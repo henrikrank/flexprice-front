@@ -9,7 +9,7 @@ interface ExportDrawerProps {
 	onOpenChange: (open: boolean) => void;
 	connectionId: string;
 	exportTask?: ScheduledTask | null; // for editing
-	onSave: (exportTask: ScheduledTask) => void;
+	onSave: (exportTask: any) => void;
 }
 
 interface ExportFormData {
@@ -123,7 +123,7 @@ const ExportDrawer: FC<ExportDrawerProps> = ({ isOpen, onOpenChange, connectionI
 			onSave(response);
 			onOpenChange(false);
 		},
-		onError: (error: Error) => {
+		onError: (error: any) => {
 			toast.error(error?.message || 'Failed to create export task');
 		},
 	});
@@ -151,7 +151,7 @@ const ExportDrawer: FC<ExportDrawerProps> = ({ isOpen, onOpenChange, connectionI
 			onSave(response);
 			onOpenChange(false);
 		},
-		onError: (error: Error) => {
+		onError: (error: any) => {
 			toast.error(error?.message || 'Failed to update export task');
 		},
 	});

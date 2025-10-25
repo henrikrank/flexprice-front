@@ -41,7 +41,7 @@ const ExportManagement = () => {
 			toast.success('Export task deleted successfully');
 			refetchTasks();
 		},
-		onError: (error: Error) => {
+		onError: (error: any) => {
 			toast.error(error?.message || 'Failed to delete export task');
 		},
 	});

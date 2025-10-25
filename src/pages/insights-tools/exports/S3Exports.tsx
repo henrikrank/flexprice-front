@@ -39,7 +39,7 @@ const S3Exports = () => {
 						// Filter out deleted tasks
 						const activeTasks = response.items.filter((task) => task.status !== 'deleted');
 						counts[connection.id] = activeTasks.length;
-					} catch {
+					} catch (error) {
 						counts[connection.id] = 0;
 					}
 				}),
@@ -56,7 +56,7 @@ const S3Exports = () => {
 			toast.success('Connection deleted successfully');
 			refetchConnections();
 		},
-		onError: (error: Error) => {
+		onError: (error: any) => {
 			toast.error(error?.message || 'Failed to delete connection');
 		},
 	});

@@ -41,7 +41,7 @@ const ExportDetails = () => {
 			toast.success('Export task updated successfully');
 			refetchExport();
 		},
-		onError: (error: Error) => {
+		onError: (error: any) => {
 			toast.error(error?.message || 'Failed to update export task');
 		},
 	});
@@ -54,7 +54,7 @@ const ExportDetails = () => {
 			toast.success('Export task started successfully');
 			setIsForceRunDrawerOpen(false);
 		},
-		onError: (error: Error) => {
+		onError: (error: any) => {
 			toast.error(error?.message || 'Failed to start export task');
 		},
 	});
@@ -66,7 +66,7 @@ const ExportDetails = () => {
 			toast.success('Export task deleted successfully');
 			navigate(`/tools/exports/s3/${connectionId}/export`);
 		},
-		onError: (error: Error) => {
+		onError: (error: any) => {
 			toast.error(error?.message || 'Failed to delete export task');
 		},
 	});

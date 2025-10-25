@@ -18,12 +18,12 @@ const TaskRunsTable: FC<TaskRunsTableProps> = ({ scheduledTaskId }) => {
 	// Reset pagination when filters change
 	useEffect(() => {
 		reset();
-	}, [statusFilter, dateRangeFilter, reset]);
+	}, [statusFilter, dateRangeFilter]);
 
 	const { data: runsResponse, isLoading } = useQuery({
 		queryKey: ['task-runs', scheduledTaskId, statusFilter, dateRangeFilter, page],
 		queryFn: () => {
-			const params: Record<string, string | number> = {
+			const params: any = {
 				scheduled_task_id: scheduledTaskId,
 				limit,
 				offset,
@@ -47,23 +47,27 @@ const TaskRunsTable: FC<TaskRunsTableProps> = ({ scheduledTaskId }) => {
 		const runDate = new Date(run.started_at || run.created_at);
 		const now = new Date();
 
-		if (dateRangeFilter === 'today') {
-			return runDate.toDateString() === now.toDateString();
-		} else if (dateRangeFilter === 'yesterday') {
-			const yesterday = new Date(now);
-			yesterday.setDate(yesterday.getDate() - 1);
-			return runDate.toDateString() === yesterday.toDateString();
-		} else if (dateRangeFilter === 'last7days') {
-			const sevenDaysAgo = new Date(now);
-			sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
-			return runDate >= sevenDaysAgo;
-		} else if (dateRangeFilter === 'last30days') {
-			const thirtyDaysAgo = new Date(now);
-			thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
-			return runDate >= thirtyDaysAgo;
+		switch (dateRangeFilter) {
+			case 'today':
+				return runDate.toDateString() === now.toDateString();
+			case 'yesterday': {
+				const yesterday = new Date(now);
+				yesterday.setDate(yesterday.getDate() - 1);
+				return runDate.toDateString() === yesterday.toDateString();
+			}
+			case 'last7days': {
+				const sevenDaysAgo = new Date(now);
+				sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+				return runDate >= sevenDaysAgo;
+			}
+			case 'last30days': {
+				const thirtyDaysAgo = new Date(now);
+				thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+				return runDate >= thirtyDaysAgo;
+			}
+			default:
+				return true;
 		}
-
-		return true;
 	});
 
 	const getStatusChip = (status: string) => {

@@ -7,15 +7,8 @@ import toast from 'react-hot-toast';
 interface S3ConnectionDrawerProps {
 	isOpen: boolean;
 	onOpenChange: (open: boolean) => void;
-	connection?: Connection | null; // for editing
-	onSave: (connection: Connection) => void;
-}
-
-interface Connection {
-	id: string;
-	name: string;
-	provider_type: string;
-	connection_status: string;
+	connection?: any; // for editing
+	onSave: (connection: any) => void;
 }
 
 interface S3FormData {
@@ -28,6 +21,7 @@ interface S3FormData {
 interface ValidationErrors {
 	name?: string;
 	aws_access_key_id?: string;
+	aws_session_token?: string;
 	aws_secret_access_key?: string;
 }
 
@@ -64,8 +58,8 @@ const S3ConnectionDrawer: FC<S3ConnectionDrawerProps> = ({ isOpen, onOpenChange,
 	const handleChange = (field: keyof S3FormData, value: string) => {
 		setFormData((prev) => ({ ...prev, [field]: value }));
 		// Clear error when user starts typing
-		if (field in errors) {
-			setErrors((prev) => ({ ...prev, [field as keyof ValidationErrors]: undefined }));
+		if (errors[field]) {
+			setErrors((prev) => ({ ...prev, [field]: undefined }));
 		}
 	};
 
@@ -107,17 +101,13 @@ const S3ConnectionDrawer: FC<S3ConnectionDrawerProps> = ({ isOpen, onOpenChange,
 			onSave(response);
 			onOpenChange(false);
 		},
-		onError: (error: Error) => {
+		onError: (error: any) => {
 			toast.error(error?.message || 'Failed to create connection');
 		},
 	});
 
 	const { mutate: updateConnection, isPending: isUpdating } = useMutation({
 		mutationFn: async () => {
-			if (!connection) {
-				throw new Error('Connection is required for update');
-			}
-
 			const payload = {
 				name: formData.name,
 			};
@@ -129,7 +119,7 @@ const S3ConnectionDrawer: FC<S3ConnectionDrawerProps> = ({ isOpen, onOpenChange,
 			onSave(response);
 			onOpenChange(false);
 		},
-		onError: (error: Error) => {
+		onError: (error: any) => {
 			toast.error(error?.message || 'Failed to update connection');
 		},
 	});
