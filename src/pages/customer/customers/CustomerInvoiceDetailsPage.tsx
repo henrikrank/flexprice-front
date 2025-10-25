@@ -1,5 +1,5 @@
 import { useParams } from 'react-router-dom';
-import InvoiceDetails from '../customers/invoice/InvoiceDetail';
+import CustomerInvoiceDetail from '../customers/invoice/CustomerInvoiceDetail';
 import { useQuery } from '@tanstack/react-query';
 import PaymentApi from '@/api/PaymentApi';
 import CreditNoteApi from '@/api/CreditNoteApi';
@@ -38,7 +38,7 @@ const CustomerInvoiceDetailsPage = () => {
 		{
 			value: 'Overview',
 			label: 'Overview',
-			content: <InvoiceDetails breadcrumb_index={4} invoice_id={invoice_id!} />,
+			content: <CustomerInvoiceDetail breadcrumb_index={4} invoice_id={invoice_id!} />,
 		},
 		{
 			value: 'payments',

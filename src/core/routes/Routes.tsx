@@ -1,56 +1,72 @@
 import MainLayout from '@/layouts/MainLayout';
-import Auth from '@/pages/auth/Auth';
 import { createBrowserRouter, Navigate } from 'react-router-dom';
-import CustomerPage from '@/pages/customer/customers/Customers';
-import SubscriptionsPage from '@/pages/customer/subscriptions/Subscriptions';
 import AuthMiddleware from '../auth/AuthProvider';
-import PricingPlans from '@/pages/product-catalog/plans/Plans';
-import CustomerSubscription from '@/pages/customer/customers/CustomerSubscription';
-import CustomerDetails from '@/pages/customer/customers/CustomerDetails';
-import ErrorPage from '@/pages/error/ErrorPage';
-import PlanDetailsPage from '@/pages/product-catalog/plans/PlanDetailsPage';
-import EventsPage from '@/pages/usage/events/Events';
-import QueryPage from '@/pages/usage/query/Query';
-import InvoicePage from '@/pages/customer/invoices/InvoicePage';
-import InvoiceDetailsPage from '@/pages/customer/invoices/InvoiceDetailsPage';
-import Invoice from '@/pages/customer/tabs/Invoice';
-import Overview from '@/pages/customer/tabs/Overview';
-import WalletTab from '@/pages/customer/tabs/Wallet';
-import SubscriptionDetails from '@/pages/customer/customers/SubscriptionDetails';
-import AddCreditPage from '@/pages/customer/invoices/AddCreditNotePage';
-import CreditNote from '@/pages/customer/creditnotes/CreditNote';
-import CreditNotesPage from '@/pages/customer/creditnotes/CreditNotesPage';
-import CreditNoteDetailsPage from '@/pages/customer/creditnotes/CreditNoteDetailsPage';
-import AddFeaturePage from '@/pages/product-catalog/features/AddFeature';
-import FeaturesPage from '@/pages/product-catalog/features/Features';
-import ImportExport from '@/pages/customer/import-export/ImportExport';
-import Integrations from '@/pages/insights-tools/integrations/Integrations';
-import IntegrationDetails from '@/pages/insights-tools/integrations/IntegrationDetails';
-import FeatureDetails from '@/pages/product-catalog/features/FeatureDetails';
-import AddOn from '@/pages/product-catalog/addons/AddOn';
-import AddonsPage from '@/pages/product-catalog/addons/Addons';
-import AddonDetailsPage from '@/pages/product-catalog/addons/AddonDetails';
-import AddonChargesPage from '@/pages/product-catalog/addons/AddonCharges';
-import CustomerInvoiceDetailsPage from '@/pages/customer/customers/CustomerInvoiceDetailsPage';
-import DeveloperPage from '@/pages/developer/developer';
-import SignupConfirmation from '@/pages/auth/SignupConfirmation';
-import ResendVerification from '@/pages/auth/ResendVerification';
-import EmailVerification from '@/pages/auth/EmailVerification';
-import CustomerInformation from '@/pages/customer/tabs/CustomerInformation';
-import PricingPage from '@/pages/product-catalog/plans/Pricing';
-import PaymentPage from '@/pages/customer/payments/PaymentPage';
-import BillingPage from '@/pages/settings/Billing';
-import AddChargesPage from '@/pages/product-catalog/plans/AddCharges';
-import CreateInvoicePage from '@/pages/customer/invoices/CreateInvoice';
 import { useUser } from '@/hooks/UserContext';
-import OnboardingTenant from '@/pages/onboarding/OnboardingTenant';
-import WebhookDashboard from '@/pages/webhooks/WebhookDashboard';
-import CouponsPage from '@/pages/product-catalog/coupons/Coupons';
-import CouponDetails from '@/pages/product-catalog/coupons/CouponDetails';
 import { TenantMetadataKey } from '@/models/Tenant';
-import TaxPage from '@/pages/customer/taxes/TaxRatesPage';
-import TaxAssociation from '@/pages/customer/tabs/TaxAssociation';
-import TaxrateDetailsPage from '@/pages/customer/taxes/TaxrateDetailsPage';
+import {
+	// Auth pages
+	Auth,
+	SignupConfirmation,
+	ResendVerification,
+	EmailVerification,
+	// Customer pages
+	CustomerListPage as CustomerPage,
+	Subscriptions as SubscriptionsPage,
+	CreateCustomerSubscriptionPage,
+	CustomerProfilePage,
+	InvoicePage,
+	InvoiceDetailsPage,
+	CustomerInvoiceTab as Invoice,
+	CustomerOverviewTab as Overview,
+	CustomerWalletTab as WalletTab,
+	CustomerSubscriptionDetailsPage,
+	AddCreditNotePage as AddCreditPage,
+	CreditNote,
+	CreditNotesPage,
+	CreditNoteDetailsPage,
+	ImportExport,
+	CustomerInvoiceDetailsPage,
+	CustomerInformationTab as CustomerInformation,
+	PaymentPage,
+	CreateInvoice as CreateInvoicePage,
+	TaxRatesPage as TaxPage,
+	CustomerTaxAssociationTab as TaxAssociation,
+	TaxrateDetailsPage,
+	// Product catalog pages
+	Plans as PricingPlans,
+	PlanDetailsPage,
+	AddFeature as AddFeaturePage,
+	Features as FeaturesPage,
+	FeatureDetails,
+	Addons as AddonsPage,
+	AddonDetails as AddonDetailsPage,
+	AddonCharges as AddonChargesPage,
+	Pricing as PricingPage,
+	AddCharges as AddChargesPage,
+	Coupons as CouponsPage,
+	CouponDetails,
+	// Usage pages
+	Events as EventsPage,
+	Query as QueryPage,
+	// Developer pages
+	DeveloperPage,
+	// Onboarding pages
+	OnboardingTenant,
+	// Webhooks pages
+	WebhookDashboard,
+	// Settings pages
+	Billing as BillingPage,
+	// Insights tools pages
+	Integrations,
+	IntegrationDetails,
+	Exports,
+	S3Exports,
+	ExportManagement,
+	ExportDetails,
+	TaskRunsPage,
+	// Error pages
+	ErrorPage,
+} from '@/pages';
 
 export const RouteNames = {
 	home: '/',
@@ -95,7 +111,6 @@ export const RouteNames = {
 	couponDetails: '/product-catalog/coupons',
 
 	// add on routes
-	addOn: '/product-catalog/add-on',
 	addons: '/product-catalog/addons',
 	addonDetails: '/product-catalog/addons',
 	addonCharges: '/product-catalog/addons/:addonId/add-charges',
@@ -105,6 +120,11 @@ export const RouteNames = {
 	bulkImports: '/tools/bulk-imports',
 	integrations: '/tools/integrations',
 	integrationDetails: '/tools/integrations',
+	exports: '/tools/exports',
+	s3Exports: '/tools/exports/s3',
+	s3ExportManagement: '/tools/exports/s3/:connectionId/export',
+	s3ExportDetails: '/tools/exports/s3/:connectionId/export/:exportId',
+	s3TaskRuns: '/tools/exports/s3/:connectionId/export/:exportId/runs',
 
 	// footer
 	developers: '/developers',
@@ -184,10 +204,6 @@ export const MainRouter = createBrowserRouter([
 						element: <FeatureDetails />,
 					},
 					{
-						path: RouteNames.addOn,
-						element: <AddOn />,
-					},
-					{
 						path: RouteNames.addons,
 						element: <AddonsPage />,
 					},
@@ -229,6 +245,26 @@ export const MainRouter = createBrowserRouter([
 						path: `${RouteNames.integrationDetails}/:id`,
 						element: <IntegrationDetails />,
 					},
+					{
+						path: RouteNames.exports,
+						element: <Exports />,
+					},
+					{
+						path: RouteNames.s3Exports,
+						element: <S3Exports />,
+					},
+					{
+						path: RouteNames.s3ExportManagement,
+						element: <ExportManagement />,
+					},
+					{
+						path: RouteNames.s3ExportDetails,
+						element: <ExportDetails />,
+					},
+					{
+						path: RouteNames.s3TaskRuns,
+						element: <TaskRunsPage />,
+					},
 				],
 			},
 			{
@@ -244,7 +280,7 @@ export const MainRouter = createBrowserRouter([
 					},
 					{
 						path: `${RouteNames.customers}/:id/add-subscription`,
-						element: <CustomerSubscription />,
+						element: <CreateCustomerSubscriptionPage />,
 					},
 					{
 						path: RouteNames.payments,
@@ -252,7 +288,7 @@ export const MainRouter = createBrowserRouter([
 					},
 					{
 						path: `${RouteNames.customers}/:id`,
-						element: <CustomerDetails />,
+						element: <CustomerProfilePage />,
 						children: [
 							{
 								path: '',
@@ -295,7 +331,7 @@ export const MainRouter = createBrowserRouter([
 							},
 							{
 								path: 'subscription/:subscription_id',
-								element: <SubscriptionDetails />,
+								element: <CustomerSubscriptionDetailsPage />,
 							},
 						],
 					},

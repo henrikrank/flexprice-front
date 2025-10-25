@@ -4,7 +4,7 @@ import { AddButton, FormHeader, ActionButton } from '@/components/atoms';
 import FlexpriceTable, { ColumnData } from '../Table';
 import CreditGrantModal from './CreditGrantModal';
 import { formatBillingPeriodForPrice } from '@/utils/common/helper_functions';
-import { formatExpirationPeriod } from '@/pages/customer/customers/SubscriptionDetails';
+import { formatExpirationPeriod } from '@/pages';
 interface Props {
 	data: CreditGrant[];
 	onChange: (data: CreditGrant[]) => void;

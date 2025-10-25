@@ -18,7 +18,7 @@ const fetchAllSubscriptions = async (customerId: string) => {
 	return subs.items;
 };
 
-const Overview = () => {
+const CustomerOverviewTab = () => {
 	const navigate = useNavigate();
 	const { id: customerId } = useParams();
 	const { isArchived } = useOutletContext<ContextType>();
@@ -92,4 +92,4 @@ const Overview = () => {
 	);
 };
 
-export default Overview;
+export default CustomerOverviewTab;

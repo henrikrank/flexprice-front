@@ -5,7 +5,7 @@ import { Price, PRICE_TYPE } from '@/models/Price';
 import { ChevronDownIcon, ChevronUpIcon, Pencil, RotateCcw, Tag } from 'lucide-react';
 import { FormHeader } from '@/components/atoms';
 import { motion } from 'framer-motion';
-import ChargeValueCell from '@/pages/product-catalog/plans/ChargeValueCell';
+import { ChargeValueCell } from '@/components/molecules';
 import { capitalize } from 'es-toolkit';
 import { Coupon } from '@/models/Coupon';
 import { BsThreeDots } from 'react-icons/bs';

@@ -13,7 +13,7 @@ import toast from 'react-hot-toast';
 import { useNavigate, useParams } from 'react-router-dom';
 import { Card } from '@/components/atoms';
 import formatChips from '@/utils/common/format_chips';
-import ChargeValueCell from '../plans/ChargeValueCell';
+import { ChargeValueCell } from '@/components/molecules';
 import { BILLING_PERIOD } from '@/constants/constants';
 import { ADDON_TYPE } from '@/models/Addon';
 

@@ -11,7 +11,7 @@ import FeatureApi from '@/api/FeatureApi';
 import { CreateFeatureRequest, CreateMeterRequest } from '@/types/dto';
 import { useMutation } from '@tanstack/react-query';
 import { Gauge, SquareCheckBig, Wrench } from 'lucide-react';
-import { useMemo, useState, useCallback } from 'react';
+import { useMemo, useState, useCallback, useEffect } from 'react';
 import toast from 'react-hot-toast';
 import { LuCircleFadingPlus, LuRefreshCw } from 'react-icons/lu';
 import { useNavigate } from 'react-router-dom';
@@ -474,15 +474,31 @@ const AggregationSection = ({
 		[onUpdateMeter],
 	);
 
+	const [multiplierInput, setMultiplierInput] = useState(meter.aggregation?.multiplier?.toString() || '');
+
+	useEffect(() => {
+		// only update local state if the prop value actually changed externally
+		const currentValue = meter.aggregation?.multiplier?.toString() || '';
+		if (currentValue !== multiplierInput) {
+			setMultiplierInput(currentValue);
+		}
+	}, [meter.aggregation?.multiplier]);
+
 	const handleMultiplierChange = useCallback(
-		(multiplierStr: string) => {
-			onUpdateMeter((prev) => ({
-				...prev,
-				aggregation: {
-					...prev.aggregation!,
-					multiplier: multiplierStr ? Number(multiplierStr) : undefined,
-				},
-			}));
+		(value: string) => {
+			// Allow only valid numeric/decimal input
+			if (/^\d*\.?\d*$/.test(value)) {
+				setMultiplierInput(value);
+
+				const num = parseFloat(value);
+				onUpdateMeter((prev) => ({
+					...prev,
+					aggregation: {
+						...prev.aggregation!,
+						multiplier: !isNaN(num) ? num : undefined,
+					},
+				}));
+			}
 		},
 		[onUpdateMeter],
 	);
@@ -539,7 +555,7 @@ const AggregationSection = ({
 
 				{showMultiplierInput && (
 					<Input
-						value={meter.aggregation?.multiplier?.toString() || ''}
+						value={multiplierInput}
 						onChange={handleMultiplierChange}
 						label='Aggregation Multiplier'
 						placeholder='1'
@@ -658,7 +674,8 @@ const AddFeaturePage = () => {
 			toast.success('Feature created successfully');
 		},
 		onError: (error: ServerError) => {
-			toast.error(error.error?.message || 'An error occurred while creating feature. Please try again.');
+			const errorMessage = error.error?.message || 'An error occurred while creating feature. Please try again.';
+			toast.error(errorMessage);
 		},
 	});
 

@@ -3,7 +3,7 @@ import { FC, ReactNode } from 'react';
 import { ArrowRight } from 'lucide-react';
 import { ApiDocsContent } from '@/components/molecules/ApiDocs/ApiDocs';
 import { motion } from 'framer-motion';
-import { TutorialItem } from '@/pages/onboarding/onboarding';
+import { TutorialItem } from '@/pages';
 import { cn } from '@/lib/utils';
 
 interface EmptyStateCardItem {

@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Link, useNavigate } from 'react-router-dom';
 import { RouteNames } from '@/core/routes/Routes';
 import { formatAmount } from '@/components/atoms/Input/Input';
-import { PlanType } from '@/pages/product-catalog/plans/Pricing';
+import { PlanType } from '@/pages';
 export interface UsageCharge {
 	amount?: string;
 	currency?: string;

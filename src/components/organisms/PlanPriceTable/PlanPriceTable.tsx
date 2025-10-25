@@ -12,9 +12,9 @@ import toast from 'react-hot-toast';
 import { useNavigate } from 'react-router-dom';
 import { RouteNames } from '@/core/routes/Routes';
 import { getPriceTypeLabel } from '@/utils/common/helper_functions';
-import ChargeValueCell from '@/pages/product-catalog/plans/ChargeValueCell';
 import { BILLING_PERIOD } from '@/constants/constants';
-import { formatInvoiceCadence } from '@/pages/product-catalog/plans/PlanDetailsPage';
+import { ChargeValueCell } from '@/components/molecules';
+import { formatInvoiceCadence } from '@/pages';
 import { Dialog } from '@/components/ui/dialog';
 
 // ===== TYPES & CONSTANTS =====

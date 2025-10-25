@@ -1,4 +1,4 @@
-import { TutorialItem } from '@/pages/onboarding/onboarding';
+import { TutorialItem } from '@/pages';
 
 const openGuide = (url: string) => {
 	window.open(url, '_blank');

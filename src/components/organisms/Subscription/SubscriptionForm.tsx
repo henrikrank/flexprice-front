@@ -20,7 +20,7 @@ import {
 import { BILLING_PERIOD } from '@/constants/constants';
 import { Pencil, Trash2 } from 'lucide-react';
 import { uniqueId } from 'lodash';
-import { SubscriptionFormState, SubscriptionPhaseState } from '@/pages/customer/customers/CustomerSubscription';
+import { SubscriptionFormState, SubscriptionPhaseState } from '@/pages';
 import { useQuery } from '@tanstack/react-query';
 import { PlanApi } from '@/api/PlanApi';
 import { AddAddonToSubscriptionRequest } from '@/types/dto/Addon';

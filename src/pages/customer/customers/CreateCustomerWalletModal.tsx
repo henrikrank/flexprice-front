@@ -19,7 +19,7 @@ interface Props {
 	onOpenChange: (open: boolean) => void;
 }
 
-const CreateWallet: FC<Props> = ({ customerId, onSuccess = () => {}, open, onOpenChange }) => {
+const CreateCustomerWalletModal: FC<Props> = ({ customerId, onSuccess = () => {}, open, onOpenChange }) => {
 	const [errors, setErrors] = useState({
 		currency: '',
 		name: '',
@@ -173,4 +173,4 @@ const CreateWallet: FC<Props> = ({ customerId, onSuccess = () => {}, open, onOpe
 	);
 };
 
-export default CreateWallet;
+export default CreateCustomerWalletModal;

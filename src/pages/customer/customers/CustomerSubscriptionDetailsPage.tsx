@@ -71,7 +71,7 @@ const columns: ColumnData<CreditGrant>[] = [
 	},
 ];
 
-const SubscriptionDetails: FC = () => {
+const CustomerSubscriptionDetailsPage: FC = () => {
 	const { subscription_id, id: customerId } = useParams();
 	const { updateBreadcrumb } = useBreadcrumbsStore();
 	const { data: subscriptionDetails, isLoading: isSubscriptionDetailsLoading } = useQuery({
@@ -303,4 +303,4 @@ const SubscriptionDetails: FC = () => {
 	);
 };
 
-export default SubscriptionDetails;
+export default CustomerSubscriptionDetailsPage;

@@ -36,7 +36,7 @@ import {
 	CREDIT_GRANT_PERIOD,
 } from '@/models/CreditGrant';
 import { uniqueId } from 'lodash';
-import { formatExpirationPeriod } from '@/pages/customer/customers/SubscriptionDetails';
+import { formatExpirationPeriod } from '@/pages';
 import CreditGrantApi from '@/api/CreditGrantApi';
 import { ENTITLEMENT_ENTITY_TYPE } from '@/models/Entitlement';
 import { EntitlementResponse } from '@/types/dto';

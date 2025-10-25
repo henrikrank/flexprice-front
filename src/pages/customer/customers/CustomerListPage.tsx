@@ -86,7 +86,7 @@ const filterOptions: FilterField[] = [
 	},
 ];
 
-const CustomerPage = () => {
+const CustomerListPage = () => {
 	const { limit, offset, page, reset } = usePagination();
 
 	const [activeCustomer, setactiveCustomer] = useState<Customer>();
@@ -252,4 +252,4 @@ const CustomerPage = () => {
 	);
 };
 
-export default CustomerPage;
+export default CustomerListPage;

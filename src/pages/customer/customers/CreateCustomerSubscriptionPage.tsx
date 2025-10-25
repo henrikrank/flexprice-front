@@ -132,7 +132,7 @@ const useAddons = (addonIds: string[] = []) => {
 	});
 };
 
-const CustomerSubscription: React.FC = () => {
+const CreateCustomerSubscriptionPage: React.FC = () => {
 	const { id: customerId, subscription_id } = useParams<Params>();
 	const navigate = useNavigate();
 	const updateBreadcrumb = useBreadcrumbsStore((state) => state.updateBreadcrumb);
@@ -480,4 +480,4 @@ const CustomerSubscription: React.FC = () => {
 	);
 };
 
-export default CustomerSubscription;
+export default CreateCustomerSubscriptionPage;

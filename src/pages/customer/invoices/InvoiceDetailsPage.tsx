@@ -1,5 +1,5 @@
 import { useParams } from 'react-router-dom';
-import InvoiceDetails from '../customers/invoice/InvoiceDetail';
+import CustomerInvoiceDetail from '../customers/invoice/CustomerInvoiceDetail';
 import { useQuery } from '@tanstack/react-query';
 import usePagination from '@/hooks/usePagination';
 import PaymentApi from '@/api/PaymentApi';
@@ -38,7 +38,7 @@ const InvoiceDetailsPage = () => {
 		{
 			value: 'Overview',
 			label: 'Overview',
-			content: <InvoiceDetails breadcrumb_index={2} invoice_id={invoiceId!} />,
+			content: <CustomerInvoiceDetail breadcrumb_index={2} invoice_id={invoiceId!} />,
 		},
 		{
 			value: 'payments',

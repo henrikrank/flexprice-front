@@ -51,8 +51,8 @@ export type { Event } from './Event';
 export { EXPAND } from './expand';
 
 // Feature
-export type { Feature } from './Feature';
-export { FEATURE_TYPE } from './Feature';
+export type { Feature, AlertSettings, AlertThreshold } from './Feature';
+export { FEATURE_TYPE, AlertLevel } from './Feature';
 export type { default as FeatureDefault } from './Feature';
 
 // ImportTask

@@ -17,13 +17,21 @@ export interface GetConnectionsResponse {
 export interface CreateConnectionPayload {
 	name: string;
 	provider_type: string;
-	encrypted_secret_data: {
-		account_id?: string;
-		publishable_key?: string;
-		secret_key: string;
-		webhook_secret: string;
-	};
-	sync_config: {
+	encrypted_secret_data:
+		| {
+				provider_type: 'stripe';
+				account_id?: string;
+				publishable_key?: string;
+				secret_key?: string;
+				webhook_secret?: string;
+		  }
+		| {
+				provider_type: 's3';
+				aws_access_key_id?: string;
+				aws_secret_access_key?: string;
+				aws_session_token?: string;
+		  };
+	sync_config?: {
 		plan: {
 			inbound: boolean;
 			outbound: boolean;

@@ -25,7 +25,7 @@ const getActiveTab = (pathTabId: string): TabId => {
 	return validTabId ? validTabId.id : '';
 };
 
-const CustomerDetails = () => {
+const CustomerProfilePage = () => {
 	const { id: customerId } = useParams();
 	const location = useLocation();
 	const [activeTab, setActiveTab] = useState<TabId>(tabs[0]?.id);
@@ -124,4 +124,4 @@ const CustomerDetails = () => {
 	);
 };
 
-export default CustomerDetails;
+export default CustomerProfilePage;

@@ -25,7 +25,7 @@ const filterStringMetadata = (meta: Record<string, unknown> | undefined): Record
 	return Object.fromEntries(Object.entries(meta).filter(([_, v]) => typeof v === 'string') as [string, string][]);
 };
 
-const CustomerInformation = () => {
+const CustomerInformationTab = () => {
 	const { id: customerId } = useParams();
 	const { isArchived } = useOutletContext<ContextType>();
 
@@ -193,4 +193,4 @@ const CustomerInformation = () => {
 	);
 };
 
-export default CustomerInformation;
+export default CustomerInformationTab;

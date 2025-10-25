@@ -7,7 +7,7 @@ import { Card } from '@/components/atoms';
 import { Invoice as InvoiceModel } from '@/models/Invoice';
 import { RouteNames } from '@/core/routes/Routes';
 
-const Invoice = () => {
+const CustomerInvoiceTab = () => {
 	const { id: customerId } = useParams();
 	const navigate = useNavigate();
 
@@ -71,4 +71,4 @@ const Invoice = () => {
 	);
 };
 
-export default Invoice;
+export default CustomerInvoiceTab;

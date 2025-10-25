@@ -25,7 +25,7 @@ interface Props {
 	breadcrumb_index: number;
 }
 
-const InvoiceDetails: FC<Props> = ({ invoice_id, breadcrumb_index }) => {
+const CustomerInvoiceDetail: FC<Props> = ({ invoice_id, breadcrumb_index }) => {
 	// const { invoice_id } = useParams<{ invoice_id: string }>();
 	const [state, setState] = useState({
 		isPaymentModalOpen: false,
@@ -228,4 +228,4 @@ const InvoiceDetails: FC<Props> = ({ invoice_id, breadcrumb_index }) => {
 		</div>
 	);
 };
-export default InvoiceDetails;
+export default CustomerInvoiceDetail;

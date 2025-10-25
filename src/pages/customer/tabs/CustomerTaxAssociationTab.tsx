@@ -16,7 +16,7 @@ type ContextType = {
 	isArchived: boolean;
 };
 
-const TaxAssociation = () => {
+const CustomerTaxAssociationTab = () => {
 	const { id: customerId } = useParams();
 	const { isArchived } = useOutletContext<ContextType>();
 	const { limit, offset, page } = usePagination();
@@ -117,4 +117,4 @@ const TaxAssociation = () => {
 	);
 };
 
-export default TaxAssociation;
+export default CustomerTaxAssociationTab;

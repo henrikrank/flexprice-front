@@ -1,5 +1,7 @@
 export { Sidebar } from './Sidebar';
 
+export { ChargeValueCell } from './ChargeValueCell';
+
 export {
 	Table,
 	TableHeader,
@@ -116,6 +118,8 @@ export { default as SaveCardModal } from './SaveCardModal';
 export { default as PriceOverrideDialog } from './PriceOverrideDialog';
 
 export { default as WalletAlertDialog } from './WalletAlertDialog';
+
+export { FeatureAlertDialog } from './FeatureAlertDialog';
 
 export { AddonTable, AddonModal } from './AddonTable';
 

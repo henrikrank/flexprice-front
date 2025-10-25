@@ -20,7 +20,7 @@ import { useEffect, useMemo, useState } from 'react';
 import toast from 'react-hot-toast';
 import { IoSearch } from 'react-icons/io5';
 import { useParams, useOutletContext } from 'react-router-dom';
-import CreateWallet from '../customers/CreateWallet';
+import CreateCustomerWalletModal from '../customers/CreateCustomerWalletModal';
 import { EllipsisVertical, Info, Pencil, SlidersHorizontal, Trash2, Wallet as WalletIcon, Bell } from 'lucide-react';
 import { getCurrencySymbol } from '@/utils/common/helper_functions';
 import useQueryParams from '@/hooks/useQueryParams';
@@ -43,7 +43,7 @@ const filterStringMetadata = (meta: Record<string, unknown> | undefined): Record
 	return Object.fromEntries(Object.entries(meta).filter(([_, v]) => typeof v === 'string') as [string, string][]);
 };
 
-const WalletTab = () => {
+const CustomerWalletTab = () => {
 	const { id: customerId } = useParams();
 	const { limit, offset } = usePagination();
 	const {
@@ -170,7 +170,7 @@ const WalletTab = () => {
 			<ApiDocsContent tags={['Wallets', 'Topup']} />
 
 			{/* Create Wallet Modal */}
-			<CreateWallet
+			<CreateCustomerWalletModal
 				customerId={customerId!}
 				open={showCreateWalletModal}
 				onOpenChange={setShowCreateWalletModal}
@@ -420,4 +420,4 @@ const WalletTab = () => {
 	);
 };
 
-export default WalletTab;
+export default CustomerWalletTab;
