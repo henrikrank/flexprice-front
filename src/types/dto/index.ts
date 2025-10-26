@@ -147,6 +147,15 @@ export type {
 } from './Addon';
 
 export type {
+	CreateCostSheetRequest,
+	UpdateCostSheetRequest,
+	GetCostSheetsPayload,
+	GetCostSheetsResponse,
+	GetCostSheetsByFilterPayload,
+	CostSheetResponse,
+} from './CostSheet';
+
+export type {
 	CreateTaxRateRequest,
 	UpdateTaxRateRequest,
 	TaxRateResponse,
