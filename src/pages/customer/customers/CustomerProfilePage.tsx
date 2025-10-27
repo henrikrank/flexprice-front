@@ -16,6 +16,8 @@ const tabs = [
 	{ id: 'invoice', label: 'Invoice' },
 	{ id: 'information', label: 'Information' },
 	{ id: 'tax-association', label: 'Tax' },
+	{ id: 'usage', label: 'Usage' },
+	{ id: 'cost', label: 'Cost Analytics' },
 ] as const;
 
 type TabId = (typeof tabs)[number]['id'];

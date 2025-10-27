@@ -32,10 +32,12 @@ export { default as PaymentPage } from './payments/PaymentPage';
 export { default as Subscriptions } from './subscriptions/Subscriptions';
 
 // Tabs
+export { default as CustomerCostTab } from './tabs/CustomerCostTab';
 export { default as CustomerInformationTab } from './tabs/CustomerInformationTab';
 export { default as CustomerInvoiceTab } from './tabs/CustomerInvoiceTab';
 export { default as CustomerOverviewTab } from './tabs/CustomerOverviewTab';
 export { default as CustomerTaxAssociationTab } from './tabs/CustomerTaxAssociationTab';
+export { default as CustomerUsageTab } from './tabs/CustomerUsageTab';
 export { default as CustomerWalletTab } from './tabs/CustomerWalletTab';
 
 // Taxes
