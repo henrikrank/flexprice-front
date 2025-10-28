@@ -1,26 +1,16 @@
 import { Button, Page, ShortPagination } from '@/components/atoms';
-import { ColumnData, DropdownMenu, FlexpriceTable, SecretKeyDrawer, ApiDocsContent } from '@/components/molecules';
+import { ColumnData, FlexpriceTable, SecretKeyDrawer, ApiDocsContent } from '@/components/molecules';
 import SecretKeysApi from '@/api/SecretKeysApi';
-import { useMutation, useQuery } from '@tanstack/react-query';
+import { useQuery } from '@tanstack/react-query';
 import { SecretKey } from '@/models/SecretKey';
 import usePagination from '@/hooks/usePagination';
 import { formatDateShort } from '@/utils/common/helper_functions';
-import { Plus, Eye, Pencil, EyeOff, LucideIcon, ShieldCheck, Key, Trash2, Loader, AlertTriangleIcon } from 'lucide-react';
+import { Plus, Eye, Pencil, EyeOff, LucideIcon, ShieldCheck, Key, Loader, TrashIcon } from 'lucide-react';
 import { useState } from 'react';
-import { refetchQueries } from '@/core/services/tanstack/ReactQueryProvider';
 import { toast } from 'react-hot-toast';
 import { EmptyPage } from '@/components/organisms';
 import GUIDES from '@/constants/guides';
-import {
-	AlertDialog,
-	AlertDialogAction,
-	AlertDialogCancel,
-	AlertDialogContent,
-	AlertDialogDescription,
-	AlertDialogFooter,
-	AlertDialogHeader,
-	AlertDialogTitle,
-} from '@/components/ui/alert-dialog';
+import ActionButton from '@/components/atoms/ActionButton/ActionButton';
 
 // Utility function to format permissions for display
 export const formatPermissionDisplay = (permissions: readonly string[]): string => {
@@ -122,7 +112,6 @@ const baseColumns: ColumnData<SecretKey>[] = [
 const DeveloperPage = () => {
 	const { page, limit, offset } = usePagination();
 	const [isSecretKeyDrawerOpen, setIsSecretKeyDrawerOpen] = useState(false);
-	const [secretKeyIdToDelete, setSecretKeyIdToDelete] = useState<string | null>(null);
 
 	const {
 		data: secretKeys,
@@ -133,23 +122,8 @@ const DeveloperPage = () => {
 		queryFn: () => SecretKeysApi.getAllSecretKeys({ limit, offset }),
 	});
 
-	const { mutate: deleteSecretKey, isPending: isDeletingSecretKey } = useMutation({
-		mutationFn: (id: string) => SecretKeysApi.deleteSecretKey(id),
-		onSuccess: () => {
-			refetchQueries(['secret-keys']);
-			toast.success('API key deleted successfully');
-		},
-		onError: (error: ServerError) => {
-			toast.error(error.error.message || 'Failed to delete secret key');
-		},
-	});
-
 	const handleAddSecretKey = () => {
 		setIsSecretKeyDrawerOpen(true);
-	};
-
-	const handleDeleteSecretKey = (id: string) => {
-		setSecretKeyIdToDelete(id);
 	};
 
 	const columns: ColumnData<SecretKey>[] = [
@@ -161,15 +135,16 @@ const DeveloperPage = () => {
 			render(rowData: SecretKey) {
 				return (
 					<div className='flex justify-end'>
-						<DropdownMenu
-							options={[
-								{
-									label: 'Delete',
-									onSelect: () => handleDeleteSecretKey(rowData.id),
-									disabled: isDeletingSecretKey,
-									icon: <Trash2 size={16} />,
-								},
-							]}
+						<ActionButton
+							id={rowData.id}
+							deleteMutationFn={async (id: string) => {
+								await SecretKeysApi.deleteSecretKey(id);
+							}}
+							refetchQueryKey={'secret-keys'}
+							entityName={'API key'}
+							archiveText={'Delete'}
+							isEditDisabled
+							archiveIcon={<TrashIcon />}
 						/>
 					</div>
 				);
@@ -198,40 +173,7 @@ const DeveloperPage = () => {
 			<ApiDocsContent tags={['secrets']} />
 			<SecretKeyDrawer isOpen={isSecretKeyDrawerOpen} onOpenChange={setIsSecretKeyDrawerOpen} />
 
-			{/* Alert Dialog for API Key Deletion */}
-			<AlertDialog open={!!secretKeyIdToDelete} onOpenChange={(open) => !open && setSecretKeyIdToDelete(null)}>
-				<AlertDialogContent className='max-w-md bg-white border border-gray-200 shadow-lg'>
-					<AlertDialogHeader>
-						<div className='flex gap-3 items-center mb-2'>
-							<div className='flex flex-shrink-0 justify-center items-center w-10 h-10 bg-red-100 rounded-full'>
-								<AlertTriangleIcon className='w-5 h-5 text-red-600' />
-							</div>
-							<AlertDialogTitle className='text-left text-gray-900'>Do you want to permanently delete this API key?</AlertDialogTitle>
-						</div>
-					</AlertDialogHeader>
-					<AlertDialogDescription className='text-left text-gray-600'>
-						This action will permanently delete the API key. This step cannot be undone.
-					</AlertDialogDescription>
-					<AlertDialogFooter className='flex-col-reverse sm:flex-row sm:justify-end sm:space-x-2'>
-						<AlertDialogCancel className='mt-2 text-gray-700 bg-white border border-gray-300 sm:mt-0 hover:bg-gray-50 hover:text-gray-900'>
-							Cancel
-						</AlertDialogCancel>
-						<AlertDialogAction
-							onClick={() => secretKeyIdToDelete && deleteSecretKey(secretKeyIdToDelete)}
-							disabled={isDeletingSecretKey}
-							className='text-white bg-red-600 hover:bg-red-700 focus:ring-red-600'>
-							{isDeletingSecretKey ? (
-								<>
-									<Loader className='mr-2 w-4 h-4 animate-spin' />
-									Deleting...
-								</>
-							) : (
-								'Delete API Key'
-							)}
-						</AlertDialogAction>
-					</AlertDialogFooter>
-				</AlertDialogContent>
-			</AlertDialog>
+			{/* Per-row actions handled via ActionButton */}
 
 			{secretKeys?.items.length === 0 && (
 				<EmptyPage
