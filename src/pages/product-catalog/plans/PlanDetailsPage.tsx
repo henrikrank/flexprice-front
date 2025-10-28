@@ -44,6 +44,7 @@ import {
 	CREDIT_SCOPE,
 	CREDIT_GRANT_CADENCE,
 	CREDIT_GRANT_PERIOD,
+	INVOICE_CADENCE,
 } from '@/models';
 import { EntitlementResponse } from '@/types';
 
@@ -51,7 +52,7 @@ import { EntitlementResponse } from '@/types';
 import { useBreadcrumbsStore } from '@/store/useBreadcrumbsStore';
 import formatDate from '@/utils/common/format_date';
 import formatChips from '@/utils/common/format_chips';
-import { formatExpirationPeriod } from '@/pages';
+import { formatExpirationPeriod } from '@/utils/common/credit_grant_helpers';
 
 const creditGrantColumns: ColumnData<CreditGrant>[] = [
 	{
@@ -75,19 +76,19 @@ const creditGrantColumns: ColumnData<CreditGrant>[] = [
 	{
 		title: 'Expiration Config',
 		render: (row) => {
-			return <span>{formatExpirationPeriod(row as CreditGrant)}</span>;
+			return <span>{formatExpirationPeriod(row)}</span>;
 		},
 	},
 ];
 
 export const formatInvoiceCadence = (cadence: string): string => {
 	switch (cadence.toUpperCase()) {
-		case 'ADVANCE':
+		case INVOICE_CADENCE.ADVANCE:
 			return 'Advance';
-		case 'ARREAR':
+		case INVOICE_CADENCE.ARREAR:
 			return 'Arrear';
 		default:
-			return '';
+			return '--';
 	}
 };
 

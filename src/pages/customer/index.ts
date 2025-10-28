@@ -11,7 +11,7 @@ export { default as CustomerInvoiceDetailsPage } from './customers/CustomerInvoi
 export { default as CustomerListPage } from './customers/CustomerListPage';
 export { default as CreateCustomerSubscriptionPage, SubscriptionPhaseState } from './customers/CreateCustomerSubscriptionPage';
 export type { SubscriptionFormState } from './customers/CreateCustomerSubscriptionPage';
-export { default as CustomerSubscriptionDetailsPage, formatExpirationPeriod } from './customers/CustomerSubscriptionDetailsPage';
+export { default as CustomerSubscriptionDetailsPage } from './customers/CustomerSubscriptionDetailsPage';
 
 // Customer Invoice
 export { default as CustomerInvoiceDetail } from './customers/invoice/CustomerInvoiceDetail';
