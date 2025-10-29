@@ -9,6 +9,10 @@ export { ADDON_TYPE, ADDON_STATUS } from './Addon';
 // CostSheet
 export type { default as CostSheet } from './CostSheet';
 
+// Group
+export type { Group } from './Group';
+export { GROUP_ENTITY_TYPE } from './Group';
+
 // Connection
 export type { Connection } from './Connection';
 export { CONNECTION_PROVIDER_TYPE, CONNECTION_STATUS } from './Connection';

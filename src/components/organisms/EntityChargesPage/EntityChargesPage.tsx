@@ -299,6 +299,7 @@ const EntityChargesPage: React.FC<EntityChargesPageProps> = ({ entityType, entit
 					})) || undefined,
 				transform_quantity: price.transform_quantity || undefined,
 				price_unit_config: price.price_unit_config,
+				group_id: price.group_id,
 			}));
 
 			const bulkPriceRequest: CreateBulkPriceRequest = {

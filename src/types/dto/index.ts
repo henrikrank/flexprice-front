@@ -212,3 +212,12 @@ export {
 
 // Additional DTO types
 export type { Testimonial } from './Testimonial';
+
+export type {
+	CreateGroupRequest,
+	UpdateGroupRequest,
+	GroupResponse,
+	ListGroupsResponse,
+	GroupFilter,
+	AddEntityToGroupRequest,
+} from './Group';

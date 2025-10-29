@@ -21,6 +21,10 @@ export type { EventFilterData } from './EventFilter';
 
 export { default as PlansTable } from './PlansTable';
 
+export { default as GroupsTable } from './GroupsTable';
+
+export { default as GroupDrawer } from './GroupDrawer';
+
 export { default as CouponTable } from './CouponTable';
 
 export { default as CouponModal } from './CouponModal';
