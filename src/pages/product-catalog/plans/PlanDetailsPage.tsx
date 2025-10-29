@@ -456,6 +456,7 @@ const PlanDetailsPage = () => {
 					showEffectiveFrom={true}
 				/>
 			)}
+
 			<ApiDocsContent tags={['Plans']} />
 			<AddEntitlementDrawer
 				selectedFeatures={planData.entitlements?.map((v) => v.feature)}

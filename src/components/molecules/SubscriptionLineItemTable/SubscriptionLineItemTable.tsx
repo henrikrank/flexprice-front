@@ -1,10 +1,11 @@
 import { ActionButton, Card, CardHeader, NoDataCard } from '@/components/atoms';
-import { ColumnData, FlexpriceTable } from '@/components/molecules';
+import { ChargeValueCell, ColumnData, FlexpriceTable } from '@/components/molecules';
 import { formatDateShort } from '@/utils/common/helper_functions';
 import { LineItem } from '@/models/Subscription';
 import { FC } from 'react';
 import { Trash2, Pencil } from 'lucide-react';
 import { ENTITY_STATUS } from '@/models/base';
+import { formatBillingPeriodForDisplay } from '@/utils/common/helper_functions';
 
 interface Props {
 	data: LineItem[];
@@ -21,11 +22,11 @@ const SubscriptionLineItemTable: FC<Props> = ({ data, onEdit, onTerminate, isLoa
 		},
 		{
 			title: 'Billing Period',
-			fieldName: 'billing_period',
+			render: (row) => formatBillingPeriodForDisplay(row.billing_period),
 		},
 		{
-			title: 'Currency',
-			fieldName: 'currency',
+			title: 'Charge',
+			render: (row) => <div className='flex items-center gap-2'>{row.price ? <ChargeValueCell data={row.price} /> : '--'}</div>,
 		},
 		{
 			title: 'Start Date',
@@ -53,6 +54,7 @@ const SubscriptionLineItemTable: FC<Props> = ({ data, onEdit, onTerminate, isLoa
 					}}
 					refetchQueryKey='subscriptionLineItems'
 					id={row.id}
+					disableToast={true}
 				/>
 			),
 		},

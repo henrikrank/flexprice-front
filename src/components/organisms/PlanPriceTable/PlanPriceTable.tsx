@@ -64,6 +64,9 @@ const PlanPriceTable: FC<PlanChargesTableProps> = ({ plan, onPriceUpdate, onEdit
 		mutationFn: async (priceId: string) => {
 			return await PriceApi.DeletePrice(priceId);
 		},
+		onSuccess: () => {
+			toast.success('Price terminated successfully');
+		},
 		onError: (error: ServerError) => {
 			toast.error(error?.error?.message || 'Error deleting price');
 		},
@@ -71,6 +74,9 @@ const PlanPriceTable: FC<PlanChargesTableProps> = ({ plan, onPriceUpdate, onEdit
 
 	const { mutateAsync: syncPlanCharges, isPending: isSyncing } = useMutation({
 		mutationFn: () => PlanApi.synchronizePlanPricesWithSubscription(plan.id),
+		onSuccess: () => {
+			toast.success('Sync has been started and will take up to 1 hour to complete.');
+		},
 		onError: (error: ServerError) => {
 			toast.error(error?.error?.message || 'Error synchronizing charges with subscriptions');
 		},
@@ -97,7 +103,6 @@ const PlanPriceTable: FC<PlanChargesTableProps> = ({ plan, onPriceUpdate, onEdit
 				// For plans without subscriptions, delete directly
 				try {
 					await deletePrice(priceId);
-					toast.success('Price deleted successfully');
 					onPriceUpdate?.();
 				} catch (error) {
 					console.error('Error deleting price:', error);
@@ -120,10 +125,6 @@ const PlanPriceTable: FC<PlanChargesTableProps> = ({ plan, onPriceUpdate, onEdit
 				// If user selected to sync with existing subscriptions
 				if (option === RolloutOption.EXISTING_ALSO) {
 					await syncPlanCharges();
-					toast.success('Sync has been started and will take up to 1 hour to complete');
-				} else {
-					// Only show delete success if no sync is happening
-					toast.success('Price deleted successfully');
 				}
 
 				// Refresh data

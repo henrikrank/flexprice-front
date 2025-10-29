@@ -19,6 +19,7 @@ import { INVOICE_TYPE } from '@/models/Invoice';
 import { TAXRATE_ENTITY_TYPE } from '@/models/Tax';
 import TaxAssociationTable from '@/components/molecules/TaxAssociationTable';
 import { SUBSCRIPTION_STATUS } from '@/models/Subscription';
+import { Subscription as SubscriptionType } from '@/models/Subscription';
 
 // Local helper function to format expiration period
 const formatExpirationPeriod = (grant: CreditGrant): string => {
@@ -71,11 +72,10 @@ const columns: ColumnData<CreditGrant>[] = [
 const CustomerSubscriptionDetailsPage: FC = () => {
 	const { subscription_id, id: customerId } = useParams();
 	const { updateBreadcrumb } = useBreadcrumbsStore();
-	const { data: subscriptionDetails, isLoading: isSubscriptionDetailsLoading } = useQuery({
+	const { data: subscriptionDetails, isLoading: isSubscriptionDetailsLoading } = useQuery<SubscriptionType>({
 		queryKey: ['subscriptionDetails', subscription_id],
-		queryFn: async () => {
-			const response = await SubscriptionApi.getSubscription(subscription_id!);
-			return 'subscription' in response ? response.subscription : response;
+		queryFn: async (): Promise<SubscriptionType> => {
+			return await SubscriptionApi.getSubscription(subscription_id!);
 		},
 		staleTime: 1,
 	});

@@ -22,9 +22,7 @@ import {
 import { BILLING_PERIOD } from '@/constants/constants';
 import { QueryFilter, TimeRangeFilter } from './base';
 import { AddAddonToSubscriptionRequest } from './Addon';
-import { PlanResponse } from './Plan';
 import { Invoice } from '@/models/Invoice';
-import { Customer } from '@/models/Customer';
 import { Coupon } from '@/models/Coupon';
 
 // Re-export existing enums for convenience
@@ -321,11 +319,7 @@ export interface ProrationDetail {
 	description?: string;
 }
 
-export interface SubscriptionResponse {
-	subscription: Subscription;
-	plan?: PlanResponse;
-	customer?: Customer;
-	schedule?: SubscriptionScheduleResponse;
+export interface SubscriptionResponse extends Subscription {
 	coupon_associations?: Coupon[];
 	latest_invoice?: Invoice;
 }

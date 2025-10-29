@@ -1,29 +1,34 @@
-import { Button, Chip, Loader, Page, Spacer } from '@/components/atoms';
+import { Chip, Loader, Page, Spacer } from '@/components/atoms';
 import { DetailsCard } from '@/components/molecules';
-import { RouteNames } from '@/core/routes/Routes';
 import { useBreadcrumbsStore } from '@/store/useBreadcrumbsStore';
 import CustomerApi from '@/api/CustomerApi';
 import SubscriptionApi from '@/api/SubscriptionApi';
 import { getCurrencySymbol } from '@/utils/common/helper_functions';
 import formatDate from '@/utils/common/format_date';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { EyeOff, Trash2 } from 'lucide-react';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import toast from 'react-hot-toast';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useParams } from 'react-router-dom';
 import { LineItem } from '@/models/Subscription';
-import { SUBSCRIPTION_STATUS, SUBSCRIPTION_CANCELLATION_TYPE } from '@/models/Subscription';
+import { SUBSCRIPTION_STATUS } from '@/models/Subscription';
 import SubscriptionLineItemTable from '@/components/molecules/SubscriptionLineItemTable/SubscriptionLineItemTable';
+import PriceOverrideDialog from '@/components/molecules/PriceOverrideDialog/PriceOverrideDialog';
 import { getSubscriptionStatus } from '@/components/organisms/Subscription/SubscriptionTable';
+import { UpdateSubscriptionLineItemRequest, DeleteSubscriptionLineItemRequest } from '@/types/dto/Subscription';
+import { Price, BILLING_MODEL, TIER_MODE } from '@/models/Price';
+import { ExtendedPriceOverride } from '@/utils/common/price_override_helpers';
+import { RouteNames } from '@/core/routes/Routes';
 
 type Params = {
 	id: string;
 };
 
 const CustomerSubscriptionEditPage: React.FC = () => {
-	const navigate = useNavigate();
 	const { id: subscriptionId } = useParams<Params>();
 	const queryClient = useQueryClient();
+	const [editingLineItem, setEditingLineItem] = useState<LineItem | null>(null);
+	const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+	const [overriddenPrices, setOverriddenPrices] = useState<Record<string, ExtendedPriceOverride>>({});
 
 	const { updateBreadcrumb } = useBreadcrumbsStore();
 
@@ -40,71 +45,147 @@ const CustomerSubscriptionEditPage: React.FC = () => {
 	});
 
 	const { data: customer } = useQuery({
-		queryKey: ['fetchCustomerDetails', subscriptionDetails?.subscription?.customer_id],
-		queryFn: async () => await CustomerApi.getCustomerById(subscriptionDetails?.subscription?.customer_id ?? ''),
-		enabled: !!subscriptionDetails?.subscription?.customer_id && !!subscriptionDetails?.subscription?.customer_id,
+		queryKey: ['fetchCustomerDetails', subscriptionDetails?.customer_id],
+		queryFn: async () => await CustomerApi.getCustomerById(subscriptionDetails?.customer_id ?? ''),
+		enabled: !!subscriptionDetails?.customer_id && !!subscriptionDetails?.customer_id,
 	});
 
-	// Mock data for subscription line items - replace with actual API call
-	const { data: subscriptionLineItems, isLoading: isLineItemsLoading } = useQuery({
-		queryKey: ['subscriptionLineItems', subscriptionId],
-		queryFn: async () => {
-			// This should be replaced with actual API call to fetch subscription line items
-			// For now, returning mock data based on the subscription details
-			return subscriptionDetails?.subscription?.line_items || [];
-		},
-		enabled: !!subscriptionDetails,
-	});
-
-	const { mutate: cancelSubscription } = useMutation({
-		mutationFn: async () => {
-			return await SubscriptionApi.cancelSubscription(subscriptionId!, {
-				cancellation_type: SUBSCRIPTION_CANCELLATION_TYPE.IMMEDIATE,
-			});
+	const { mutate: updateLineItem } = useMutation({
+		mutationFn: async ({ lineItemId, updateData }: { lineItemId: string; updateData: UpdateSubscriptionLineItemRequest }) => {
+			return await SubscriptionApi.updateSubscriptionLineItem(lineItemId, updateData);
 		},
 		onSuccess: () => {
-			toast.success('Subscription cancelled successfully');
-			navigate(`${RouteNames.subscriptions}`);
+			toast.success('Line item updated successfully');
+			queryClient.invalidateQueries({ queryKey: ['subscriptionLineItems', subscriptionId] });
+			queryClient.invalidateQueries({ queryKey: ['subscriptionDetails', subscriptionId] });
 		},
 		onError: (error: { error?: { message?: string } }) => {
-			toast.error(error?.error?.message || 'Failed to cancel subscription');
+			toast.error(error?.error?.message || 'Failed to update line item');
 		},
 	});
 
 	const { mutate: terminateLineItem } = useMutation({
-		mutationFn: async (lineItemId: string) => {
-			// This should be replaced with actual API call to terminate a line item
-			// For now, just simulating the operation
-			return new Promise((resolve) => {
-				setTimeout(() => resolve({ id: lineItemId }), 1000);
-			});
+		mutationFn: async ({ lineItemId, endDate }: { lineItemId: string; endDate?: string }) => {
+			const payload: DeleteSubscriptionLineItemRequest = {};
+			if (endDate) {
+				payload.end_date = endDate;
+			}
+			return await SubscriptionApi.deleteSubscriptionLineItem(lineItemId, payload);
 		},
 		onSuccess: () => {
 			toast.success('Line item terminated successfully');
 			queryClient.invalidateQueries({ queryKey: ['subscriptionLineItems', subscriptionId] });
+			queryClient.invalidateQueries({ queryKey: ['subscriptionDetails', subscriptionId] });
 		},
-		onError: (error: { message?: string }) => {
-			toast.error(error?.message || 'Failed to terminate line item');
+		onError: (error: { error?: { message?: string } }) => {
+			toast.error(error?.error?.message || 'Failed to terminate line item');
 		},
 	});
 
 	useEffect(() => {
 		if (subscriptionDetails?.plan?.name) {
-			updateBreadcrumb(2, `${subscriptionDetails.plan.name} - Edit`);
+			updateBreadcrumb(2, `Subscription`, `${RouteNames.customers}/${customer?.id}/subscription/${subscriptionId}`);
 		}
 
 		if (customer?.external_id) {
-			updateBreadcrumb(1, customer.external_id);
+			updateBreadcrumb(1, customer.external_id, `${RouteNames.customers}/${customer.id}`);
 		}
-	}, [subscriptionDetails, updateBreadcrumb, customer]);
+	}, [subscriptionDetails, updateBreadcrumb, customer, subscriptionId]);
 
-	const handleEditLineItem = (_lineItem: LineItem) => {
-		// Here you would open a modal or navigate to edit form
-		toast.success('Edit functionality will be implemented');
+	const handleEditLineItem = (lineItem: LineItem) => {
+		setEditingLineItem(lineItem);
+		setIsEditDialogOpen(true);
 	};
 
 	const handleTerminateLineItem = (lineItemId: string) => {
-		terminateLineItem(lineItemId);
+		terminateLineItem({ lineItemId });
+	};
+
+	// Convert price override data to subscription line item update data
+	const convertPriceOverrideToLineItemUpdate = (
+		_priceId: string,
+		override: Partial<ExtendedPriceOverride>,
+	): UpdateSubscriptionLineItemRequest => {
+		const updateData: UpdateSubscriptionLineItemRequest = {};
+
+		if (override.amount) {
+			updateData.amount = parseFloat(override.amount);
+		}
+
+		if (override.billing_model && override.billing_model !== 'SLAB_TIERED') {
+			updateData.billing_model = override.billing_model;
+		}
+
+		if (override.tier_mode) {
+			updateData.tier_mode = override.tier_mode;
+		}
+
+		if (override.tiers) {
+			updateData.tiers = override.tiers;
+		}
+
+		if (override.transform_quantity) {
+			updateData.transform_quantity = override.transform_quantity;
+		}
+
+		if (override.effective_from) {
+			updateData.effective_from = override.effective_from;
+		}
+
+		return updateData;
+	};
+
+	const handlePriceOverride = (priceId: string, override: Partial<ExtendedPriceOverride>) => {
+		if (!editingLineItem) return;
+
+		const updateData = convertPriceOverrideToLineItemUpdate(priceId, override);
+		updateLineItem({ lineItemId: editingLineItem.id, updateData });
+		setIsEditDialogOpen(false);
+		setEditingLineItem(null);
+	};
+
+	const handleResetOverride = (priceId: string) => {
+		// Reset the override for this price
+		setOverriddenPrices((prev) => {
+			const newOverrides = { ...prev };
+			delete newOverrides[priceId];
+			return newOverrides;
+		});
+	};
+
+	// Convert LineItem to Price object for PriceOverrideDialog
+	const convertLineItemToPrice = (lineItem: LineItem): Price => {
+		return {
+			id: lineItem.price_id,
+			amount: lineItem.quantity?.toString() || '0',
+			currency: lineItem.currency,
+			billing_model: lineItem.price_type as BILLING_MODEL,
+			tier_mode: TIER_MODE.VOLUME,
+			tiers: [],
+			transform_quantity: { divide_by: 1 },
+			description: lineItem.display_name,
+			meter: { name: lineItem.meter_display_name },
+			type: 'USAGE' as const,
+			display_amount: lineItem.quantity?.toString() || '0',
+			entity_type: 'SUBSCRIPTION',
+			entity_id: lineItem.subscription_id,
+			price_unit_type: 'UNIT',
+			created_at: lineItem.created_at,
+			updated_at: lineItem.updated_at,
+			status: 'ACTIVE',
+			environment_id: lineItem.environment_id,
+			tenant_id: lineItem.tenant_id,
+			plan_id: lineItem.plan_id,
+			meter_id: lineItem.meter_id,
+			metadata: lineItem.metadata,
+			billing_period: 'MONTHLY',
+			billing_period_count: 1,
+			billing_cadence: 'ADVANCE',
+			filter_values: {},
+			unit_amount: lineItem.quantity?.toString() || '0',
+			flat_amount: '0',
+			up_to: null,
+		} as unknown as Price;
 	};
 
 	if (isSubscriptionDetailsLoading) {
@@ -127,61 +208,51 @@ const CustomerSubscriptionEditPage: React.FC = () => {
 			label: 'Status',
 			value: (
 				<Chip
-					label={getSubscriptionStatus(subscriptionDetails?.subscription?.subscription_status ?? '')}
-					variant={subscriptionDetails?.subscription?.subscription_status === SUBSCRIPTION_STATUS.ACTIVE ? 'success' : 'default'}
+					label={getSubscriptionStatus(subscriptionDetails?.subscription_status ?? '')}
+					variant={subscriptionDetails?.subscription_status === SUBSCRIPTION_STATUS.ACTIVE ? 'success' : 'default'}
 				/>
 			),
 		},
-		{ label: 'Billing Cycle', value: subscriptionDetails?.subscription?.billing_cycle || '--' },
-		{ label: 'Start Date', value: formatDate(subscriptionDetails?.subscription?.start_date ?? '') },
-		{ label: 'Current Period End', value: formatDate(subscriptionDetails?.subscription?.current_period_end ?? '') },
-		...(subscriptionDetails?.subscription?.commitment_amount
+		{ label: 'Billing Cycle', value: subscriptionDetails?.billing_cycle || '--' },
+		{ label: 'Start Date', value: formatDate(subscriptionDetails?.start_date ?? '') },
+		{ label: 'Current Period End', value: formatDate(subscriptionDetails?.current_period_end ?? '') },
+		...(subscriptionDetails?.commitment_amount
 			? [
 					{
 						label: 'Commitment Amount',
-						value: `${getCurrencySymbol(subscriptionDetails?.subscription?.currency || '')} ${subscriptionDetails?.subscription?.commitment_amount}`,
+						value: `${getCurrencySymbol(subscriptionDetails?.currency || '')} ${subscriptionDetails?.commitment_amount}`,
 					},
 				]
 			: []),
-		...(subscriptionDetails?.subscription?.overage_factor && subscriptionDetails?.subscription?.overage_factor > 1
-			? [{ label: 'Overage Factor', value: subscriptionDetails?.subscription?.overage_factor.toString() }]
+		...(subscriptionDetails?.overage_factor && subscriptionDetails?.overage_factor > 1
+			? [{ label: 'Overage Factor', value: subscriptionDetails?.overage_factor.toString() }]
 			: []),
 	];
 
 	return (
-		<Page
-			heading={`${subscriptionDetails?.plan?.name} - Edit`}
-			headingCTA={
-				<>
-					<Button
-						onClick={() =>
-							navigate(`${RouteNames.customers}/${subscriptionDetails?.subscription?.customer_id}/subscription/${subscriptionId}`)
-						}
-						variant={'outline'}
-						className='flex gap-2'>
-						<EyeOff />
-						View Details
-					</Button>
-
-					<Button
-						onClick={() => cancelSubscription()}
-						disabled={subscriptionDetails?.subscription?.subscription_status === SUBSCRIPTION_STATUS.CANCELLED}
-						variant={'outline'}
-						className='flex gap-2'>
-						<Trash2 />
-						Cancel Subscription
-					</Button>
-				</>
-			}>
+		<Page heading={`${subscriptionDetails?.plan?.name} - Edit`}>
 			<div className='space-y-6'>
 				<DetailsCard variant='stacked' title='Subscription Details' data={subscriptionDetailsData} />
 
 				<SubscriptionLineItemTable
-					data={subscriptionLineItems || []}
-					isLoading={isLineItemsLoading}
+					data={subscriptionDetails?.line_items || []}
+					isLoading={isSubscriptionDetailsLoading}
 					onEdit={handleEditLineItem}
 					onTerminate={handleTerminateLineItem}
 				/>
+
+				{/* Price Override Dialog */}
+				{editingLineItem && (
+					<PriceOverrideDialog
+						isOpen={isEditDialogOpen}
+						onOpenChange={setIsEditDialogOpen}
+						price={convertLineItemToPrice(editingLineItem)}
+						onPriceOverride={handlePriceOverride}
+						onResetOverride={handleResetOverride}
+						overriddenPrices={overriddenPrices}
+						showEffectiveFrom={true}
+					/>
+				)}
 
 				<Spacer className='!h-20' />
 			</div>
