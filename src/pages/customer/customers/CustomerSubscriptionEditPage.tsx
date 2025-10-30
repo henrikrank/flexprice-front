@@ -1,4 +1,4 @@
-import { Chip, Loader, Page, Spacer } from '@/components/atoms';
+import { Loader, Page, Spacer } from '@/components/atoms';
 import { DetailsCard } from '@/components/molecules';
 import { useBreadcrumbsStore } from '@/store/useBreadcrumbsStore';
 import CustomerApi from '@/api/CustomerApi';
@@ -10,7 +10,6 @@ import { useEffect, useState } from 'react';
 import toast from 'react-hot-toast';
 import { useParams } from 'react-router-dom';
 import { LineItem } from '@/models/Subscription';
-import { SUBSCRIPTION_STATUS } from '@/models/Subscription';
 import SubscriptionLineItemTable from '@/components/molecules/SubscriptionLineItemTable/SubscriptionLineItemTable';
 import PriceOverrideDialog from '@/components/molecules/PriceOverrideDialog/PriceOverrideDialog';
 import { getSubscriptionStatus } from '@/components/organisms/Subscription/SubscriptionTable';
@@ -203,15 +202,10 @@ const CustomerSubscriptionEditPage: React.FC = () => {
 	}
 
 	const subscriptionDetailsData = [
-		{ label: 'Subscription Name', value: subscriptionDetails?.plan?.name },
+		{ label: 'Plan', value: subscriptionDetails?.plan?.name },
 		{
 			label: 'Status',
-			value: (
-				<Chip
-					label={getSubscriptionStatus(subscriptionDetails?.subscription_status ?? '')}
-					variant={subscriptionDetails?.subscription_status === SUBSCRIPTION_STATUS.ACTIVE ? 'success' : 'default'}
-				/>
-			),
+			value: getSubscriptionStatus(subscriptionDetails?.subscription_status ?? ''),
 		},
 		{ label: 'Billing Cycle', value: subscriptionDetails?.billing_cycle || '--' },
 		{ label: 'Start Date', value: formatDate(subscriptionDetails?.start_date ?? '') },
@@ -230,7 +224,7 @@ const CustomerSubscriptionEditPage: React.FC = () => {
 	];
 
 	return (
-		<Page heading={`${subscriptionDetails?.plan?.name} - Edit`}>
+		<Page heading={`Edit Subscription`}>
 			<div className='space-y-6'>
 				<DetailsCard variant='stacked' title='Subscription Details' data={subscriptionDetailsData} />
 
