@@ -1,5 +1,5 @@
-import { ActionButton, Card, CardHeader, NoDataCard } from '@/components/atoms';
-import { ChargeValueCell, ColumnData, FlexpriceTable, TerminateLineItemModal } from '@/components/molecules';
+import { Card, CardHeader, NoDataCard } from '@/components/atoms';
+import { ChargeValueCell, ColumnData, FlexpriceTable, TerminateLineItemModal, DropdownMenu } from '@/components/molecules';
 import { formatDateShort } from '@/utils/common/helper_functions';
 import { LineItem } from '@/models/Subscription';
 import { FC, useState } from 'react';
@@ -63,29 +63,40 @@ const SubscriptionLineItemTable: FC<Props> = ({ data, onEdit, onTerminate, isLoa
 		},
 		{
 			title: 'End Date',
-			render: (row) => formatDateShort(row.end_date),
+			render(row) {
+				const defaultEndDate = '0001-01-01T00:00:00Z';
+				const hasValidEndDate = row.end_date && row.end_date.trim() !== '' && row.end_date !== defaultEndDate;
+				return <span>{hasValidEndDate ? formatDateShort(row.end_date) : '--'}</span>;
+			},
 		},
 		{
 			fieldVariant: 'interactive',
-			width: '120px',
+			width: '30px',
 			hideOnEmpty: true,
-			render: (row) => (
-				<ActionButton
-					isEditDisabled={false}
-					isArchiveDisabled={row.status === ENTITY_STATUS.ARCHIVED}
-					entityName={row.display_name}
-					editIcon={<Pencil />}
-					archiveIcon={<Trash2 />}
-					archiveText='Terminate'
-					onEdit={() => onEdit?.(row)}
-					deleteMutationFn={async () => {
-						handleTerminateClick(row);
-					}}
-					refetchQueryKey='subscriptionLineItems'
-					id={row.id}
-					disableToast={true}
-				/>
-			),
+			render: (row) => {
+				const isArchived = row.status === ENTITY_STATUS.ARCHIVED;
+				const defaultEndDate = '0001-01-01T00:00:00Z';
+				const hasEndDate = !!(row.end_date && row.end_date.trim() !== '' && row.end_date !== defaultEndDate);
+				const isDisabled = isArchived || hasEndDate;
+				return (
+					<DropdownMenu
+						options={[
+							{
+								label: 'Edit',
+								icon: <Pencil />,
+								onSelect: () => onEdit?.(row),
+								disabled: isDisabled,
+							},
+							{
+								label: 'Terminate',
+								icon: <Trash2 />,
+								onSelect: () => handleTerminateClick(row),
+								disabled: isDisabled,
+							},
+						]}
+					/>
+				);
+			},
 		},
 	];
 
