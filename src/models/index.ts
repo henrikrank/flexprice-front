@@ -69,6 +69,11 @@ export type { default as FeatureDefault } from './Feature';
 // ImportTask
 export type { ImportTask } from './ImportTask';
 
+// ScheduledTask
+export type { ScheduledTask, ScheduledTaskJobConfig } from './ScheduledTask';
+export type { ScheduledEntityType, ScheduledTaskInterval } from './ScheduledTask';
+export { SCHEDULED_ENTITY_TYPE, SCHEDULED_TASK_INTERVAL } from './ScheduledTask';
+
 // Integration
 export type { Integration } from './Integration';
 

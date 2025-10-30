@@ -155,3 +155,5 @@ export { default as TestimonialCard } from './TestimonialCard/TestimonialCard';
 export { default as CustomerHeader } from './Customer/CustomerHeader';
 export { default as CustomerUsageTable } from './CustomerUsageTable';
 export { CostDataTable } from './CostDataTable';
+
+export { default as HubSpotConnectionDrawer } from './HubSpotConnectionDrawer';
