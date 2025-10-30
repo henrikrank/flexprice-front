@@ -1,12 +1,11 @@
-import { FC, useCallback, useState, useMemo } from 'react';
+import { FC, useCallback, useState } from 'react';
 import { Button, Card, CardHeader, NoDataCard } from '@/components/atoms';
-import { FlexpriceTable, ColumnData, DropdownMenu, RolloutChargesModal, RolloutOption } from '@/components/molecules';
+import { FlexpriceTable, ColumnData, DropdownMenu, TerminatePriceModal, SyncOption } from '@/components/molecules';
 import { Price, Plan } from '@/models';
 import { Plus, Trash2, Pencil } from 'lucide-react';
-import { useMutation, useQuery } from '@tanstack/react-query';
+import { useMutation } from '@tanstack/react-query';
 import { PriceApi } from '@/api/PriceApi';
 import { PlanApi } from '@/api/PlanApi';
-import SubscriptionApi from '@/api/SubscriptionApi';
 import toast from 'react-hot-toast';
 import { useNavigate } from 'react-router-dom';
 import { RouteNames } from '@/core/routes/Routes';
@@ -15,6 +14,7 @@ import { BILLING_PERIOD } from '@/constants/constants';
 import { ChargeValueCell } from '@/components/molecules';
 import { formatInvoiceCadence } from '@/pages';
 import { Dialog } from '@/components/ui';
+import { DeletePriceRequest } from '@/types/dto';
 
 // ===== TYPES & CONSTANTS =====
 
@@ -39,30 +39,19 @@ const formatBillingPeriod = (billingPeriod: string) => {
 		case BILLING_PERIOD.HALF_YEARLY:
 			return 'Half Yearly';
 		default:
-			return '--';
+			return '赔偿';
 	}
 };
 
 const PlanPriceTable: FC<PlanChargesTableProps> = ({ plan, onPriceUpdate, onEditPrice }) => {
 	const navigate = useNavigate();
-	const [showRolloutModal, setShowRolloutModal] = useState(false);
+	const [showTerminateModal, setShowTerminateModal] = useState(false);
 	const [selectedPrice, setSelectedPrice] = useState<Price | null>(null);
-
-	// ===== DATA FETCHING =====
-	const { data: existingSubscriptions } = useQuery({
-		queryKey: ['subscriptions', plan.id],
-		queryFn: () =>
-			SubscriptionApi.listSubscriptions({
-				plan_id: plan.id,
-				limit: 10,
-			}),
-		enabled: !!plan.id,
-	});
 
 	// ===== MUTATIONS =====
 	const { mutateAsync: deletePrice, isPending: isDeletingPrice } = useMutation({
-		mutationFn: async (priceId: string) => {
-			return await PriceApi.DeletePrice(priceId);
+		mutationFn: async ({ priceId, data }: { priceId: string; data?: DeletePriceRequest }) => {
+			return await PriceApi.DeletePrice(priceId, data);
 		},
 		onSuccess: () => {
 			toast.success('Price terminated successfully');
@@ -84,46 +73,33 @@ const PlanPriceTable: FC<PlanChargesTableProps> = ({ plan, onPriceUpdate, onEdit
 
 	const isPending = isDeletingPrice || isSyncing;
 
-	// ===== MEMOIZED VALUES =====
-	const hasExistingSubscriptions = useMemo(() => {
-		return existingSubscriptions?.items?.length && existingSubscriptions.items.length > 0;
-	}, [existingSubscriptions]);
-
 	// ===== HANDLERS =====
-	const handleDeletePrice = useCallback(
-		async (priceId: string) => {
+	const handleTerminatePrice = useCallback(
+		(priceId: string) => {
 			const price = plan.prices?.find((p) => p.id === priceId);
 			if (!price) return;
 
-			if (hasExistingSubscriptions) {
-				// Show rollout modal for plans with existing subscriptions
-				setSelectedPrice(price);
-				setShowRolloutModal(true);
-			} else {
-				// For plans without subscriptions, delete directly
-				try {
-					await deletePrice(priceId);
-					onPriceUpdate?.();
-				} catch (error) {
-					console.error('Error deleting price:', error);
-				}
-			}
+			setSelectedPrice(price);
+			setShowTerminateModal(true);
 		},
-		[plan.prices, hasExistingSubscriptions, deletePrice, onPriceUpdate],
+		[plan.prices],
 	);
 
-	const handleRolloutConfirm = useCallback(
-		async (option: RolloutOption) => {
+	const handleTerminateConfirm = useCallback(
+		async (endDate: string | undefined, syncOption?: SyncOption) => {
 			if (!selectedPrice) return;
 
-			setShowRolloutModal(false);
+			setShowTerminateModal(false);
 
 			try {
+				// Prepare delete request with end_date if provided
+				const deleteRequest: DeletePriceRequest | undefined = endDate ? { end_date: endDate } : undefined;
+
 				// Delete the price
-				await deletePrice(selectedPrice.id);
+				await deletePrice({ priceId: selectedPrice.id, data: deleteRequest });
 
 				// If user selected to sync with existing subscriptions
-				if (option === RolloutOption.EXISTING_ALSO) {
+				if (syncOption === SyncOption.EXISTING_ALSO) {
 					await syncPlanCharges();
 				}
 
@@ -131,14 +107,14 @@ const PlanPriceTable: FC<PlanChargesTableProps> = ({ plan, onPriceUpdate, onEdit
 				onPriceUpdate?.();
 				setSelectedPrice(null);
 			} catch (error) {
-				console.error('Error in rollout process:', error);
+				console.error('Error terminating price:', error);
 			}
 		},
 		[selectedPrice, deletePrice, syncPlanCharges, onPriceUpdate],
 	);
 
-	const handleRolloutCancel = useCallback(() => {
-		setShowRolloutModal(false);
+	const handleTerminateCancel = useCallback(() => {
+		setShowTerminateModal(false);
 		setSelectedPrice(null);
 	}, []);
 
@@ -190,7 +166,7 @@ const PlanPriceTable: FC<PlanChargesTableProps> = ({ plan, onPriceUpdate, onEdit
 							{
 								label: 'Terminate Price',
 								icon: <Trash2 />,
-								onSelect: () => handleDeletePrice(row.id),
+								onSelect: () => handleTerminatePrice(row.id),
 							},
 						]}
 					/>
@@ -202,9 +178,17 @@ const PlanPriceTable: FC<PlanChargesTableProps> = ({ plan, onPriceUpdate, onEdit
 	// ===== RENDER =====
 	return (
 		<>
-			{/* Rollout Charges Modal */}
-			<Dialog open={showRolloutModal} onOpenChange={setShowRolloutModal}>
-				<RolloutChargesModal onCancel={handleRolloutCancel} onConfirm={handleRolloutConfirm} isLoading={isPending} planName={plan.name} />
+			{/* Terminate Price Modal */}
+			<Dialog open={showTerminateModal} onOpenChange={setShowTerminateModal}>
+				{selectedPrice && (
+					<TerminatePriceModal
+						planId={plan.id}
+						onCancel={handleTerminateCancel}
+						onConfirm={handleTerminateConfirm}
+						isLoading={isPending}
+						showSyncOption={true}
+					/>
+				)}
 			</Dialog>
 
 			{/* Charges Table */}

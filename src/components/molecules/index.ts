@@ -36,6 +36,7 @@ export { default as TopupCard } from './WalletTopupCard';
 export { default as RecordPaymentTopup } from './RecordPaymentTopup';
 
 export { default as RolloutChargesModal, RolloutOption } from './RolloutChargesModal';
+export { default as TerminatePriceModal, SyncOption } from './TerminatePriceModal';
 
 export { default as RectangleRadiogroup } from './RectangleRadiogroup';
 export type { RectangleRadiogroupOption } from './RectangleRadiogroup';
