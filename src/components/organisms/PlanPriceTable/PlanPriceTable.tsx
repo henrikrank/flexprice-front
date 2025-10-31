@@ -1,4 +1,4 @@
-import React, { FC, useCallback, useState } from 'react';
+import React, { FC, useCallback, useState, useMemo } from 'react';
 import { Button, Card, CardHeader, NoDataCard, Chip, Tooltip } from '@/components/atoms';
 import { FlexpriceTable, ColumnData, DropdownMenu, TerminatePriceModal, SyncOption, UpdatePriceDialog } from '@/components/molecules';
 import { Price, Plan, PRICE_STATUS } from '@/models';
@@ -22,6 +22,13 @@ import { formatDateTimeWithSecondsAndTimezone } from '@/utils/common/format_date
 interface PlanChargesTableProps {
 	plan: Plan;
 	onPriceUpdate?: () => void;
+}
+
+interface PriceWithStatus extends Price {
+	precomputedStatus: PRICE_STATUS;
+	statusVariant: 'info' | 'default' | 'success';
+	statusLabel: string;
+	tooltipContent: React.ReactNode;
 }
 
 interface PriceDropdownProps {
@@ -91,7 +98,7 @@ const formatBillingPeriod = (billingPeriod: string) => {
 	}
 };
 
-const getPriceStatus = (price: Price & { start_date?: string; end_date?: string }): PRICE_STATUS => {
+const getPriceStatus = (price: Price): PRICE_STATUS => {
 	const now = new Date();
 
 	// Check if start_date is in the future
@@ -254,8 +261,40 @@ const PlanPriceTable: FC<PlanChargesTableProps> = ({ plan, onPriceUpdate }) => {
 		setSelectedPriceForTermination(null);
 	}, []);
 
+	// ===== PROCESSED PRICES WITH PRECOMPUTED STATUS =====
+	const processedPrices = useMemo<PriceWithStatus[]>(() => {
+		if (!plan.prices || plan.prices.length === 0) return [];
+
+		// Precompute status and related data for each price
+		const pricesWithStatus: PriceWithStatus[] = plan.prices.map((price) => {
+			const status = getPriceStatus(price);
+			const variant = getStatusChipVariant(status);
+			const statusLabel = status.charAt(0).toUpperCase() + status.slice(1);
+			const tooltipContent = formatPriceDateTooltip(price);
+
+			return {
+				...price,
+				precomputedStatus: status,
+				statusVariant: variant,
+				statusLabel,
+				tooltipContent,
+			};
+		});
+
+		// Sort: active first, then upcoming, then inactive
+		const statusOrder: Record<PRICE_STATUS, number> = {
+			[PRICE_STATUS.ACTIVE]: 0,
+			[PRICE_STATUS.UPCOMING]: 1,
+			[PRICE_STATUS.INACTIVE]: 2,
+		};
+
+		return pricesWithStatus.sort((a, b) => {
+			return statusOrder[a.precomputedStatus] - statusOrder[b.precomputedStatus];
+		});
+	}, [plan.prices]);
+
 	// ===== TABLE COLUMNS =====
-	const chargeColumns: ColumnData<Price>[] = [
+	const chargeColumns: ColumnData<PriceWithStatus>[] = [
 		{
 			title: 'Charge Type',
 			render: (row) => {
@@ -283,20 +322,14 @@ const PlanPriceTable: FC<PlanChargesTableProps> = ({ plan, onPriceUpdate }) => {
 		{
 			title: 'Status',
 			render(rowData) {
-				const price = rowData as Price & { start_date?: string; end_date?: string };
-				const status = getPriceStatus(price);
-				const variant = getStatusChipVariant(status);
-				const statusLabel = status.charAt(0).toUpperCase() + status.slice(1);
-				const tooltipContent = formatPriceDateTooltip(price);
-
 				return (
 					<Tooltip
-						content={tooltipContent}
+						content={rowData.tooltipContent}
 						delayDuration={0}
 						sideOffset={5}
 						className='bg-white border border-gray-200 shadow-lg text-sm text-gray-900 px-4 py-3 rounded-lg max-w-[320px]'>
 						<span>
-							<Chip label={statusLabel} variant={variant} />
+							<Chip label={rowData.statusLabel} variant={rowData.statusVariant} />
 						</span>
 					</Tooltip>
 				);
@@ -347,7 +380,7 @@ const PlanPriceTable: FC<PlanChargesTableProps> = ({ plan, onPriceUpdate }) => {
 			)}
 
 			{/* Charges Table */}
-			{(plan?.prices?.length ?? 0) > 0 ? (
+			{processedPrices.length > 0 ? (
 				<Card variant='notched'>
 					<CardHeader
 						title='Charges'
@@ -357,7 +390,7 @@ const PlanPriceTable: FC<PlanChargesTableProps> = ({ plan, onPriceUpdate }) => {
 							</Button>
 						}
 					/>
-					<FlexpriceTable columns={chargeColumns} data={plan?.prices ?? []} />
+					<FlexpriceTable columns={chargeColumns} data={processedPrices} />
 				</Card>
 			) : (
 				<NoDataCard
