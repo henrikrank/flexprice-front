@@ -117,6 +117,7 @@ const FeatureDetails = () => {
 			await PriceApi.ListPrices({
 				expand: generateExpandQueryParams([EXPAND.PLAN, EXPAND.ADDONS]),
 				meter_ids: [data?.meter?.id || ''],
+				entity_types: [PRICE_ENTITY_TYPE.PLAN, PRICE_ENTITY_TYPE.ADDON],
 			}),
 		enabled: !!data?.meter?.id,
 	});
