@@ -180,7 +180,7 @@ class SubscriptionApi {
 	 * Delete a subscription line item
 	 */
 	public static async deleteSubscriptionLineItem(id: string, payload: DeleteSubscriptionLineItemRequest): Promise<void> {
-		return await AxiosClient.delete(`${this.baseUrl}/lineitems/${id}`, { data: payload });
+		return await AxiosClient.delete(`${this.baseUrl}/lineitems/${id}`, payload);
 	}
 }
 
