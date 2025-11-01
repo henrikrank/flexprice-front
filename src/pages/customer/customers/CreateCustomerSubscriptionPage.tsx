@@ -66,6 +66,10 @@ export type SubscriptionFormState = {
 
 	// Tax Rate Overrides
 	tax_rate_overrides: TaxRateOverride[];
+
+	// Additional Fields
+	overageFactor: string;
+	commitmentAmount: string;
 };
 
 // Data Fetching Hooks
@@ -182,6 +186,8 @@ const CreateCustomerSubscriptionPage: React.FC = () => {
 		addons: [],
 		customerId: customerId!,
 		tax_rate_overrides: [],
+		overageFactor: '',
+		commitmentAmount: '',
 	});
 
 	// Fetch data using React Query
@@ -282,6 +288,8 @@ const CreateCustomerSubscriptionPage: React.FC = () => {
 					addons: [],
 					customerId: customerId!,
 					tax_rate_overrides: [],
+					overageFactor: subscriptionData.details.overage_factor?.toString() ?? '',
+					commitmentAmount: subscriptionData.details.commitment_amount?.toString() ?? '',
 				});
 			}
 		}
@@ -318,6 +326,8 @@ const CreateCustomerSubscriptionPage: React.FC = () => {
 			lineItemCoupons,
 			tax_rate_overrides,
 			addons,
+			overageFactor,
+			commitmentAmount,
 		} = subscriptionState;
 
 		if (!billingPeriod || !selectedPlan) {
@@ -395,7 +405,8 @@ const CreateCustomerSubscriptionPage: React.FC = () => {
 			billing_cycle: firstPhase.billing_cycle,
 			phases: sanitizedPhases.length > 1 ? sanitizedPhases : undefined,
 			credit_grants: (firstPhase.credit_grants?.length ?? 0 > 0) ? firstPhase.credit_grants : undefined,
-			commitment_amount: firstPhase.commitment_amount,
+			commitment_amount: commitmentAmount && commitmentAmount.trim() !== '' ? parseFloat(commitmentAmount) : undefined,
+			overage_factor: overageFactor && overageFactor.trim() !== '' ? parseFloat(overageFactor) : undefined,
 			override_line_items: overrideLineItems.length > 0 ? overrideLineItems : undefined,
 			addons: (addons?.length ?? 0) > 0 ? addons : undefined,
 			coupons: linkedCoupon ? [linkedCoupon.id] : undefined,
@@ -408,9 +419,6 @@ const CreateCustomerSubscriptionPage: React.FC = () => {
 							]),
 						)
 					: undefined,
-
-			// TODO: remove this once the feature is released
-			overage_factor: firstPhase.overage_factor ?? 1,
 
 			// Tax rate overrides
 			tax_rate_overrides: tax_rate_overrides.length > 0 ? tax_rate_overrides : undefined,

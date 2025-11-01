@@ -193,6 +193,7 @@ const CustomerSubscriptionDetailsPage: FC = () => {
 						</p>
 					</div>
 				)}
+				<Spacer className='!my-4' />
 
 				{subscriptionDetails?.overage_factor && subscriptionDetails?.overage_factor > 1 && (
 					<div className='w-full flex justify-between items-center'>
@@ -200,6 +201,7 @@ const CustomerSubscriptionDetailsPage: FC = () => {
 						<p className='text-[#09090B] text-sm'>{subscriptionDetails?.overage_factor}</p>
 					</div>
 				)}
+				<Spacer className='!my-4' />
 
 				<div className='w-full flex justify-between items-center'>
 					<p className='text-[#71717A] text-sm'>Start date</p>
