@@ -46,6 +46,9 @@ const SecretKeyDrawer: FC<Props> = ({ isOpen, onOpenChange }) => {
 			return [];
 		}
 
+		// Optionally log here if logger is available
+		// logger.info('Service accounts loaded:', serviceAccounts);
+
 		// Sort by created_at (newest first) if available, otherwise keep original order
 		const sortedAccounts = [...serviceAccounts].sort((a, b) => {
 			if (a.tenant?.created_at && b.tenant?.created_at) {
@@ -76,9 +79,12 @@ const SecretKeyDrawer: FC<Props> = ({ isOpen, onOpenChange }) => {
 				label = `Service Account ${index + 1}`;
 			}
 
+
+
 			return {
 				label: label,
 				value: account.id,
+				key_input: [account.email || account.id],
 			};
 		});
 	}, [serviceAccounts]);
@@ -302,7 +308,8 @@ const SecretKeyDrawer: FC<Props> = ({ isOpen, onOpenChange }) => {
 								</>
 							)}
 						</>
-					)}
+					)
+					}
 
 					<Select
 						label='Expiration'
@@ -315,8 +322,8 @@ const SecretKeyDrawer: FC<Props> = ({ isOpen, onOpenChange }) => {
 					<Button isLoading={isPending} disabled={!isFormValid} onClick={() => createApiKey()}>
 						Create
 					</Button>
-				</div>
-			</Sheet>
+				</div >
+			</Sheet >
 
 			<Modal isOpen={isModalOpen} onOpenChange={setIsModalOpen}>
 				<div className='space-y-4 bg-white card p-5 max-w-md mx-auto'>
@@ -351,7 +358,7 @@ const SecretKeyDrawer: FC<Props> = ({ isOpen, onOpenChange }) => {
 					</div>
 				</div>
 			</Modal>
-		</div>
+		</div >
 	);
 };
 

@@ -45,7 +45,6 @@ export type { SignupData, LoginData, LocalUser } from './Auth';
 export type { GetServiceAccountsResponse } from './UserApi';
 
 export type { RbacRole, GetRolesResponse } from '@/api/RbacApi';
-
 export type {
 	GetAllPricesResponse,
 	CreatePriceRequest,
