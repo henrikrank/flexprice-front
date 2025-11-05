@@ -586,6 +586,17 @@ const SubscriptionForm = ({
 		}));
 	};
 
+	const handleEntitlementOverrideReset = (entitlementId: string) => {
+		setState((prev) => {
+			const newOverrides = { ...prev.entitlementOverrides };
+			delete newOverrides[entitlementId];
+			return {
+				...prev,
+				entitlementOverrides: newOverrides,
+			};
+		});
+	};
+
 	return (
 		<div className='p-4 rounded-lg border border-gray-300 space-y-4'>
 			<FormHeader title='Subscription Details' variant='sub-header' />
@@ -831,6 +842,7 @@ const SubscriptionForm = ({
 							entitlements={allEntitlements}
 							overrides={state.entitlementOverrides}
 							onOverrideChange={handleEntitlementOverride}
+							onOverrideReset={handleEntitlementOverrideReset}
 						/>
 					</div>
 				</div>

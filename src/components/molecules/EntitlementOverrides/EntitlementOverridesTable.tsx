@@ -13,9 +13,10 @@ interface EntitlementOverridesTableProps {
 	entitlements: any[];
 	overrides: Record<string, EntitlementOverrideRequest>;
 	onOverrideChange: (entitlementId: string, override: EntitlementOverrideRequest) => void;
+	onOverrideReset?: (entitlementId: string) => void;
 }
 
-const EntitlementOverridesTable: FC<EntitlementOverridesTableProps> = ({ entitlements, overrides, onOverrideChange }) => {
+const EntitlementOverridesTable: FC<EntitlementOverridesTableProps> = ({ entitlements, overrides, onOverrideChange, onOverrideReset }) => {
 	const [selectedEntitlement, setSelectedEntitlement] = useState<any | null>(null);
 	const [drawerOpen, setDrawerOpen] = useState(false);
 	const [dropdownOpen, setDropdownOpen] = useState<string | null>(null);
@@ -44,6 +45,14 @@ const EntitlementOverridesTable: FC<EntitlementOverridesTableProps> = ({ entitle
 
 	const handleSaveOverride = (override: EntitlementOverrideRequest) => {
 		onOverrideChange(override.entitlement_id, override);
+		setDrawerOpen(false);
+		setSelectedEntitlement(null);
+	};
+
+	const handleResetOverride = (entitlementId: string) => {
+		if (onOverrideReset) {
+			onOverrideReset(entitlementId);
+		}
 		setDrawerOpen(false);
 		setSelectedEntitlement(null);
 	};
@@ -192,33 +201,40 @@ const EntitlementOverridesTable: FC<EntitlementOverridesTableProps> = ({ entitle
 			width: '30px',
 			fieldVariant: 'interactive',
 			hideOnEmpty: true,
-			render: (row: any) => (
-				<div
-					data-interactive='true'
-					onClick={(e) => {
-						e.preventDefault();
-						e.stopPropagation();
-					}}>
-					<DropdownMenu open={dropdownOpen === row.id} onOpenChange={(open) => setDropdownOpen(open ? row.id : null)}>
-						<DropdownMenuTrigger asChild>
-							<button className='focus:outline-none'>
-								<BsThreeDotsVertical className='text-base text-muted-foreground hover:text-foreground transition-colors' />
-							</button>
-						</DropdownMenuTrigger>
-						<DropdownMenuContent align='end'>
-							<DropdownMenuItem
-								onSelect={(e) => {
-									e.preventDefault();
-									handleEdit(row);
-								}}
-								className='flex gap-2 items-center cursor-pointer'>
-								<Pencil className='h-4 w-4' />
-								<span>Edit</span>
-							</DropdownMenuItem>
-						</DropdownMenuContent>
-					</DropdownMenu>
-				</div>
-			),
+			render: (row: any) => {
+				// Only show edit button for plan entitlements, not addon entitlements
+				if (row.entity_type?.toLowerCase() === 'addon') {
+					return null;
+				}
+
+				return (
+					<div
+						data-interactive='true'
+						onClick={(e) => {
+							e.preventDefault();
+							e.stopPropagation();
+						}}>
+						<DropdownMenu open={dropdownOpen === row.id} onOpenChange={(open) => setDropdownOpen(open ? row.id : null)}>
+							<DropdownMenuTrigger asChild>
+								<button className='focus:outline-none'>
+									<BsThreeDotsVertical className='text-base text-muted-foreground hover:text-foreground transition-colors' />
+								</button>
+							</DropdownMenuTrigger>
+							<DropdownMenuContent align='end'>
+								<DropdownMenuItem
+									onSelect={(e) => {
+										e.preventDefault();
+										handleEdit(row);
+									}}
+									className='flex gap-2 items-center cursor-pointer'>
+									<Pencil className='h-4 w-4' />
+									<span>Edit</span>
+								</DropdownMenuItem>
+							</DropdownMenuContent>
+						</DropdownMenu>
+					</div>
+				);
+			},
 		},
 	];
 
@@ -238,6 +254,7 @@ const EntitlementOverridesTable: FC<EntitlementOverridesTableProps> = ({ entitle
 				onOpenChange={handleCloseDrawer}
 				entitlement={selectedEntitlement}
 				onSave={handleSaveOverride}
+				onReset={handleResetOverride}
 			/>
 		</>
 	);

@@ -9,9 +9,10 @@ interface EditEntitlementDrawerProps {
 	onOpenChange: (open: boolean) => void;
 	entitlement: any | null;
 	onSave: (override: EntitlementOverrideRequest) => void;
+	onReset?: (entitlementId: string) => void;
 }
 
-const EditEntitlementDrawer: FC<EditEntitlementDrawerProps> = ({ isOpen, onOpenChange, entitlement, onSave }) => {
+const EditEntitlementDrawer: FC<EditEntitlementDrawerProps> = ({ isOpen, onOpenChange, entitlement, onSave, onReset }) => {
 	const [usageLimit, setUsageLimit] = useState<string>('');
 	const [isInfinite, setIsInfinite] = useState<boolean>(false);
 	const [staticValue, setStaticValue] = useState<string>('');
@@ -59,6 +60,23 @@ const EditEntitlementDrawer: FC<EditEntitlementDrawerProps> = ({ isOpen, onOpenC
 	};
 
 	const handleCancel = () => {
+		onOpenChange(false);
+	};
+
+	const handleReset = () => {
+		if (!entitlement || !onReset) return;
+
+		// Reset to original values
+		const originalLimit = entitlement.usage_limit;
+		const isOriginallyInfinite = originalLimit === null;
+
+		setIsInfinite(isOriginallyInfinite);
+		setUsageLimit(isOriginallyInfinite ? '' : originalLimit?.toString() || '');
+		setStaticValue(entitlement.static_value || '');
+		setIsEnabled(entitlement.is_enabled ?? true);
+
+		// Remove the override
+		onReset(entitlement.id);
 		onOpenChange(false);
 	};
 
@@ -146,6 +164,11 @@ const EditEntitlementDrawer: FC<EditEntitlementDrawerProps> = ({ isOpen, onOpenC
 					<Button variant='outline' onClick={handleCancel}>
 						Cancel
 					</Button>
+					{entitlement.hasOverride && onReset && (
+						<Button variant='outline' onClick={handleReset}>
+							Reset to Default
+						</Button>
+					)}
 					<Button onClick={handleSave}>Save Override</Button>
 				</div>
 			</div>
