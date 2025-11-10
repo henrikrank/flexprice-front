@@ -3,6 +3,7 @@ import { BaseModel } from './base';
 export enum SCHEDULED_ENTITY_TYPE {
 	EVENTS = 'events',
 	INVOICE = 'invoice',
+	CREDIT_TOPUPS = 'credit_topups',
 }
 
 export enum SCHEDULED_TASK_INTERVAL {
@@ -31,4 +32,6 @@ export interface ScheduledTaskJobConfig {
 	compression?: string;
 	encryption?: string;
 	max_file_size_mb?: number;
+	endpoint_url?: string;
+	use_path_style?: boolean;
 }
