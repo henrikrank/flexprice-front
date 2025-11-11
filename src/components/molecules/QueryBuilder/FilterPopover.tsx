@@ -141,6 +141,7 @@ const FilterPopover: React.FC<Props> = ({ fields, value = [], onChange, classNam
 						setDate={(date) => handleFilterUpdate(filter.id, { valueDate: date })}
 						date={filter.valueDate}
 						{...inputProps}
+						popoverContentClassName='w-full !z-[110]'
 						className={cn(inputProps.className, 'h-9 min-w-[182px] text-xs')}
 						placeholder='Select date'
 					/>
