@@ -100,6 +100,10 @@ const AppSidebar: React.FC<React.ComponentProps<typeof Sidebar>> = ({ ...props }
 					title: 'API Keys',
 					url: RouteNames.apiKeys,
 				},
+				{
+					title: 'Service Accounts',
+					url: RouteNames.serviceAccounts,
+				},
 			],
 		},
 		{
