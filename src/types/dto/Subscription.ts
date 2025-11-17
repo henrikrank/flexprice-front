@@ -45,7 +45,7 @@ export interface ListSubscriptionsPayload extends QueryFilter, TimeRangeFilter {
 
 import { TaxRateOverride } from './tax';
 import { TypedBackendFilter, TypedBackendSort } from '../formatters/QueryBuilder';
-import { CREDIT_GRANT_SCOPE } from '@/models/CreditGrant';
+import { CreateCreditGrantRequest } from './CreditGrant';
 
 export interface GetSubscriptionDetailsPayload {
 	subscription_id: string;
@@ -206,14 +206,6 @@ export interface CreateSubscriptionRequest {
 
 	// Entitlement overrides
 	override_entitlements?: EntitlementOverrideRequest[];
-}
-
-export interface CreateCreditGrantRequest {
-	amount: number;
-	currency: string;
-	description?: string;
-	expires_at?: string;
-	scope: CREDIT_GRANT_SCOPE;
 }
 
 export interface SubscriptionPhaseCreateRequest {

@@ -13,6 +13,7 @@ import { RouteNames } from '@/core/routes/Routes';
 import { ServerError } from '@/core/axios/types';
 
 import { BILLING_CADENCE, SubscriptionPhase, Coupon, TAXRATE_ENTITY_TYPE, EXPAND, BILLING_CYCLE } from '@/models';
+import { InternalCreditGrantRequest, creditGrantToInternal, internalToCreateRequest } from '@/types/dto/CreditGrant';
 import { BILLING_PERIOD } from '@/constants/constants';
 
 import {
@@ -65,6 +66,7 @@ export type SubscriptionFormState = {
 	customerId: string;
 	tax_rate_overrides: TaxRateOverride[];
 	entitlementOverrides: Record<string, EntitlementOverrideRequest>;
+	creditGrants: InternalCreditGrantRequest[];
 };
 
 const usePlans = () => {
@@ -183,6 +185,7 @@ const CreateCustomerSubscriptionPage: React.FC = () => {
 		customerId: customerId!,
 		tax_rate_overrides: [],
 		entitlementOverrides: {},
+		creditGrants: [],
 	});
 
 	const { data: plans, isLoading: plansLoading, isError: plansError } = usePlans();
@@ -246,6 +249,7 @@ const CreateCustomerSubscriptionPage: React.FC = () => {
 					customerId: customerId!,
 					tax_rate_overrides: [],
 					entitlementOverrides: {},
+					creditGrants: (subscriptionData.details.credit_grants || []).map(creditGrantToInternal),
 				});
 			}
 		}
@@ -286,6 +290,7 @@ const CreateCustomerSubscriptionPage: React.FC = () => {
 			overageFactor,
 			commitmentAmount,
 			entitlementOverrides,
+			creditGrants,
 		} = subscriptionState;
 
 		if (!billingPeriod || !selectedPlan) {
@@ -377,6 +382,7 @@ const CreateCustomerSubscriptionPage: React.FC = () => {
 			line_item_coupons: finalLineItemCoupons,
 			tax_rate_overrides: tax_rate_overrides.length > 0 ? tax_rate_overrides : undefined,
 			override_entitlements: Object.keys(entitlementOverrides).length > 0 ? Object.values(entitlementOverrides) : undefined,
+			credit_grants: creditGrants.length > 0 ? creditGrants.map(internalToCreateRequest) : undefined,
 		};
 
 		createSubscription(payload);

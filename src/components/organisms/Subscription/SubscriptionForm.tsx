@@ -7,7 +7,13 @@ import toast from 'react-hot-toast';
 import CreditGrantTable from '@/components/molecules/CreditGrant/CreditGrantTable';
 import SubscriptionAddonTable from '@/components/molecules/SubscriptionAddonTable/SubscriptionAddonTable';
 import { BILLING_CYCLE } from '@/models/Subscription';
-import { CREDIT_GRANT_SCOPE, CreditGrant } from '@/models/CreditGrant';
+import {
+	CREDIT_GRANT_CADENCE,
+	CREDIT_GRANT_EXPIRATION_TYPE,
+	CREDIT_GRANT_PERIOD,
+	CREDIT_GRANT_PERIOD_UNIT,
+	CREDIT_GRANT_SCOPE,
+} from '@/models/CreditGrant';
 import { BILLING_PERIOD } from '@/constants/constants';
 import { SubscriptionFormState } from '@/pages';
 import { useQuery } from '@tanstack/react-query';
@@ -17,10 +23,12 @@ import { AddAddonToSubscriptionRequest } from '@/types/dto/Addon';
 import { SubscriptionDiscountTable, EntitlementOverridesTable } from '@/components/molecules';
 import SubscriptionTaxAssociationTable from '@/components/molecules/SubscriptionTaxAssociationTable';
 import PhaseList from './PhaseList';
-import { SubscriptionPhaseCreateRequest, CreateCreditGrantRequest, EntitlementOverrideRequest } from '@/types/dto/Subscription';
+import { SubscriptionPhaseCreateRequest, EntitlementOverrideRequest } from '@/types/dto/Subscription';
 import PriceTable from './PriceTable';
 import { usePriceOverrides } from '@/hooks/usePriceOverrides';
 import { Coupon } from '@/models/Coupon';
+import { InternalCreditGrantRequest, creditGrantToInternal } from '@/types/dto/CreditGrant';
+import { uniqueId } from 'lodash';
 
 // Helper components
 const BillingCycleSelector = ({
@@ -227,12 +235,21 @@ const SubscriptionForm = ({
 		});
 	};
 
-	const getEmptyCreditGrant = (): CreateCreditGrantRequest => {
+	const getEmptyCreditGrant = (): InternalCreditGrantRequest => {
 		return {
-			amount: 0,
-			currency: state.currency || 'USD',
-			description: 'Free Credits',
+			id: uniqueId('credit-grant-'),
+			name: 'Free Credits',
 			scope: CREDIT_GRANT_SCOPE.SUBSCRIPTION,
+			credits: 0,
+			cadence: CREDIT_GRANT_CADENCE.ONETIME,
+			period: CREDIT_GRANT_PERIOD.MONTHLY,
+			period_count: 1,
+			expiration_type: CREDIT_GRANT_EXPIRATION_TYPE.NEVER,
+			expiration_duration: 0,
+			expiration_duration_unit: CREDIT_GRANT_PERIOD_UNIT.DAYS,
+			priority: 0,
+			metadata: {},
+			subscription_id: uniqueId('sub_'),
 		};
 	};
 
@@ -259,13 +276,19 @@ const SubscriptionForm = ({
 		return isLoadingCreditGrants || (selectedPlanCreditGrants?.items.length ?? 0) > 0;
 	}, [isLoadingCreditGrants, selectedPlanCreditGrants]);
 
-	// In case plan has credit grants show them else show the normal ones
+	// Combine plan credit grants (read-only) with user-added credit grants (editable)
 	const relevantCreditGrants = useMemo(() => {
-		if (state.selectedPlan && (selectedPlanCreditGrants?.items.length ?? 0) > 0) {
-			return selectedPlanCreditGrants?.items as CreditGrant[];
-		}
-		return [];
-	}, [selectedPlanCreditGrants, state.selectedPlan]);
+		const planGrants: InternalCreditGrantRequest[] =
+			state.selectedPlan && selectedPlanCreditGrants && (selectedPlanCreditGrants.items.length ?? 0) > 0
+				? selectedPlanCreditGrants.items.map(creditGrantToInternal)
+				: [];
+
+		// User-added credit grants from state (these are editable)
+		const userGrants: InternalCreditGrantRequest[] = (state.creditGrants || []) as InternalCreditGrantRequest[];
+
+		// Return combined list: plan grants first (read-only), then user grants (editable)
+		return [...planGrants, ...userGrants];
+	}, [selectedPlanCreditGrants, state.selectedPlan, state.creditGrants]);
 
 	// Fetch plan entitlements
 	const { data: planEntitlements } = useQuery({
@@ -564,11 +587,19 @@ const SubscriptionForm = ({
 			{state.selectedPlan && (
 				<div className='mt-6 pt-6 border-t border-gray-200'>
 					<CreditGrantTable
-						getEmptyCreditGrant={() => getEmptyCreditGrant() as unknown as Partial<CreditGrant>}
+						getEmptyCreditGrant={() => getEmptyCreditGrant()}
 						data={relevantCreditGrants}
-						onChange={() => {
-							// Credit grants are read-only if they come from the plan
-							// Otherwise they would be managed at subscription level
+						onChange={(data: InternalCreditGrantRequest[]) => {
+							// Filter out plan credit grants (they have plan_id set and are read-only)
+							// Only keep user-added credit grants (subscription-scoped or new ones)
+							const planGrantIds = new Set((selectedPlanCreditGrants?.items || []).map((grant) => grant.id));
+							const userGrants = data.filter((grant) => !planGrantIds.has(grant.id));
+
+							// Store only user-added credit grants in state
+							setState((prev) => ({
+								...prev,
+								creditGrants: userGrants,
+							}));
 						}}
 						disabled={isDisabled || isCreditGrantDisabled}
 					/>

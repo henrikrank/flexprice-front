@@ -47,6 +47,7 @@ import {
 	INVOICE_CADENCE,
 } from '@/models';
 import { EntitlementResponse } from '@/types';
+import { InternalCreditGrantRequest, CreateCreditGrantRequest } from '@/types/dto/CreditGrant';
 
 // Constants and utilities
 import { useBreadcrumbsStore } from '@/store/useBreadcrumbsStore';
@@ -158,16 +159,21 @@ const PlanDetailsPage = () => {
 	});
 
 	const { mutate: updatePlanWithCreditGrant, isPending: isCreatingCreditGrant } = useMutation({
-		mutationFn: async (data: CreditGrant) => {
-			// Add the new credit grant to local state first
-			const newGrant = {
+		mutationFn: async (data: CreateCreditGrantRequest) => {
+			// Ensure plan_id is set
+			const grantWithPlanId = {
 				...data,
-				id: uniqueId(),
 				plan_id: planId!,
 			};
 
+			// Add the new credit grant to local state first (for optimistic update)
+			const newGrant: CreditGrant = {
+				...grantWithPlanId,
+				id: uniqueId(),
+			} as CreditGrant;
+
 			setNewCreditGrants((prev) => [...prev, newGrant]);
-			return await CreditGrantApi.createCreditGrant(newGrant);
+			return await CreditGrantApi.createCreditGrant(grantWithPlanId);
 		},
 		onSuccess: () => {
 			toast.success('Credit grant added successfully');
@@ -280,9 +286,9 @@ const PlanDetailsPage = () => {
 		},
 	];
 
-	const getEmptyCreditGrant = (): Partial<CreditGrant> => {
+	const getEmptyCreditGrant = (): InternalCreditGrantRequest => {
 		return {
-			id: uniqueId(),
+			id: uniqueId('credit-grant-'),
 			credits: 0,
 			period: CREDIT_GRANT_PERIOD.MONTHLY,
 			name: 'Free Credits',
@@ -293,28 +299,15 @@ const PlanDetailsPage = () => {
 			expiration_type: CREDIT_GRANT_EXPIRATION_TYPE.NEVER,
 			expiration_duration_unit: CREDIT_GRANT_PERIOD_UNIT.DAYS,
 			priority: 0,
+			metadata: {},
 		};
 	};
 
-	const getEmptyCreditGrantForModal = (): CreditGrant => {
-		const emptyData = getEmptyCreditGrant();
-		return {
-			id: uniqueId(),
-			credits: emptyData.credits || 0,
-			period: emptyData.period || CREDIT_GRANT_PERIOD.MONTHLY,
-			name: emptyData.name || 'Free Credits',
-			scope: emptyData.scope || CREDIT_SCOPE.SUBSCRIPTION,
-			cadence: emptyData.cadence || CREDIT_GRANT_CADENCE.ONETIME,
-			period_count: emptyData.period_count || 1,
-			plan_id: emptyData.plan_id || '',
-			expiration_type: emptyData.expiration_type || CREDIT_GRANT_EXPIRATION_TYPE.NEVER,
-			expiration_duration_unit: emptyData.expiration_duration_unit || CREDIT_GRANT_PERIOD_UNIT.DAYS,
-			priority: 0,
-		} as CreditGrant;
-	};
-
-	const handleSaveCreditGrant = (data: CreditGrant) => {
-		updatePlanWithCreditGrant(data);
+	const handleSaveCreditGrant = (data: InternalCreditGrantRequest) => {
+		// Convert InternalCreditGrantRequest to CreateCreditGrantRequest for API
+		// eslint-disable-next-line @typescript-eslint/no-unused-vars
+		const { id, ...createRequest } = data;
+		updatePlanWithCreditGrant(createRequest);
 	};
 
 	const handleCancelCreditGrant = () => {
@@ -341,7 +334,7 @@ const PlanDetailsPage = () => {
 				</>
 			}>
 			<CreditGrantModal
-				data={getEmptyCreditGrantForModal()}
+				data={undefined}
 				isOpen={creditGrantModalOpen}
 				onOpenChange={setCreditGrantModalOpen}
 				onSave={handleSaveCreditGrant}

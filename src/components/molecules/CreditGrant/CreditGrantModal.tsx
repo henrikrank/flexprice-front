@@ -1,17 +1,18 @@
 import { Button, Input, Label, Select, SelectOption } from '@/components/atoms';
 import Dialog from '@/components/atoms/Dialog';
-import { CREDIT_GRANT_CADENCE, CREDIT_GRANT_EXPIRATION_TYPE, CREDIT_GRANT_PERIOD, CreditGrant } from '@/models/CreditGrant';
-import { useCallback, useMemo, useState } from 'react';
+import { CREDIT_GRANT_CADENCE, CREDIT_GRANT_EXPIRATION_TYPE, CREDIT_GRANT_PERIOD, CREDIT_GRANT_SCOPE } from '@/models/CreditGrant';
+import { InternalCreditGrantRequest } from '@/types/dto/CreditGrant';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import RectangleRadiogroup, { RectangleRadiogroupOption } from '../RectangleRadiogroup';
 import { creditGrantPeriodOptions } from '@/constants/constants';
 
 interface Props {
-	data?: CreditGrant;
+	data?: InternalCreditGrantRequest;
 	isOpen: boolean;
 	onOpenChange: (isOpen: boolean) => void;
-	onSave: (data: CreditGrant) => void;
+	onSave: (data: InternalCreditGrantRequest) => void;
 	onCancel: () => void;
-	getEmptyCreditGrant: () => Partial<CreditGrant>;
+	getEmptyCreditGrant: () => InternalCreditGrantRequest;
 }
 
 interface FormErrors {
@@ -45,32 +46,57 @@ const CreditGrantModal: React.FC<Props> = ({ data, isOpen, onOpenChange, onSave,
 	const isEdit = !!data;
 
 	const [errors, setErrors] = useState<FormErrors>({});
-	const [formData, setFormData] = useState<Partial<CreditGrant>>(data || getEmptyCreditGrant());
+	const [formData, setFormData] = useState<Partial<InternalCreditGrantRequest>>(data || getEmptyCreditGrant());
+
+	// Update formData when data prop changes (for editing) or when modal opens
+	useEffect(() => {
+		if (isOpen) {
+			if (data) {
+				// Editing: load the credit grant data
+				setFormData(data);
+			} else {
+				// Adding new: reset to empty credit grant
+				setFormData(getEmptyCreditGrant());
+			}
+			// Clear errors when modal opens
+			setErrors({});
+		}
+	}, [isOpen, data, getEmptyCreditGrant]);
 
 	// Sanitize and validate data before saving
-	const sanitizeData = useCallback((data: Partial<CreditGrant>): CreditGrant => {
-		let sanitized = {
-			...data,
-			// Trim and sanitize string fields
+	const sanitizeData = useCallback((data: Partial<InternalCreditGrantRequest>): InternalCreditGrantRequest => {
+		// Build sanitized object with required fields explicitly set (not from spread)
+		const sanitized: InternalCreditGrantRequest = {
+			// Required fields - explicitly set to avoid undefined
+			id: data.id || '',
 			name: data.name?.trim() || '',
-			// Ensure credits is a positive number
+			scope: data.scope || CREDIT_GRANT_SCOPE.PLAN,
+			cadence: data.cadence || CREDIT_GRANT_CADENCE.ONETIME,
 			credits: Math.max(0, Number(data.credits) || 0),
-			// Ensure priority is a non-negative integer
-			priority: Math.max(0, Math.floor(Number(data.priority) || 0)),
-			// Sanitize expiration_duration if present
+			// Optional fields
+			plan_id: data.plan_id,
+			subscription_id: data.subscription_id,
+			period: data.period,
+			period_count: data.period_count,
+			expiration_type: data.expiration_type,
 			expiration_duration: data.expiration_duration ? Math.max(1, Math.floor(Number(data.expiration_duration))) : undefined,
-		} as CreditGrant;
+			expiration_duration_unit: data.expiration_duration_unit,
+			priority: Math.max(0, Math.floor(Number(data.priority) || 0)),
+			metadata: data.metadata,
+		};
 
 		// Remove expiration_duration if not needed
 		if (sanitized.expiration_type !== CREDIT_GRANT_EXPIRATION_TYPE.DURATION) {
+			// eslint-disable-next-line @typescript-eslint/no-unused-vars
 			const { expiration_duration, ...rest } = sanitized;
-			sanitized = rest as CreditGrant;
+			return rest as InternalCreditGrantRequest;
 		}
 
 		// Remove period if not recurring
 		if (sanitized.cadence !== CREDIT_GRANT_CADENCE.RECURRING) {
+			// eslint-disable-next-line @typescript-eslint/no-unused-vars
 			const { period, ...rest } = sanitized;
-			sanitized = rest as CreditGrant;
+			return rest as InternalCreditGrantRequest;
 		}
 
 		return sanitized;
@@ -144,7 +170,10 @@ const CreditGrantModal: React.FC<Props> = ({ data, isOpen, onOpenChange, onSave,
 	}, [data, getEmptyCreditGrant, onCancel]);
 
 	const handleFieldChange = useCallback(
-		(field: keyof CreditGrant, value: any) => {
+		(
+			field: keyof InternalCreditGrantRequest,
+			value: string | number | CREDIT_GRANT_CADENCE | CREDIT_GRANT_EXPIRATION_TYPE | CREDIT_GRANT_PERIOD | CREDIT_GRANT_SCOPE | undefined,
+		) => {
 			setFormData((prev) => ({ ...prev, [field]: value }));
 			// Clear error for this field when user starts typing
 			if (errors[field as keyof FormErrors]) {

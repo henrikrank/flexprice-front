@@ -32,5 +32,5 @@ export const formatExpirationPeriod = (grant: CreditGrant): string => {
 		return `${duration} ${unitName}`;
 	}
 
-	return formatExpirationType(grant.expiration_type);
+	return grant.expiration_type ? formatExpirationType(grant.expiration_type) : '--';
 };

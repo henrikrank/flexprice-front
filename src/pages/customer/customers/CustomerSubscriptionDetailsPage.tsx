@@ -36,7 +36,7 @@ const formatExpirationPeriod = (grant: CreditGrant): string => {
 		return `${duration} ${unitName}`;
 	}
 
-	return formatExpirationType(grant.expiration_type);
+	return grant.expiration_type ? formatExpirationType(grant.expiration_type) : '--';
 };
 
 const columns: ColumnData<CreditGrant>[] = [
@@ -61,7 +61,7 @@ const columns: ColumnData<CreditGrant>[] = [
 	},
 	{
 		title: 'Period',
-		render: (row) => (row.period ? `${row.period_count} ${formatBillingPeriodForPrice(row.period)}` : '--'),
+		render: (row) => (row.period ? `${row.period_count || 1} ${formatBillingPeriodForPrice(row.period)}` : '--'),
 	},
 	{
 		title: 'Expiration',
