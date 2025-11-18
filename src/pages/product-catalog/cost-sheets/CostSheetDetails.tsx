@@ -141,7 +141,12 @@ const CostSheetDetails = () => {
 		{ label: 'Lookup Key', value: costSheetData?.lookup_key },
 		{
 			label: 'Status',
-			value: <Chip label={formatChips(costSheetData?.status)} variant={costSheetData?.status === ENTITY_STATUS.PUBLISHED ? 'success' : 'default'} />,
+			value: (
+				<Chip
+					label={formatChips(costSheetData?.status)}
+					variant={costSheetData?.status === ENTITY_STATUS.PUBLISHED ? 'success' : 'default'}
+				/>
+			),
 		},
 		{ label: 'Description', value: costSheetData?.description || '--' },
 	];

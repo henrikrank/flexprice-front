@@ -271,11 +271,11 @@ const CustomerSubscriptionEditPage: React.FC = () => {
 		{ label: 'Current Period End', value: formatDate(subscriptionDetails?.current_period_end ?? '') },
 		...(subscriptionDetails?.commitment_amount
 			? [
-				{
-					label: 'Commitment Amount',
-					value: `${getCurrencySymbol(subscriptionDetails?.currency || '')} ${subscriptionDetails?.commitment_amount}`,
-				},
-			]
+					{
+						label: 'Commitment Amount',
+						value: `${getCurrencySymbol(subscriptionDetails?.currency || '')} ${subscriptionDetails?.commitment_amount}`,
+					},
+				]
 			: []),
 		...(subscriptionDetails?.overage_factor && subscriptionDetails?.overage_factor > 1
 			? [{ label: 'Overage Factor', value: subscriptionDetails?.overage_factor.toString() }]

@@ -14,7 +14,7 @@ interface Props {
 	getEmptyCreditGrant: () => InternalCreditGrantRequest;
 }
 
-const CreditGrantTable: React.FC<Props> = ({ data, onChange, disabled, getEmptyCreditGrant }) => {
+const SubscriptionCreditGrantTable: React.FC<Props> = ({ data, onChange, disabled, getEmptyCreditGrant }) => {
 	const [isOpen, setIsOpen] = useState(false);
 	const [selectedCreditGrant, setSelectedCreditGrant] = useState<InternalCreditGrantRequest | null>(null);
 
@@ -122,4 +122,4 @@ const CreditGrantTable: React.FC<Props> = ({ data, onChange, disabled, getEmptyC
 	);
 };
 
-export default CreditGrantTable;
+export default SubscriptionCreditGrantTable;

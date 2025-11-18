@@ -287,7 +287,11 @@ const PlanDetailsPage = () => {
 						Edit
 					</Button>
 
-					<Button onClick={() => archivePlan()} disabled={planData?.status !== ENTITY_STATUS.PUBLISHED} variant={'outline'} className='flex gap-2'>
+					<Button
+						onClick={() => archivePlan()}
+						disabled={planData?.status !== ENTITY_STATUS.PUBLISHED}
+						variant={'outline'}
+						className='flex gap-2'>
 						<EyeOff />
 						Archive
 					</Button>

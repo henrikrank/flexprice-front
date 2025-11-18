@@ -62,7 +62,7 @@ const filterOptions: FilterField[] = [
 		operators: [FilterOperator.IS_ANY_OF, FilterOperator.IS_NOT_ANY_OF],
 		dataType: DataType.ARRAY,
 		options: [
-					{ value: ENTITY_STATUS.PUBLISHED, label: 'Active' },
+			{ value: ENTITY_STATUS.PUBLISHED, label: 'Active' },
 			{ value: ENTITY_STATUS.ARCHIVED, label: 'Inactive' },
 		],
 	},
@@ -96,7 +96,7 @@ const CouponsPage = () => {
 			{
 				field: 'status',
 				operator: FilterOperator.IS_ANY_OF,
-					valueArray: [ENTITY_STATUS.PUBLISHED],
+				valueArray: [ENTITY_STATUS.PUBLISHED],
 				dataType: DataType.ARRAY,
 				id: 'initial-status',
 			},

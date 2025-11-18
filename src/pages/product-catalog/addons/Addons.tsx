@@ -102,7 +102,7 @@ const AddonsPage = () => {
 			{
 				field: 'status',
 				operator: FilterOperator.IS_ANY_OF,
-					valueArray: [ENTITY_STATUS.PUBLISHED],
+				valueArray: [ENTITY_STATUS.PUBLISHED],
 				dataType: DataType.ARRAY,
 				id: 'initial-status',
 			},

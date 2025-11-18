@@ -237,7 +237,11 @@ const AddonDetails = () => {
 						Edit
 					</Button>
 
-					<Button onClick={() => archiveAddon()} disabled={addonData?.status !== ENTITY_STATUS.PUBLISHED} variant={'outline'} className='flex gap-2'>
+					<Button
+						onClick={() => archiveAddon()}
+						disabled={addonData?.status !== ENTITY_STATUS.PUBLISHED}
+						variant={'outline'}
+						className='flex gap-2'>
 						<EyeOff />
 						Archive
 					</Button>
