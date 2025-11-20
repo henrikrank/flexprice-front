@@ -158,7 +158,7 @@ const ChargebeeConnectionDrawer: FC<ChargebeeConnectionDrawerProps> = ({ isOpen,
 				};
 			}
 
-			return await ConnectionApi.createConnection(payload);
+			return await ConnectionApi.Create(payload);
 		},
 		onSuccess: (response) => {
 			toast.success('Chargebee connection created successfully');
@@ -185,7 +185,7 @@ const ChargebeeConnectionDrawer: FC<ChargebeeConnectionDrawerProps> = ({ isOpen,
 				};
 			}
 
-			return await ConnectionApi.updateConnection(connection.id, payload);
+			return await ConnectionApi.Update(connection.id, payload);
 		},
 		onSuccess: (response) => {
 			toast.success('Chargebee connection updated successfully');
