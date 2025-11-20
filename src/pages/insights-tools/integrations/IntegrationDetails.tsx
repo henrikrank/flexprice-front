@@ -1,4 +1,4 @@
-import { useParams } from 'react-router-dom';
+import { useParams } from 'react-router';
 import { integrations } from './integrationsData';
 import { cn } from '@/lib/utils';
 import { Button, FormHeader, Page, Dialog } from '@/components/atoms';

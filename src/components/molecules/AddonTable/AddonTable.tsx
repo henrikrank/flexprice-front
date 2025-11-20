@@ -6,7 +6,7 @@ import { ActionButton, Chip } from '@/components/atoms';
 import { toSentenceCase } from '@/utils/common/helper_functions';
 import formatChips from '@/utils/common/format_chips';
 import formatDate from '@/utils/common/format_date';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router';
 import { RouteNames } from '@/core/routes/Routes';
 import AddonApi from '@/api/AddonApi';
 

@@ -6,7 +6,7 @@ import GUIDES from '@/constants/guides';
 import usePagination from '@/hooks/usePagination';
 import FeatureApi from '@/api/FeatureApi';
 import toast from 'react-hot-toast';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router';
 import { useEffect, useMemo } from 'react';
 import {
 	FilterField,

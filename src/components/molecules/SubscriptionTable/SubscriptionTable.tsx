@@ -3,7 +3,7 @@ import { ActionButton, Chip } from '@/components/atoms';
 import FlexpriceTable, { ColumnData } from '../Table';
 import formatDate from '@/utils/common/format_date';
 import { Subscription, SUBSCRIPTION_CANCELLATION_TYPE, SUBSCRIPTION_STATUS } from '@/models/Subscription';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router';
 import { RouteNames } from '@/core/routes/Routes';
 import SubscriptionApi from '@/api/SubscriptionApi';
 import RedirectCell from '../Table/RedirectCell';

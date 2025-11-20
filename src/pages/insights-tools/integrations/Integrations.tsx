@@ -1,6 +1,6 @@
 import { FormHeader, Loader, Page } from '@/components/atoms';
 import { Integration, integrations } from './integrationsData';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router';
 import { cn } from '@/lib/utils';
 import { PremiumFeature, ApiDocsContent } from '@/components/molecules';
 import { useQuery } from '@tanstack/react-query';

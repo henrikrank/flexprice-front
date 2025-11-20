@@ -3,7 +3,7 @@
 import { FC, useState, useEffect } from 'react';
 import { SidebarGroup, SidebarMenu, useSidebar } from '@/components/ui/sidebar';
 import SidebarItem from './SidebarItem';
-import { useLocation } from 'react-router-dom';
+import { useLocation } from 'react-router';
 import { LucideIcon } from 'lucide-react';
 import { cn } from '@/lib/utils';
 

@@ -2,7 +2,7 @@ import { Button, Loader, Page } from '@/components/atoms';
 import { Plan } from '@/models/Plan';
 import Addon from '@/models/Addon';
 import { useCallback, useEffect, useMemo, useReducer, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { PlanApi, AddonApi, PriceApi, SubscriptionApi, CostSheetApi } from '@/api';
 import { CreateBulkPriceRequest } from '@/types/dto';

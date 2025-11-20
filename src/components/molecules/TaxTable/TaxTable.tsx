@@ -7,7 +7,7 @@ import { TAX_RATE_TYPE, TAX_RATE_STATUS, TaxRate } from '@/models/Tax';
 import TaxApi from '@/api/TaxApi';
 import formatChips from '@/utils/common/format_chips';
 import { RouteNames } from '@/core/routes/Routes';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router';
 
 interface Props {
 	data: TaxRateResponse[];

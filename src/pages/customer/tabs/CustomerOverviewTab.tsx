@@ -1,4 +1,4 @@
-import { useNavigate, useParams, useOutletContext } from 'react-router-dom';
+import { useNavigate, useParams, useOutletContext } from 'react-router';
 import { AddButton, Card, CardHeader, NoDataCard } from '@/components/atoms';
 import CustomerApi from '@/api/CustomerApi';
 import { useQuery } from '@tanstack/react-query';

@@ -7,7 +7,7 @@ import { ENTITY_STATUS } from '@/models';
 import formatChips from '@/utils/common/format_chips';
 import formatDate from '@/utils/common/format_date';
 import CouponApi from '@/api/CouponApi';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router';
 import CouponDrawer from '../CouponDrawer';
 import { RouteNames } from '@/core/routes/Routes';
 import { getCurrencySymbol } from '@/utils/common/helper_functions';

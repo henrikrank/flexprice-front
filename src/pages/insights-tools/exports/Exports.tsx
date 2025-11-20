@@ -1,5 +1,5 @@
 import { FormHeader, Page } from '@/components/atoms';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router';
 import { cn } from '@/lib/utils';
 import { ApiDocsContent } from '@/components/molecules';
 import { Download, Database, Cloud } from 'lucide-react';

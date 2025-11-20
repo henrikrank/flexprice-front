@@ -5,7 +5,7 @@ import formatDate from '@/utils/common/format_date';
 import formatChips from '@/utils/common/format_chips';
 import Customer from '@/models/Customer';
 import CustomerApi from '@/api/CustomerApi';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router';
 import { RouteNames } from '@/core/routes/Routes';
 import { ENTITY_STATUS } from '@/models';
 

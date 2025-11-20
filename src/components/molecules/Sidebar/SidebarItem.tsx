@@ -12,7 +12,7 @@ import {
 	useSidebar,
 } from '@/components/ui';
 // import { ChevronRight } from 'lucide-react';
-import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router';
 import { cn } from '@/lib/utils';
 
 interface SidebarItemProps extends NavItem {

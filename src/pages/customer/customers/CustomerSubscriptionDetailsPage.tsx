@@ -11,7 +11,7 @@ import { formatDateShort, getCurrencySymbol } from '@/utils/common/helper_functi
 import { useQuery } from '@tanstack/react-query';
 import { FC, useEffect } from 'react';
 import toast from 'react-hot-toast';
-import { useParams } from 'react-router-dom';
+import { useParams } from 'react-router';
 import { INVOICE_TYPE } from '@/models/Invoice';
 import { TAXRATE_ENTITY_TYPE } from '@/models/Tax';
 import TaxAssociationTable from '@/components/molecules/TaxAssociationTable';

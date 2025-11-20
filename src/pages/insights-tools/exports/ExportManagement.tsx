@@ -1,6 +1,6 @@
 import { FormHeader, Loader, Page, Button, AddButton } from '@/components/atoms';
 import { useState } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router';
 import { ArrowLeft, Trash2, Eye, Plus } from 'lucide-react';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { TaskApi, ConnectionApi } from '@/api';

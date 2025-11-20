@@ -7,7 +7,7 @@ import formatChips from '@/utils/common/format_chips';
 import formatDate from '@/utils/common/format_date';
 import { PlanApi } from '@/api/PlanApi';
 import { RouteNames } from '@/core/routes/Routes';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router';
 export interface PlansTableProps {
 	data: Plan[];
 	onEdit: (plan: Plan) => void;
