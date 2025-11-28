@@ -207,6 +207,8 @@ export interface CreateSubscriptionRequest {
 	// Entitlement overrides
 	override_entitlements?: EntitlementOverrideRequest[];
 
+	// True up flag
+	enable_true_up: boolean;
 	// Subscription status
 	subscription_status?: string;
 }
