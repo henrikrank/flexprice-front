@@ -13,7 +13,16 @@ import { refetchQueries } from '@/core/services/tanstack/ReactQueryProvider';
 import { RouteNames } from '@/core/routes/Routes';
 import { ServerError } from '@/core/axios/types';
 
-import { BILLING_CADENCE, SubscriptionPhase, Coupon, TAXRATE_ENTITY_TYPE, EXPAND, BILLING_CYCLE, INVOICE_BILLING, SUBSCRIPTION_STATUS } from '@/models';
+import {
+	BILLING_CADENCE,
+	SubscriptionPhase,
+	Coupon,
+	TAXRATE_ENTITY_TYPE,
+	EXPAND,
+	BILLING_CYCLE,
+	INVOICE_BILLING,
+	SUBSCRIPTION_STATUS,
+} from '@/models';
 import { InternalCreditGrantRequest, creditGrantToInternal, internalToCreateRequest } from '@/types/dto/CreditGrant';
 import { BILLING_PERIOD } from '@/constants/constants';
 
@@ -408,9 +417,9 @@ const CreateCustomerSubscriptionPage: React.FC = () => {
 		createSubscription(payload);
 	};
 
-	const handleDraftSubmit = () => {
-		handleSubscriptionSubmit(true);
-	};
+	// const handleDraftSubmit = () => {
+	// 	handleSubscriptionSubmit(true);
+	// };
 
 	const handleRegularSubmit = () => {
 		handleSubscriptionSubmit(false);
@@ -469,9 +478,9 @@ const CreateCustomerSubscriptionPage: React.FC = () => {
 							<Button onClick={navigateBack} variant={'outline'} disabled={isCreating}>
 								Cancel
 							</Button>
-							<Button onClick={handleDraftSubmit} isLoading={isCreating && isDraft} variant={'outline'} disabled={isCreating}>
+							{/* <Button onClick={handleDraftSubmit} isLoading={isCreating && isDraft} variant={'outline'} disabled={isCreating}>
 								Save as Draft
-							</Button>
+							</Button> */}
 						</div>
 						<Button onClick={handleRegularSubmit} isLoading={isCreating && !isDraft} disabled={isCreating}>
 							Add Subscription
