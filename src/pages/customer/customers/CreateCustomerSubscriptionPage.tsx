@@ -421,13 +421,13 @@ const CreateCustomerSubscriptionPage: React.FC = () => {
 	const invoiceOptions = [
 		{
 			value: INVOICE_BILLING.INVOICED_TO_PARENT,
-			label: 'Invoice via Parent',
+			label: 'Invoice To Parent',
 			icon: Building,
 			description: 'Invoices will be sent to the parent customer',
 		},
 		{
 			value: INVOICE_BILLING.INVOICED_TO_SELF,
-			label: 'Invoice via Self',
+			label: 'Invoice To Self',
 			icon: User,
 			description: 'Invoices will be sent to this customer',
 		},
