@@ -3,6 +3,7 @@ import { Button, Input, Sheet, Spacer } from '@/components/atoms';
 import { Switch } from '@/components/ui';
 import { useMutation } from '@tanstack/react-query';
 import ConnectionApi from '@/api/ConnectionApi';
+import OAuthApi from '@/api/OAuthApi';
 import toast from 'react-hot-toast';
 import { CONNECTION_PROVIDER_TYPE, Connection } from '@/models';
 import { useEnvironment } from '@/hooks/useEnvironment';
@@ -41,9 +42,6 @@ const QuickBooksConnectionDrawer: FC<QuickBooksConnectionDrawerProps> = ({ isOpe
 
 	// Determine QuickBooks environment based on Flexprice environment
 	const qbEnvironment: 'sandbox' | 'production' = isProduction ? 'production' : 'sandbox';
-
-	// Fixed redirect URI
-	const redirectUri = `${window.location.origin}/tools/integrations/quickbooks/oauth/callback`;
 
 	const [formData, setFormData] = useState<QuickBooksFormData>({
 		name: '',
@@ -167,72 +165,70 @@ const QuickBooksConnectionDrawer: FC<QuickBooksConnectionDrawerProps> = ({ isOpe
 		},
 	});
 
+	const { mutate: initiateOAuth, isPending: isInitiatingOAuth } = useMutation({
+		mutationFn: async () => {
+			// Call new backend OAuth API
+			// Backend will securely store credentials and return OAuth URL
+			const payload: any = {
+				provider: 'quickbooks',
+				name: formData.name,
+				credentials: {
+					client_id: formData.client_id,
+					client_secret: formData.client_secret,
+				},
+				metadata: {
+					environment: formData.environment,
+					income_account_id: formData.income_account_id || '',
+				},
+			};
+
+			// Add sync_config if invoice sync is enabled
+			if (formData.sync_config.invoice) {
+				payload.sync_config = {
+					invoice: {
+						inbound: false,
+						outbound: true,
+					},
+				};
+			}
+
+			return await OAuthApi.InitiateOAuth(payload);
+		},
+		onSuccess: (response) => {
+			// Store ONLY non-sensitive session_id in sessionStorage
+			// NO client_secret, NO access_token - SECURE!
+			sessionStorage.setItem('qb_oauth_session_id', response.session_id);
+
+			// Debug logging (safe - no sensitive data)
+			console.log('🚀 QuickBooks OAuth initiated:', {
+				session_id: response.session_id.substring(0, 16) + '...',
+				has_oauth_url: !!response.oauth_url,
+			});
+
+			// Close drawer
+			onOpenChange(false);
+
+			// Redirect to QuickBooks OAuth page
+			window.location.href = response.oauth_url;
+		},
+		onError: (error: unknown) => {
+			const errorMessage = error instanceof Error ? error.message : 'Failed to initiate OAuth';
+			toast.error(errorMessage);
+		},
+	});
+
 	const handleSave = () => {
 		if (validateForm()) {
 			if (connection) {
 				updateConnection();
 			} else {
-				// For new connections, initiate OAuth flow
+				// For new connections, initiate OAuth flow via backend
 				initiateOAuth();
 			}
 		}
 	};
 
-	const initiateOAuth = () => {
-		// Generate state for CSRF protection
-		const state = generateState();
-
-		// Store form data in sessionStorage to retrieve after OAuth callback
-		// NOTE: This includes sensitive data (client_secret) but is necessary for the OAuth flow
-		// The data is cleared immediately after connection creation in the callback
-		sessionStorage.setItem(
-			'qb_connection_data',
-			JSON.stringify({
-				name: formData.name,
-				client_id: formData.client_id,
-				client_secret: formData.client_secret, // Temporary storage, cleared after use
-				redirect_uri: redirectUri,
-				environment: formData.environment,
-				income_account_id: formData.income_account_id,
-				sync_config: formData.sync_config,
-			}),
-		);
-
-		sessionStorage.setItem('qb_oauth_state', state);
-
-		// Debug logging (without sensitive data)
-		console.log('🚀 Initiating QuickBooks OAuth:', {
-			state,
-			storedState: sessionStorage.getItem('qb_oauth_state'),
-			redirectUri,
-			environment: formData.environment,
-		});
-
-		// Build OAuth URL
-		const scope = 'com.intuit.quickbooks.accounting';
-		const responseType = 'code';
-
-		const authUrl =
-			`https://appcenter.intuit.com/connect/oauth2?` +
-			`client_id=${encodeURIComponent(formData.client_id)}` +
-			`&scope=${encodeURIComponent(scope)}` +
-			`&redirect_uri=${encodeURIComponent(redirectUri)}` +
-			`&response_type=${responseType}` +
-			`&state=${state}`;
-
-		// Close drawer and redirect to QuickBooks OAuth
-		onOpenChange(false);
-		window.location.href = authUrl;
-	};
-
-	const generateState = (): string => {
-		// Use cryptographically secure random generation
-		const array = new Uint8Array(16);
-		crypto.getRandomValues(array);
-		return Array.from(array, (byte) => byte.toString(16).padStart(2, '0')).join('');
-	};
-
-	const isPending = isUpdating;
+	const isPending = isUpdating || isInitiatingOAuth;
 
 	return (
 		<Sheet
@@ -321,10 +317,15 @@ const QuickBooksConnectionDrawer: FC<QuickBooksConnectionDrawerProps> = ({ isOpe
 				{/* OAuth Info Box */}
 				{!connection && (
 					<div className='p-4 bg-blue-50 border border-blue-200 rounded-lg'>
-						<h3 className='text-sm font-medium text-blue-800 mb-2'>OAuth Authorization Required</h3>
+						<h3 className='text-sm font-medium text-blue-800 mb-2'>🔒 OAuth Authorization Required</h3>
 						<p className='text-xs text-blue-700 mb-2'>
-							After clicking "Connect to QuickBooks", you will be redirected to QuickBooks to authorize this connection. Make sure you have
-							the Client ID and Client Secret ready from your QuickBooks Dashboard.
+							After clicking `Create Connection`, you will be redirected to QuickBooks to authorize this connection.
+							<br />
+							Make sure you have the `Client ID` and `Client Secret` ready from your QuickBooks Dashboard.
+							<br />
+							<br />
+							<span className='text-yellow-500 font-bold'>IMPORTANT:</span> You must configure the redirect URI in your QuickBooks' app
+							settings.
 						</p>
 					</div>
 				)}
@@ -346,7 +347,7 @@ const QuickBooksConnectionDrawer: FC<QuickBooksConnectionDrawerProps> = ({ isOpe
 						Cancel
 					</Button>
 					<Button onClick={handleSave} className='flex-1' isLoading={isPending} disabled={isPending}>
-						{connection ? 'Update Connection' : 'Connect to QuickBooks'}
+						{connection ? 'Update Connection' : 'Create Connection'}
 					</Button>
 				</div>
 			</div>
