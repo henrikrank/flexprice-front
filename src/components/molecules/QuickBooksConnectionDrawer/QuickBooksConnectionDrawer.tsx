@@ -16,6 +16,7 @@ interface QuickBooksConnection extends Connection {
 	};
 	sync_config?: {
 		invoice?: { inbound: boolean; outbound: boolean };
+		payment?: { inbound: boolean; outbound: boolean };
 	};
 }
 
@@ -34,6 +35,7 @@ interface QuickBooksFormData {
 	income_account_id: string;
 	sync_config: {
 		invoice: boolean;
+		payment: boolean;
 	};
 }
 
@@ -51,6 +53,7 @@ const QuickBooksConnectionDrawer: FC<QuickBooksConnectionDrawerProps> = ({ isOpe
 		income_account_id: '',
 		sync_config: {
 			invoice: false,
+			payment: false,
 		},
 	});
 	const [errors, setErrors] = useState<Record<string, string>>({});
@@ -69,6 +72,7 @@ const QuickBooksConnectionDrawer: FC<QuickBooksConnectionDrawerProps> = ({ isOpe
 					income_account_id: secretData.income_account_id || '',
 					sync_config: {
 						invoice: syncConfig.invoice?.outbound || false,
+						payment: syncConfig.payment?.inbound || syncConfig.payment?.outbound || false,
 					},
 				});
 			} else {
@@ -80,6 +84,7 @@ const QuickBooksConnectionDrawer: FC<QuickBooksConnectionDrawerProps> = ({ isOpe
 					income_account_id: '',
 					sync_config: {
 						invoice: false,
+						payment: false,
 					},
 				});
 			}
@@ -150,6 +155,13 @@ const QuickBooksConnectionDrawer: FC<QuickBooksConnectionDrawerProps> = ({ isOpe
 				};
 			}
 
+			if (formData.sync_config.payment) {
+				payload.sync_config.payment = {
+					inbound: true,
+					outbound: true,
+				};
+			}
+
 			return await ConnectionApi.Update(connection.id, payload);
 		},
 		onSuccess: (response) => {
@@ -182,16 +194,27 @@ const QuickBooksConnectionDrawer: FC<QuickBooksConnectionDrawerProps> = ({ isOpe
 				},
 			};
 
-			// Add sync_config if invoice sync is enabled
+			// Build sync_config
+			const syncConfig: Record<string, { inbound: boolean; outbound: boolean }> = {};
+
 			if (formData.sync_config.invoice) {
-				payload.sync_config = {
-					invoice: {
-						inbound: false,
-						outbound: true,
-					},
+				syncConfig.invoice = {
+					inbound: false,
+					outbound: true,
 				};
 			}
 
+			if (formData.sync_config.payment) {
+				syncConfig.payment = {
+					inbound: true,
+					outbound: true,
+				};
+			}
+
+			// Only add sync_config if at least one is enabled
+			if (Object.keys(syncConfig).length > 0) {
+				payload.sync_config = syncConfig;
+			}
 			return await OAuthApi.InitiateOAuth(payload);
 		},
 		onSuccess: (response) => {
@@ -310,6 +333,15 @@ const QuickBooksConnectionDrawer: FC<QuickBooksConnectionDrawerProps> = ({ isOpe
 								<p className='text-xs text-gray-500'>Push to QuickBooks</p>
 							</div>
 							<Switch checked={formData.sync_config.invoice} onCheckedChange={(checked) => handleSyncConfigChange('invoice', checked)} />
+						</div>
+
+						{/* Payments */}
+						<div className='flex items-center justify-between p-3 bg-white border border-gray-200 rounded-lg'>
+							<div>
+								<label className='text-sm font-medium text-gray-700'>Payments</label>
+								<p className='text-xs text-gray-500'>2-way sync with QuickBooks</p>
+							</div>
+							<Switch checked={formData.sync_config.payment} onCheckedChange={(checked) => handleSyncConfigChange('payment', checked)} />
 						</div>
 					</div>
 				</div>
