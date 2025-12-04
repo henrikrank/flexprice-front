@@ -114,16 +114,17 @@ const DashboardPage = () => {
 	}, [subscriptionsError, revenueError, invoiceErrors]);
 
 	return (
-		<Page heading='Home'>
-			<div className='space-y-6'>
-				{/* Controls */}
+		<Page
+			heading='Home'
+			headingCTA={
 				<DashboardControls
 					timePeriod={timePeriod}
 					windowSize={windowSize}
 					onTimePeriodChange={setTimePeriod}
 					onWindowSizeChange={setWindowSize}
 				/>
-
+			}>
+			<div className='space-y-6'>
 				{/* Events Monitoring Chart */}
 				<div>
 					{monitoringLoading ? (
