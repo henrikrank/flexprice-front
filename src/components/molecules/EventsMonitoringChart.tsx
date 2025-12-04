@@ -64,7 +64,6 @@ export const EventsMonitoringChart: React.FC<EventsMonitoringChartProps> = ({
 			<Card className={`py-4 sm:py-0 ${className || ''}`}>
 				<CardHeader>
 					<CardTitle>{title}</CardTitle>
-					<CardDescription>No monitoring data available</CardDescription>
 				</CardHeader>
 				<CardContent className='flex items-center justify-center h-[250px]'>
 					<p className='text-muted-foreground'>No data to display</p>
