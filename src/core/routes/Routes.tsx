@@ -160,7 +160,7 @@ const DefaultRoute = () => {
 	const onboardingMetadata = user?.tenant?.metadata?.[TenantMetadataKey.ONBOARDING_COMPLETED];
 	const onboardingCompleted = onboardingMetadata === 'true';
 	if (onboardingCompleted) {
-		return <DashboardPage />;
+		return <Navigate to={RouteNames.pricing} />;
 	}
 	return <Navigate to={RouteNames.onboarding} />;
 };
