@@ -102,7 +102,7 @@ export const useRevenueData = () => {
 			});
 		}
 
-		return ranges;
+		return ranges.reverse();
 	}, []);
 
 	const environmentId = EnvironmentApi.getActiveEnvironmentId();
@@ -155,15 +155,15 @@ export const useInvoiceIssues = () => {
 	const environmentId = EnvironmentApi.getActiveEnvironmentId();
 
 	const {
-		data: failedPaymentInvoices,
-		isLoading: failedPaymentLoading,
-		error: failedPaymentError,
+		data: allInvoices,
+		isLoading: invoicesLoading,
+		error: invoicesError,
 	} = useQuery({
-		queryKey: ['invoices', 'payment-failed', environmentId],
+		queryKey: ['invoices', 'all-statuses', environmentId],
 		queryFn: async () => {
 			return await InvoiceApi.getAllInvoices({
-				payment_status: PAYMENT_STATUS.FAILED,
-				limit: 100,
+				limit: 500, // Increased limit to get more invoices
+				start_time: new Date(new Date().setDate(new Date().getDate() - 7)).toISOString(),
 			});
 		},
 		staleTime: 0, // No caching
@@ -192,10 +192,40 @@ export const useInvoiceIssues = () => {
 		enabled: !!environmentId, // Only run if environment ID exists
 	});
 
+	// Categorize invoices by payment status
+	const invoicesByStatus = useMemo(() => {
+		if (!allInvoices?.items) {
+			return {
+				paid: [],
+				failed: [],
+				pending: [],
+				processing: [],
+				refunded: [],
+				total: 0,
+			};
+		}
+
+		const invoices = allInvoices.items;
+		const categorized = {
+			paid: invoices.filter((inv) => inv.payment_status === PAYMENT_STATUS.SUCCEEDED),
+			failed: invoices.filter((inv) => inv.payment_status === PAYMENT_STATUS.FAILED),
+			pending: invoices.filter((inv) => inv.payment_status === PAYMENT_STATUS.PENDING || inv.payment_status === PAYMENT_STATUS.INITIATED),
+			processing: invoices.filter((inv) => inv.payment_status === PAYMENT_STATUS.PROCESSING),
+			refunded: invoices.filter(
+				(inv) => inv.payment_status === PAYMENT_STATUS.REFUNDED || inv.payment_status === PAYMENT_STATUS.PARTIALLY_REFUNDED,
+			),
+			total: invoices.length,
+		};
+
+		return categorized;
+	}, [allInvoices]);
+
 	return {
-		failedPaymentInvoices: failedPaymentInvoices?.items || [],
+		invoicesByStatus,
 		pastDueSubscriptions: pastDueSubscriptions?.items || [],
-		isLoading: failedPaymentLoading || pastDueLoading,
-		errors: [failedPaymentError, pastDueError].filter(Boolean),
+		isLoading: invoicesLoading || pastDueLoading,
+		errors: [invoicesError, pastDueError].filter(Boolean),
+		// Legacy support - keeping these for backward compatibility
+		failedPaymentInvoices: invoicesByStatus.failed,
 	};
 };
