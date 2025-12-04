@@ -3,17 +3,35 @@ import { useQuery } from '@tanstack/react-query';
 import { Page, Loader, Select } from '@/components/atoms';
 import EventsApi from '@/api/EventsApi';
 import toast from 'react-hot-toast';
-import { GetUsageAnalyticsRequest } from '@/types';
+import { GetMonitoringDataRequest } from '@/types';
 import { WindowSize } from '@/models';
-import { CustomerUsageChart } from '@/components/molecules';
+import { EventsMonitoringChart } from '@/components/molecules';
 
-type TimePeriod = 'last-hour' | 'last-day' | 'last-week' | 'last-30-days';
+enum TimePeriod {
+	LAST_HOUR = 'last-hour',
+	LAST_DAY = 'last-day',
+	LAST_WEEK = 'last-week',
+	LAST_30_DAYS = 'last-30-days',
+}
 
 const timePeriodOptions = [
-	{ value: 'last-hour', label: 'Last hour' },
-	{ value: 'last-day', label: 'Last day' },
-	{ value: 'last-week', label: 'Last week' },
-	{ value: 'last-30-days', label: 'Last 30 days' },
+	{ value: TimePeriod.LAST_HOUR, label: 'Last hour' },
+	{ value: TimePeriod.LAST_DAY, label: 'Last day' },
+	{ value: TimePeriod.LAST_WEEK, label: 'Last week' },
+	{ value: TimePeriod.LAST_30_DAYS, label: 'Last 30 days' },
+];
+
+const windowSizeOptions = [
+	{ value: WindowSize.MINUTE, label: 'Minute' },
+	{ value: WindowSize.FIFTEEN_MIN, label: '15 Minutes' },
+	{ value: WindowSize.THIRTY_MIN, label: '30 Minutes' },
+	{ value: WindowSize.HOUR, label: 'Hour' },
+	{ value: WindowSize.THREE_HOUR, label: '3 Hours' },
+	{ value: WindowSize.SIX_HOUR, label: '6 Hours' },
+	{ value: WindowSize.TWELVE_HOUR, label: '12 Hours' },
+	{ value: WindowSize.DAY, label: 'Day' },
+	{ value: WindowSize.WEEK, label: 'Week' },
+	{ value: WindowSize.MONTH, label: 'Month' },
 ];
 
 const getTimeRangeForPeriod = (period: TimePeriod): { startDate: Date; endDate: Date } => {
@@ -21,16 +39,16 @@ const getTimeRangeForPeriod = (period: TimePeriod): { startDate: Date; endDate: 
 	let startDate = new Date();
 
 	switch (period) {
-		case 'last-hour':
+		case TimePeriod.LAST_HOUR:
 			startDate = new Date(endDate.getTime() - 60 * 60 * 1000);
 			break;
-		case 'last-day':
+		case TimePeriod.LAST_DAY:
 			startDate = new Date(endDate.getTime() - 24 * 60 * 60 * 1000);
 			break;
-		case 'last-week':
+		case TimePeriod.LAST_WEEK:
 			startDate = new Date(endDate.getTime() - 7 * 24 * 60 * 60 * 1000);
 			break;
-		case 'last-30-days':
+		case TimePeriod.LAST_30_DAYS:
 			startDate = new Date(endDate.getTime() - 30 * 24 * 60 * 60 * 1000);
 			break;
 	}
@@ -38,95 +56,57 @@ const getTimeRangeForPeriod = (period: TimePeriod): { startDate: Date; endDate: 
 	return { startDate, endDate };
 };
 
-const getWindowSizeForPeriod = (period: TimePeriod): WindowSize => {
-	switch (period) {
-		case 'last-hour':
-			return WindowSize.MINUTE;
-		case 'last-day':
-			return WindowSize.HOUR;
-		case 'last-week':
-			return WindowSize.DAY;
-		case 'last-30-days':
-			return WindowSize.DAY;
-		default:
-			return WindowSize.DAY;
-	}
-};
-
 const DashboardPage = () => {
-	const [timePeriod, setTimePeriod] = useState<TimePeriod>('last-week');
+	const [timePeriod, setTimePeriod] = useState<TimePeriod>(TimePeriod.LAST_WEEK);
+	const [windowSize, setWindowSize] = useState<WindowSize>(WindowSize.HOUR);
 
 	// Calculate date range based on selected time period
 	const { startDate, endDate } = useMemo(() => {
 		return getTimeRangeForPeriod(timePeriod);
 	}, [timePeriod]);
 
-	// Get window size based on period
-	const windowSize = useMemo(() => {
-		return getWindowSizeForPeriod(timePeriod);
-	}, [timePeriod]);
-
-	// Prepare Usage API parameters
-	// Note: external_customer_id is required by the API
-	// For dashboard view, you may need to:
-	// 1. Provide a specific customer_id, or
-	// 2. Aggregate across all customers, or
-	// 3. Use a different endpoint that supports global analytics
-	// For now, leaving it as a placeholder - adjust based on your API requirements
-	const usageApiParams: GetUsageAnalyticsRequest | null = useMemo(() => {
-		// TODO: Add customer_id or adjust based on your dashboard requirements
-		// Example: const customerId = 'your-customer-id';
-		// if (!customerId) return null;
-
-		// Uncomment and adjust when you have customer_id or global endpoint:
-		// const params: GetUsageAnalyticsRequest = {
-		// 	external_customer_id: customerId, // or remove if API supports global
-		// 	window_size: windowSize,
-		// };
-		// if (startDate) params.start_time = startDate.toISOString();
-		// if (endDate) params.end_time = endDate.toISOString();
-		// return params;
-
-		return null; // Disabled until customer_id or global endpoint is configured
+	// Prepare Monitoring API parameters
+	const monitoringApiParams: GetMonitoringDataRequest = useMemo(() => {
+		const params: GetMonitoringDataRequest = {
+			window_size: windowSize,
+		};
+		if (startDate) params.start_time = startDate.toISOString();
+		if (endDate) params.end_time = endDate.toISOString();
+		return params;
 	}, [startDate, endDate, windowSize]);
 
 	// Debounced API parameters with 300ms delay
-	const [debouncedUsageParams, setDebouncedUsageParams] = useState<GetUsageAnalyticsRequest | null>(null);
+	const [debouncedMonitoringParams, setDebouncedMonitoringParams] = useState<GetMonitoringDataRequest | null>(null);
 
 	useEffect(() => {
-		if (usageApiParams) {
-			const timeoutId = setTimeout(() => {
-				setDebouncedUsageParams(usageApiParams);
-			}, 300);
+		const timeoutId = setTimeout(() => {
+			setDebouncedMonitoringParams(monitoringApiParams);
+		}, 300);
 
-			return () => clearTimeout(timeoutId);
-		} else {
-			setDebouncedUsageParams(null);
-		}
-	}, [usageApiParams]);
+		return () => clearTimeout(timeoutId);
+	}, [monitoringApiParams]);
 
 	const {
-		data: usageData,
-		isLoading: usageLoading,
-		error: usageError,
+		data: monitoringData,
+		isLoading: monitoringLoading,
+		error: monitoringError,
 	} = useQuery({
-		queryKey: ['usage', 'dashboard', debouncedUsageParams],
+		queryKey: ['monitoring', 'dashboard', debouncedMonitoringParams],
 		queryFn: async () => {
-			if (!debouncedUsageParams) {
-				throw new Error('API parameters not available');
+			if (!debouncedMonitoringParams) {
+				throw new Error('Monitoring API parameters not available');
 			}
-			return await EventsApi.getUsageAnalytics(debouncedUsageParams);
+			return await EventsApi.getMonitoringData(debouncedMonitoringParams);
 		},
-		enabled: !!debouncedUsageParams,
+		enabled: !!debouncedMonitoringParams,
+		refetchInterval: 30000, // Refetch every 30 seconds for real-time monitoring
 	});
 
 	useEffect(() => {
-		if (usageError) {
-			toast.error('Error fetching usage data');
+		if (monitoringError) {
+			toast.error('Error fetching monitoring data');
 		}
-	}, [usageError]);
-
-	const isLoading = usageLoading;
+	}, [monitoringError]);
 
 	// Format "Updated just now" timestamp
 	const getUpdatedTime = () => {
@@ -136,29 +116,38 @@ const DashboardPage = () => {
 	return (
 		<Page heading='Home'>
 			<div className='space-y-6'>
-				{/* Graph Section with Time Period Selector */}
-				<div className='relative'>
-					{/* Time Period Selector - Positioned top right */}
-					<div className='absolute top-0 right-0 z-10'>
-						<Select
-							value={timePeriod}
-							options={timePeriodOptions}
-							onChange={(value) => setTimePeriod(value as TimePeriod)}
-							className='min-w-[150px]'
-						/>
+				{/* Controls */}
+				<div className='flex flex-col sm:flex-row gap-4 sm:justify-end mb-6'>
+					<div className='flex flex-col sm:flex-row gap-4'>
+						<div className='flex flex-col gap-1'>
+							<label className='text-xs font-medium text-gray-600'>Time Period</label>
+							<Select
+								value={timePeriod}
+								options={timePeriodOptions}
+								onChange={(value) => setTimePeriod(value as TimePeriod)}
+								className='min-w-[150px]'
+							/>
+						</div>
+						<div className='flex flex-col gap-1'>
+							<label className='text-xs font-medium text-gray-600'>Window Size</label>
+							<Select
+								value={windowSize}
+								options={windowSizeOptions}
+								onChange={(value) => setWindowSize(value as WindowSize)}
+								className='min-w-[150px]'
+							/>
+						</div>
 					</div>
+				</div>
 
-					{/* Usage Chart */}
-					{isLoading ? (
-						<div className='flex items-center justify-center py-12'>
+				{/* Events Monitoring Chart */}
+				<div>
+					{monitoringLoading ? (
+						<div className='flex items-center justify-center py-12 border rounded-lg'>
 							<Loader />
 						</div>
 					) : (
-						usageData && (
-							<div className='mt-2'>
-								<CustomerUsageChart data={usageData} title='Events ingested' description={getUpdatedTime()} />
-							</div>
-						)
+						monitoringData && <EventsMonitoringChart data={monitoringData} title='Events Monitoring' description={getUpdatedTime()} />
 					)}
 				</div>
 			</div>

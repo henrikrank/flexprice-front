@@ -154,6 +154,7 @@ export { SubscriptionTable } from './SubscriptionTable';
 
 export { default as CustomerUsageChart } from './CustomerUsageChart';
 export { default as CustomerCostChart } from './CustomerCostChart';
+export { default as EventsMonitoringChart } from './EventsMonitoringChart';
 
 export { default as MetricCard } from './MetricCard';
 export { default as TestimonialCard } from './TestimonialCard/TestimonialCard';
