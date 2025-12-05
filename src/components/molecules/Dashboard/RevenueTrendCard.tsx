@@ -2,7 +2,6 @@
 
 import { Loader } from '@/components/atoms';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui';
-import { DollarSign } from 'lucide-react';
 import { getTypographyClass } from '@/lib/typography';
 
 interface RevenueMonth {
@@ -14,30 +13,33 @@ interface RevenueMonth {
 interface RevenueTrendCardProps {
 	revenueData: RevenueMonth[];
 	isLoading: boolean;
+	className?: string;
 }
 
-export const RevenueTrendCard: React.FC<RevenueTrendCardProps> = ({ revenueData, isLoading }) => {
+export const RevenueTrendCard: React.FC<RevenueTrendCardProps> = ({ revenueData, isLoading, className }) => {
 	return (
-		<Card className='shadow-sm'>
-			<CardHeader className='pb-4'>
-				<div className='flex items-center justify-between'>
+		<Card className={`shadow-sm ${className || ''}`}>
+			<CardHeader className='pb-2'>
+				<div className='flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3'>
 					<div>
 						<CardTitle className={getTypographyClass('section-title')}>Revenue Trend</CardTitle>
 						<CardDescription className={getTypographyClass('helper-text', 'mt-1')}>Last 3 months</CardDescription>
 					</div>
-					<DollarSign className='w-5 h-5 text-green-600' />
 				</div>
 			</CardHeader>
-			<CardContent className='pt-0'>
+			<CardContent className='pt-0 pb-5'>
 				{isLoading ? (
-					<div className='flex items-center justify-center py-8'>
+					<div className='flex items-center justify-center py-4 px-6'>
 						<Loader />
 					</div>
 				) : revenueData && revenueData.length > 0 ? (
-					<div className='space-y-2'>
+					<div>
 						{revenueData.map((month, index) => {
+							const isLast = index === revenueData.length - 1;
 							return (
-								<div key={index} className='flex items-center justify-between py-3 border-b border-zinc-100 last:border-0'>
+								<div
+									key={index}
+									className={`flex items-center justify-between px-6 ${isLast ? 'pt-3 pb-0' : 'py-3 border-b border-zinc-100'}`}>
 									<div className='flex-1'>
 										<p className={getTypographyClass('body-default', 'font-medium text-zinc-900')}>{month.month}</p>
 									</div>
@@ -56,7 +58,7 @@ export const RevenueTrendCard: React.FC<RevenueTrendCardProps> = ({ revenueData,
 						})}
 					</div>
 				) : (
-					<p className={getTypographyClass('body-small', 'text-center text-zinc-500 py-6')}>No revenue data available</p>
+					<p className={getTypographyClass('body-small', 'text-center text-zinc-500 py-6 px-6')}>No revenue data available</p>
 				)}
 			</CardContent>
 		</Card>
