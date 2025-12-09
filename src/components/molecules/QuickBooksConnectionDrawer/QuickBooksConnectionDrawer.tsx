@@ -8,7 +8,8 @@ import toast from 'react-hot-toast';
 import { CONNECTION_PROVIDER_TYPE, Connection } from '@/models';
 import { useEnvironment } from '@/hooks/useEnvironment';
 import { useUser } from '@/hooks/UserContext';
-import { Copy, CheckCircle } from 'lucide-react';
+import { Copy, CheckCircle, ChevronDown, ChevronRight } from 'lucide-react';
+import { QuickBooksWebhookEvents, getDefaultQuickBooksWebhookEvents } from '@/types';
 
 interface QuickBooksConnection extends Connection {
 	encrypted_secret_data?: {
@@ -63,11 +64,17 @@ const QuickBooksConnectionDrawer: FC<QuickBooksConnectionDrawerProps> = ({ isOpe
 	});
 	const [errors, setErrors] = useState<Record<string, string>>({});
 	const [webhookCopied, setWebhookCopied] = useState(false);
+	const [isWebhookEventsExpanded, setIsWebhookEventsExpanded] = useState(false);
 
 	// Generate webhook URL
 	const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:8080/v1';
 	const webhookUrl =
 		user?.tenant?.id && activeEnvironment?.id ? `${apiUrl}/webhooks/quickbooks/${user.tenant.id}/${activeEnvironment.id}` : '';
+
+	// Webhook events
+	const getWebhookEvents = (): QuickBooksWebhookEvents[] => {
+		return getDefaultQuickBooksWebhookEvents();
+	};
 
 	// Reset form on open or when editing connection changes
 	useEffect(() => {
@@ -432,6 +439,31 @@ const QuickBooksConnectionDrawer: FC<QuickBooksConnectionDrawerProps> = ({ isOpe
 							</ol>
 						</div>
 					)}
+					<br />
+					{/* Webhook Events to Subscribe - Collapsible */}
+					<div>
+						<button
+							type='button'
+							onClick={() => setIsWebhookEventsExpanded(!isWebhookEventsExpanded)}
+							className='flex items-center gap-2 text-sm font-medium text-blue-800 hover:text-blue-900 mb-2'>
+							{isWebhookEventsExpanded ? <ChevronDown className='w-4 h-4' /> : <ChevronRight className='w-4 h-4' />}
+							Webhook Events to Subscribe
+						</button>
+
+						{isWebhookEventsExpanded && (
+							<div className='mt-2 p-3 bg-white border border-blue-200 rounded-md'>
+								<p className='text-xs text-blue-700 mb-3'>Subscribe to this event in your QuickBooks app (Intuit Developer Portal):</p>
+								<div className='space-y-1'>
+									{getWebhookEvents().map((event, index) => (
+										<div key={index} className='flex items-center gap-2 text-xs text-blue-700'>
+											<div className='w-1.5 h-1.5 bg-blue-500 rounded-full'></div>
+											<code className='font-mono'>{event}</code>
+										</div>
+									))}
+								</div>
+							</div>
+						)}
+					</div>
 				</div>
 
 				{/* OAuth Info Box */}
