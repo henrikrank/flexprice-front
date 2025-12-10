@@ -66,10 +66,14 @@ const QuickBooksConnectionDrawer: FC<QuickBooksConnectionDrawerProps> = ({ isOpe
 	const [webhookCopied, setWebhookCopied] = useState(false);
 	const [isWebhookEventsExpanded, setIsWebhookEventsExpanded] = useState(false);
 
-	// Generate webhook URL
+	const [redirectUriCopied, setRedirectUriCopied] = useState(false);
+
 	const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:8080/v1';
+	// Generate webhook URL
 	const webhookUrl =
 		user?.tenant?.id && activeEnvironment?.id ? `${apiUrl}/webhooks/quickbooks/${user.tenant.id}/${activeEnvironment.id}` : '';
+	// Generate redirect URI
+	const redirectUri = `${window.location.origin}/tools/integrations/oauth/callback`;
 
 	// Webhook events
 	const getWebhookEvents = (): QuickBooksWebhookEvents[] => {
@@ -295,6 +299,18 @@ const QuickBooksConnectionDrawer: FC<QuickBooksConnectionDrawerProps> = ({ isOpe
 		}
 	};
 
+	const handleCopyRedirectUri = () => {
+		if (redirectUri) {
+			navigator.clipboard.writeText(redirectUri);
+			setRedirectUriCopied(true);
+			toast.success('Redirect URI copied to clipboard!');
+
+			setTimeout(() => {
+				setRedirectUriCopied(false);
+			}, 2000);
+		}
+	};
+
 	return (
 		<Sheet
 			isOpen={isOpen}
@@ -476,8 +492,16 @@ const QuickBooksConnectionDrawer: FC<QuickBooksConnectionDrawerProps> = ({ isOpe
 							Make sure you have the `Client ID` and `Client Secret` ready from your QuickBooks Dashboard.
 							<br />
 							<br />
-							<span className='text-yellow-500 font-bold'>IMPORTANT:</span> You must configure the redirect URI in your QuickBooks' app
+							<span className='text-yellow-500 font-bold'>IMPORTANT:</span> You must configure this redirect URI in your QuickBooks' app
 							settings.
+							<br />
+							<div className='flex items-center gap-2 p-2 bg-white border border-blue-200 rounded-md mt-2'>
+								<code className='flex-1 text-xs text-gray-800 font-mono break-all'>{redirectUri}</code>
+								<Button size='xs' variant='outline' onClick={handleCopyRedirectUri} className='flex items-center gap-1'>
+									{redirectUriCopied ? <CheckCircle className='w-3 h-3' /> : <Copy className='w-3 h-3' />}
+									{redirectUriCopied ? 'Copied!' : 'Copy'}
+								</Button>
+							</div>
 						</p>
 					</div>
 				)}
