@@ -223,6 +223,39 @@ export const integrations: Integration[] = [
 			},
 		],
 	},
+	{
+		name: 'Nomod',
+		description: 'Send invoices and collect payments using payment links through Nomod integration.',
+		logo: '/assets/logo/nomod-logo.svg',
+		tags: ['Payments', 'Invoices'],
+		type: 'available',
+		info: [
+			{
+				title: 'Overview',
+				description: [
+					'The Flexprice Nomod app enables invoicing and payment collection through Nomod payment links. Integrate it seamlessly with Flexprice to streamline your payment workflows.',
+				],
+			},
+			{
+				title: 'Invoice Sync',
+				description: [
+					'Create and send invoices with payment links through Nomod directly from Flexprice. Payment collection can be automated through Nomod payment links.',
+				],
+			},
+			{
+				title: 'Payment Links',
+				description: [
+					'Generate secure payment links for your invoices using Nomod. Your customers can pay quickly and securely through various payment methods supported by Nomod.',
+				],
+			},
+			{
+				title: 'Webhook Integration',
+				description: [
+					'Receive real-time notifications about invoice and payment link events through webhooks. Stay updated on payment status, invoice creation, and more.',
+				],
+			},
+		],
+	},
 ];
 
 export const installedIntegrations = integrations.filter((integration) => integration.type === 'installed');

@@ -58,6 +58,11 @@ export interface CreateConnectionPayload {
 				realm_id?: string;
 				environment?: 'sandbox' | 'production';
 				income_account_id?: string;
+		  }
+		| {
+				provider_type: CONNECTION_PROVIDER_TYPE.NOMOD;
+				api_key?: string;
+				webhook_secret?: string;
 		  };
 	sync_config?: {
 		plan?: {
