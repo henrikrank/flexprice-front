@@ -15,6 +15,7 @@ export enum CONNECTION_PROVIDER_TYPE {
 	S3 = 's3',
 	HUBSPOT = 'hubspot',
 	QUICKBOOKS = 'quickbooks',
+	NOMOD = 'nomod',
 	// Add more providers as needed
 }
 
