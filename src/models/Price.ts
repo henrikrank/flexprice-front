@@ -37,6 +37,7 @@ export interface Price extends BaseModel {
 	readonly price_unit_config?: PriceUnitConfig;
 	readonly parent_price_id?: string;
 	readonly group_id?: string;
+	readonly min_quantity?: number;
 }
 
 export interface Tier {

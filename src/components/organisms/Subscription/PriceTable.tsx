@@ -136,17 +136,20 @@ const PriceTable: FC<Props> = ({
 			),
 			quantity: (() => {
 				if (price.type === PRICE_TYPE.FIXED) {
-					// Get current quantity from override or default to 1
-					const currentQuantity = overriddenPrices[price.id]?.quantity || 1;
+					// Calculate minimum quantity from price or default to 1
+					const minQuantity = price.min_quantity || 1;
+					// Get current quantity from override or default to min_quantity
+					const currentQuantity = overriddenPrices[price.id]?.quantity || minQuantity;
 
 					return (
 						<div className='w-20' data-interactive='true'>
 							<DecimalUsageInput
 								value={currentQuantity.toString()}
 								onChange={(value) => {
-									const quantity = parseInt(value) || 1;
-									if (quantity === 1) {
-										// If quantity is back to default (1), remove the override if it only contains quantity
+									const quantity = parseInt(value) || minQuantity;
+
+									if (quantity === minQuantity) {
+										// If quantity is back to default (min_quantity), remove the override if it only contains quantity
 										const currentOverride = overriddenPrices[price.id];
 										if (
 											currentOverride &&
@@ -171,10 +174,9 @@ const PriceTable: FC<Props> = ({
 										onPriceOverride?.(price.id, { quantity });
 									}
 								}}
-								placeholder='1'
+								placeholder={minQuantity.toString()}
 								disabled={disabled}
 								precision={0}
-								min={1}
 							/>
 						</div>
 					);

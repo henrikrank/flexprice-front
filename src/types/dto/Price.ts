@@ -61,6 +61,7 @@ export interface CreatePriceRequest {
 	start_date?: string; // ISO date string
 	end_date?: string; // ISO date string
 	group_id?: string;
+	min_quantity?: number;
 }
 
 export interface GetPriceResponse extends Price {
