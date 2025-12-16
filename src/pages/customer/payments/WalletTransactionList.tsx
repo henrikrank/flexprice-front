@@ -143,7 +143,6 @@ const WalletTransactionList = () => {
 
 	if (isError) {
 		toast.error('Error fetching wallet transactions');
-		return null;
 	}
 
 	if (isLoading || isUsersLoading) {
