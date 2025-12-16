@@ -163,23 +163,18 @@ const WalletTransactionList = () => {
 
 	return (
 		<div>
-			<div>
-				<QueryBuilder
-					filterOptions={filterOptions}
-					filters={filters}
-					onFilterChange={setFilters}
-					sortOptions={sortingOptions}
-					onSortChange={setSorts}
-					selectedSorts={sorts}
-				/>
-				<WalletTransactionsTable data={transactionsData?.items || []} users={users?.items || []} />
-				<Spacer className='!h-4' />
-				<ShortPagination
-					prefix={PAGINATION_PREFIX.WALLET_TRANSACTIONS}
-					unit='Transactions'
-					totalItems={transactionsData?.pagination.total ?? 0}
-				/>
-			</div>
+			<QueryBuilder
+				filterOptions={filterOptions}
+				filters={filters}
+				onFilterChange={setFilters}
+				sortOptions={sortingOptions}
+				onSortChange={setSorts}
+				selectedSorts={sorts}
+			/>
+			<Spacer className='!h-4' />
+			<WalletTransactionsTable data={transactionsData?.items || []} users={users?.items || []} />
+			<Spacer className='!h-4' />
+			<ShortPagination unit='Transactions' totalItems={transactionsData?.pagination.total ?? 0} />
 		</div>
 	);
 };

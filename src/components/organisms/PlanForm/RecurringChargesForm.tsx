@@ -56,12 +56,14 @@ const RecurringChargesForm = ({
 			// Merge price changes, preserving user edits where appropriate
 			const updated = { ...prev, ...price };
 
-			// Apply display_name: prefer price prop value, fallback to entityName, keep existing if none
-			if (price.display_name !== undefined && price.display_name !== null && price.display_name !== '') {
+			// Apply display_name: always prefer price prop value if it exists (including empty string for explicit clearing)
+			// Only fallback to entityName if price.display_name is undefined/null and we don't have a previous value
+			if (price.display_name !== undefined && price.display_name !== null) {
 				updated.display_name = price.display_name;
 			} else if (entityName && (!prev.display_name || prev.display_name === '')) {
 				updated.display_name = entityName;
 			}
+			// If price.display_name is undefined/null and we have a prev value, keep it (preserves user edits)
 
 			// Apply min_quantity: for fixed charges, prefer price prop value, default to 1 if not set
 			if (price.type === PRICE_TYPE.FIXED) {

@@ -297,7 +297,43 @@ const CreateCustomerSubscriptionPage: React.FC = () => {
 		},
 	});
 
-	const handleSubscriptionSubmit = (isDraftParam: boolean = false) => {
+	/**
+	 * Validates subscription form data before submission
+	 */
+	const validateSubscriptionData = (): string | null => {
+		const { billingPeriod, selectedPlan, startDate, phases } = subscriptionState;
+
+		if (!billingPeriod || !selectedPlan) {
+			return 'Please select a plan and billing period.';
+		}
+
+		if (!startDate) {
+			return 'Please select a start date for the subscription.';
+		}
+
+		for (let i = 0; i < phases.length; i++) {
+			if (!phases[i].start_date) {
+				return `Please select a start date for phase ${i + 1}`;
+			}
+		}
+
+		if (subscriptionState.isPhaseEditing) {
+			return 'Please save your changes before submitting.';
+		}
+
+		return null;
+	};
+
+	/**
+	 * Sanitizes and prepares subscription data for API submission.
+	 *
+	 * IMPORTANT: During sanitization, quantity is automatically excluded from line item
+	 * overrides for USAGE type prices. This is because usage-based prices calculate quantity
+	 * dynamically from meter usage, and including a static quantity override would conflict
+	 * with the usage-based billing model. The getLineItemOverrides helper function handles
+	 * this exclusion automatically.
+	 */
+	const sanitizeSubscriptionData = () => {
 		const {
 			billingPeriod,
 			selectedPlan,
@@ -318,28 +354,6 @@ const CreateCustomerSubscriptionPage: React.FC = () => {
 			invoiceBillingConfig,
 		} = subscriptionState;
 
-		if (!billingPeriod || !selectedPlan) {
-			toast.error('Please select a plan and billing period.');
-			return;
-		}
-
-		if (!startDate) {
-			toast.error('Please select a start date for the subscription.');
-			return;
-		}
-
-		for (let i = 0; i < phases.length; i++) {
-			if (!phases[i].start_date) {
-				toast.error(`Please select a start date for phase ${i + 1}`);
-				return;
-			}
-		}
-
-		if (subscriptionState.isPhaseEditing) {
-			toast.error('Please save your changes before submitting.');
-			return;
-		}
-
 		let finalStartDate: string;
 		let finalEndDate: string | undefined;
 		let finalCoupons: string[] | undefined;
@@ -348,6 +362,7 @@ const CreateCustomerSubscriptionPage: React.FC = () => {
 		let sanitizedPhases: SubscriptionPhaseCreateRequest[] | undefined;
 
 		if (phases.length > 0) {
+			// Multi-phase subscription: extract data from phases
 			const boundaries = extractSubscriptionBoundaries(phases);
 			finalStartDate = boundaries.startDate;
 			finalEndDate = boundaries.endDate;
@@ -357,6 +372,7 @@ const CreateCustomerSubscriptionPage: React.FC = () => {
 			finalLineItemCoupons = firstPhaseData.line_item_coupons;
 			finalOverrideLineItems = firstPhaseData.override_line_items;
 
+			// Sanitize phases (quantity exclusion for USAGE prices handled in PhaseList conversion)
 			sanitizedPhases = phases.map((phase) => ({
 				start_date: phase.start_date,
 				end_date: phase.end_date || undefined,
@@ -366,9 +382,11 @@ const CreateCustomerSubscriptionPage: React.FC = () => {
 				metadata: phase.metadata || undefined,
 			}));
 		} else {
+			// Single-phase subscription: use subscription-level data
 			finalStartDate = new Date(startDate).toISOString();
 			finalEndDate = endDate ? new Date(endDate).toISOString() : undefined;
 
+			// Get current prices for the selected billing period and currency
 			const currentPrices =
 				prices?.prices?.filter(
 					(price) =>
@@ -376,6 +394,9 @@ const CreateCustomerSubscriptionPage: React.FC = () => {
 						price.currency.toLowerCase() === currency.toLowerCase() &&
 						isPriceActive(price),
 				) || [];
+
+			// Convert price overrides to line item overrides
+			// Note: getLineItemOverrides automatically excludes quantity for USAGE type prices
 			finalOverrideLineItems = getLineItemOverrides(currentPrices, priceOverrides);
 
 			finalCoupons = linkedCoupon ? [linkedCoupon.id] : undefined;
@@ -387,30 +408,65 @@ const CreateCustomerSubscriptionPage: React.FC = () => {
 			sanitizedPhases = undefined;
 		}
 
+		return {
+			billingPeriod,
+			selectedPlan,
+			currency,
+			billingCycle,
+			finalStartDate,
+			finalEndDate,
+			finalCoupons,
+			finalLineItemCoupons,
+			finalOverrideLineItems,
+			sanitizedPhases,
+			tax_rate_overrides,
+			overageFactor,
+			commitmentAmount,
+			entitlementOverrides,
+			creditGrants,
+			invoiceBillingConfig,
+		};
+	};
+
+	const handleSubscriptionSubmit = (isDraftParam: boolean = false) => {
+		// Validate form data
+		const validationError = validateSubscriptionData();
+		if (validationError) {
+			toast.error(validationError);
+			return;
+		}
+
+		// Sanitize subscription data
+		const sanitized = sanitizeSubscriptionData();
+
+		// Build API payload
 		const payload: CreateSubscriptionRequest = {
 			billing_cadence: BILLING_CADENCE.RECURRING,
-			billing_period: billingPeriod.toUpperCase() as BILLING_PERIOD,
+			billing_period: sanitized.billingPeriod.toUpperCase() as BILLING_PERIOD,
 			billing_period_count: 1,
-			billing_cycle: billingCycle,
-			currency: currency.toLowerCase(),
+			billing_cycle: sanitized.billingCycle,
+			currency: sanitized.currency.toLowerCase(),
 			customer_id: customerId!,
-			plan_id: selectedPlan,
-			start_date: finalStartDate,
-			end_date: finalEndDate,
-			commitment_amount: commitmentAmount && commitmentAmount.trim() !== '' ? parseFloat(commitmentAmount) : undefined,
-			overage_factor: overageFactor && overageFactor.trim() !== '' ? parseFloat(overageFactor) : undefined,
+			plan_id: sanitized.selectedPlan,
+			start_date: sanitized.finalStartDate,
+			end_date: sanitized.finalEndDate,
+			commitment_amount:
+				sanitized.commitmentAmount && sanitized.commitmentAmount.trim() !== '' ? parseFloat(sanitized.commitmentAmount) : undefined,
+			overage_factor: sanitized.overageFactor && sanitized.overageFactor.trim() !== '' ? parseFloat(sanitized.overageFactor) : undefined,
 			lookup_key: '',
-			phases: sanitizedPhases,
-			override_line_items: finalOverrideLineItems && finalOverrideLineItems.length > 0 ? finalOverrideLineItems : undefined,
+			phases: sanitized.sanitizedPhases,
+			override_line_items:
+				sanitized.finalOverrideLineItems && sanitized.finalOverrideLineItems.length > 0 ? sanitized.finalOverrideLineItems : undefined,
 			addons: subscriptionState.addons && subscriptionState.addons.length > 0 ? subscriptionState.addons : undefined,
-			coupons: finalCoupons,
-			line_item_coupons: finalLineItemCoupons,
-			tax_rate_overrides: tax_rate_overrides.length > 0 ? tax_rate_overrides : undefined,
-			override_entitlements: Object.keys(entitlementOverrides).length > 0 ? Object.values(entitlementOverrides) : undefined,
-			credit_grants: creditGrants.length > 0 ? creditGrants.map(internalToCreateRequest) : undefined,
+			coupons: sanitized.finalCoupons,
+			line_item_coupons: sanitized.finalLineItemCoupons,
+			tax_rate_overrides: sanitized.tax_rate_overrides.length > 0 ? sanitized.tax_rate_overrides : undefined,
+			override_entitlements:
+				Object.keys(sanitized.entitlementOverrides).length > 0 ? Object.values(sanitized.entitlementOverrides) : undefined,
+			credit_grants: sanitized.creditGrants.length > 0 ? sanitized.creditGrants.map(internalToCreateRequest) : undefined,
 			enable_true_up: subscriptionState.enable_true_up,
 			subscription_status: isDraftParam ? SUBSCRIPTION_STATUS.DRAFT : undefined,
-			invoice_billing: invoiceBillingConfig,
+			invoice_billing: sanitized.invoiceBillingConfig,
 		};
 
 		setIsDraft(isDraftParam);

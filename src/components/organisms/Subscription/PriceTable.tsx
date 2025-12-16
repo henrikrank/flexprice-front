@@ -131,7 +131,7 @@ const PriceTable: FC<Props> = ({
 			priceId: price.id,
 			charge: (
 				<div>
-					<div>{price.meter?.name ? `${price.meter.name}` : price.description || 'Charge'}</div>
+					<div>{price.display_name ? `${price.display_name}` : price.meter?.name || 'Charge'}</div>
 				</div>
 			),
 			quantity: (() => {
