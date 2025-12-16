@@ -173,7 +173,11 @@ const WalletTransactionList = () => {
 			<Spacer className='!h-4' />
 			<WalletTransactionsTable data={transactionsData?.items || []} users={users?.items || []} />
 			<Spacer className='!h-4' />
-			<ShortPagination unit='Transactions' totalItems={transactionsData?.pagination.total ?? 0} />
+			<ShortPagination
+				unit='Transactions'
+				totalItems={transactionsData?.pagination.total ?? 0}
+				prefix={PAGINATION_PREFIX.WALLET_TRANSACTIONS}
+			/>
 		</div>
 	);
 };
