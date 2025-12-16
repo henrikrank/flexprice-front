@@ -366,22 +366,24 @@ export interface AddAddonRequest {
 }
 
 export interface RemoveAddonRequest {
-	subscription_id: string;
-	addon_id: string;
+	addon_association_id: string;
 	reason?: string;
 }
 
 export interface AddonAssociationResponse {
 	id: string;
-	subscription_id: string;
+	environment_id: string;
+	entity_id: string;
+	entity_type: string;
 	addon_id: string;
-	quantity: number;
 	start_date: string;
-	end_date?: string;
+	addon_status: string;
+	tenant_id: string;
 	status: string;
-	metadata: Metadata;
 	created_at: string;
 	updated_at: string;
+	created_by: string;
+	updated_by: string;
 }
 
 // =============================================================================

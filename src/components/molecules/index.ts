@@ -44,6 +44,7 @@ export { default as SubscriptionPauseWarning } from './CustomerSubscription/Subs
 export { default as SubscriptionCoupon } from './SubscriptionCoupon/SubscriptionCoupon';
 export { SubscriptionDiscountTable } from './SubscriptionDiscountTable';
 export { SubscriptionEntitlementsSection } from './SubscriptionEntitlementsSection';
+export { default as SubscriptionAddonsSection } from './SubscriptionAddonsSection/SubscriptionAddonsSection';
 
 // Invoice & Billing
 export {

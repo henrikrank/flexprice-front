@@ -139,10 +139,17 @@ class SubscriptionApi {
 	}
 
 	/**
+	 * Get active addons for a subscription
+	 */
+	public static async getActiveAddons(subscriptionId: string): Promise<AddonAssociationResponse[]> {
+		return await AxiosClient.get<AddonAssociationResponse[]>(`${this.baseUrl}/${subscriptionId}/addons/active`);
+	}
+
+	/**
 	 * Remove addon from subscription
 	 */
 	public static async removeAddonFromSubscription(payload: RemoveAddonRequest): Promise<{ message: string }> {
-		return await AxiosClient.delete(`${this.baseUrl}/addon`, { data: payload });
+		return await AxiosClient.delete(`${this.baseUrl}/addon`, payload);
 	}
 
 	// =============================================================================
