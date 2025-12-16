@@ -34,7 +34,7 @@ const CommitmentConfigDialog: FC<CommitmentConfigDialogProps> = ({ isOpen, onOpe
 	const [commitmentQuantity, setCommitmentQuantity] = useState<string>('');
 	const [overageFactor, setOverageFactor] = useState<string>('1.0');
 	const [enableTrueUp, setEnableTrueUp] = useState<boolean>(false);
-	const [isWindowCommitment, setIsWindowCommitment] = useState<boolean>(false);
+	const [isWindowCommitment, setIsWindowCommitment] = useState<boolean>(() => supportsWindowCommitment(price));
 	const [validationError, setValidationError] = useState<string | null>(null);
 
 	const currencySymbol = getCurrencySymbol(price.currency);
@@ -57,10 +57,10 @@ const CommitmentConfigDialog: FC<CommitmentConfigDialogProps> = ({ isOpen, onOpe
 			setCommitmentQuantity('');
 			setOverageFactor('1.0');
 			setEnableTrueUp(false);
-			setIsWindowCommitment(false);
+			setIsWindowCommitment(showWindowCommitment);
 		}
 		setValidationError(null);
-	}, [currentConfig, isOpen]);
+	}, [currentConfig, isOpen, showWindowCommitment]);
 
 	const handleSave = () => {
 		const config: Partial<LineItemCommitmentConfig> = {
