@@ -8,7 +8,7 @@ import { Pencil, Trash2, Calendar } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { Coupon } from '@/models/Coupon';
 import { ExtendedPriceOverride } from '@/utils/common/price_override_helpers';
-import { BILLING_MODEL, TIER_MODE } from '@/models/Price';
+import { BILLING_MODEL, TIER_MODE, PRICE_TYPE } from '@/models/Price';
 import { convertSubscriptionToPhaseData } from '@/utils/subscription/phaseConversion';
 import { formatDateShort } from '@/utils/common/helper_functions';
 
@@ -169,6 +169,10 @@ const PhaseList: React.FC<PhaseListProps> = ({
 			override_line_items:
 				Object.keys(phaseFormData.priceOverrides).length > 0
 					? Object.entries(phaseFormData.priceOverrides).map(([priceId, override]) => {
+							// Find the price to check its type
+							const price = prices.find((p) => p.id === priceId);
+							const isUsagePrice = price?.type === PRICE_TYPE.USAGE;
+
 							// Convert SLAB_TIERED to TIERED + SLAB for backend
 							let billingModel = override.billing_model;
 							let tierMode = override.tier_mode;
@@ -183,7 +187,10 @@ const PhaseList: React.FC<PhaseListProps> = ({
 							return {
 								price_id: priceId,
 								...(override.amount !== undefined && { amount: parseFloat(override.amount) }),
-								...(override.quantity !== undefined && { quantity: override.quantity }),
+								// IMPORTANT: Exclude quantity for USAGE type prices - quantity is determined by meter usage
+								// For usage-based prices, quantity is calculated dynamically from meter usage data,
+								// so including a static quantity override would conflict with the usage-based billing model.
+								...(override.quantity !== undefined && !isUsagePrice && { quantity: override.quantity }),
 								...(billingModel !== undefined && { billing_model: billingModel as BILLING_MODEL }),
 								...(tierMode !== undefined && { tier_mode: tierMode }),
 								...(override.tiers !== undefined && { tiers: override.tiers }),
