@@ -136,7 +136,7 @@ const WalletTransactionsTable: FC<Props> = ({ data, users }) => {
 			},
 		},
 	];
-	return <FlexpriceTable columns={columnData} data={data} />;
+	return <FlexpriceTable showEmptyRow columns={columnData} data={data} />;
 };
 
 export default WalletTransactionsTable;
