@@ -1,39 +1,46 @@
-import { useSearchParams } from 'react-router';
 import { Button } from '@/components/ui/button';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import usePagination, { PAGINATION_PREFIX } from '@/hooks/usePagination';
 
 interface ShortPaginationProps {
 	totalItems: number; // Changed to required
 	pageSize?: number;
 	showPages?: boolean;
 	unit?: string;
+	prefix?: PAGINATION_PREFIX;
 }
 
 const ShortPagination = ({
 	totalItems,
-	pageSize = 10,
+	pageSize,
 	unit = 'items',
 	showPages = false,
+	prefix,
 	// Keep these for backward compatibility
 }: ShortPaginationProps) => {
-	const [searchParams, setSearchParams] = useSearchParams();
-	const currentPage = parseInt(searchParams.get('page') || '1', 10);
+	const { page, setPage, limit } = usePagination({
+		initialLimit: pageSize,
+		prefix,
+	});
 
-	// Calculate actual total pages from totalItems and pageSize
-	const calculatedTotalPages = Math.ceil(totalItems / pageSize);
+	// Use limit from hook if pageSize not provided, otherwise use pageSize
+	const effectivePageSize = pageSize || limit;
+
+	// Calculate actual total pages from totalItems and effectivePageSize
+	const calculatedTotalPages = Math.ceil(totalItems / effectivePageSize);
 	// Use calculated pages, fall back to provided total pages for backward compatibility
 	const totalPages = calculatedTotalPages || 1;
 
-	const handlePageChange = (page: number) => {
-		if (page < 1 || page > totalPages) return;
-		setSearchParams({ page: page.toString() });
+	const handlePageChange = (newPage: number) => {
+		if (newPage < 1 || newPage > totalPages) return;
+		setPage(newPage);
 	};
 
 	if (totalPages <= 1) return null;
 
-	const startItem = (currentPage - 1) * pageSize + 1;
-	const endItem = Math.min(currentPage * pageSize, totalItems);
+	const startItem = (page - 1) * effectivePageSize + 1;
+	const endItem = Math.min(page * effectivePageSize, totalItems);
 
 	return (
 		<div className='flex items-center justify-between py-4'>
@@ -45,22 +52,22 @@ const ShortPagination = ({
 				<Button
 					variant='outline'
 					size='icon'
-					onClick={() => handlePageChange(currentPage - 1)}
-					disabled={currentPage === 1}
-					className={cn('size-8', currentPage === 1 && 'text-gray-300 cursor-not-allowed')}>
+					onClick={() => handlePageChange(page - 1)}
+					disabled={page === 1}
+					className={cn('size-8', page === 1 && 'text-gray-300 cursor-not-allowed')}>
 					<ChevronLeft className='h-4 w-4' />
 				</Button>
 				{showPages && (
 					<div className='text-sm font-light text-gray-500'>
-						Page {currentPage} of {totalPages}
+						Page {page} of {totalPages}
 					</div>
 				)}
 				<Button
 					variant='outline'
 					size='icon'
-					onClick={() => handlePageChange(currentPage + 1)}
-					disabled={currentPage === totalPages}
-					className={cn('size-8', currentPage === totalPages && 'text-gray-300 cursor-not-allowed')}>
+					onClick={() => handlePageChange(page + 1)}
+					disabled={page === totalPages}
+					className={cn('size-8', page === totalPages && 'text-gray-300 cursor-not-allowed')}>
 					<ChevronRight className='h-4 w-4' />
 				</Button>
 			</div>

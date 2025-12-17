@@ -184,7 +184,7 @@ const FilterPopover: React.FC<Props> = ({ fields, value = [], onChange, classNam
 						value={filter.valueArray || []}
 						onChange={(value) => handleFilterUpdate(filter.id, { valueArray: value })}
 						placeholder='Select options'
-						className={cn(inputProps.className, 'h-9 text-sm')}
+						className={cn(inputProps.className, 'h-9 text-sm overflow-hidden')}
 					/>
 				),
 			};

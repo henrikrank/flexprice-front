@@ -1,5 +1,6 @@
 import { Price } from '@/models/Price';
-import { BILLING_MODEL, TIER_MODE, CreatePriceTier, TransformQuantity } from '@/models/Price';
+import { BILLING_MODEL, TIER_MODE, CreatePriceTier, TransformQuantity, PRICE_TYPE } from '@/models/Price';
+import { LineItemCommitmentConfig } from '@/types/dto/LineItemCommitmentConfig';
 
 /**
  * Interface for line item overrides that will be sent to the backend
@@ -38,6 +39,7 @@ export interface ExtendedPriceOverride {
 	tiers?: CreatePriceTier[];
 	transform_quantity?: TransformQuantity;
 	effective_from?: string; // ISO date string for scheduling price changes
+	commitment?: LineItemCommitmentConfig; // Commitment configuration for this price
 }
 
 /**
@@ -57,6 +59,10 @@ export const getCurrentPriceAmount = (price: Price, overriddenPrices: Record<str
 
 /**
  * Get all overridden prices as line item overrides for backend submission
+ *
+ * IMPORTANT: For USAGE type prices, quantity should never be sent in line item overrides.
+ * Usage-based prices calculate quantity dynamically from meter usage, so including a static
+ * quantity override would conflict with the usage-based billing model.
  */
 export const getLineItemOverrides = (
 	prices: Price[],
@@ -76,6 +82,9 @@ export const getLineItemOverrides = (
 			);
 		})
 		.map(([priceId, override]) => {
+			const price = prices.find((p) => p.id === priceId);
+			const isUsagePrice = price?.type === PRICE_TYPE.USAGE;
+
 			// Handle SLAB_TIERED and Volume Tiered conversion
 			let billingModel = override.billing_model;
 			let tierMode = override.tier_mode;
@@ -91,7 +100,8 @@ export const getLineItemOverrides = (
 			return {
 				price_id: priceId,
 				...(override.amount !== undefined && { amount: parseFloat(override.amount) }),
-				...(override.quantity !== undefined && { quantity: override.quantity }),
+				// Exclude quantity for USAGE type prices - quantity is determined by meter usage
+				...(override.quantity !== undefined && !isUsagePrice && { quantity: override.quantity }),
 				...(billingModel !== undefined && { billing_model: billingModel as BILLING_MODEL }),
 				...(tierMode !== undefined && { tier_mode: tierMode }),
 				...(override.tiers !== undefined && { tiers: override.tiers }),

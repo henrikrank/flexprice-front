@@ -9,6 +9,10 @@ import {
 	UpdateWalletRequest,
 	WalletResponse,
 	GetCustomerWalletsPayload,
+	GetWalletTransactionsByFilterPayload,
+	ListWalletsPayload,
+	ListWalletsByFilterPayload,
+	ListWalletsResponse,
 } from '@/types/dto';
 import { generateQueryParams } from '@/utils/common/api_helper';
 
@@ -45,6 +49,25 @@ class WalletApi {
 
 	static async updateWallet(walletId: string, data: UpdateWalletRequest): Promise<WalletResponse> {
 		return await AxiosClient.put<WalletResponse>(`${this.baseUrl}/${walletId}`, { ...data });
+	}
+
+	// Search all wallet transactions across all wallets
+	static async getAllWalletTransactionsByFilter(payload: GetWalletTransactionsByFilterPayload): Promise<WalletTransactionResponse> {
+		return await AxiosClient.post<WalletTransactionResponse, GetWalletTransactionsByFilterPayload>(
+			`${this.baseUrl}/transactions/search`,
+			payload,
+		);
+	}
+
+	// List wallets with query parameters
+	static async listWallets(payload: ListWalletsPayload = {}): Promise<ListWalletsResponse> {
+		const url = generateQueryParams(this.baseUrl, payload);
+		return await AxiosClient.get<ListWalletsResponse>(url);
+	}
+
+	// List wallets by filter with JSON body
+	static async listWalletsByFilter(payload: ListWalletsByFilterPayload): Promise<ListWalletsResponse> {
+		return await AxiosClient.post<ListWalletsResponse, ListWalletsByFilterPayload>(`${this.baseUrl}/search`, payload);
 	}
 }
 

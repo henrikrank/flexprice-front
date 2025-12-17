@@ -19,6 +19,7 @@ import { Gauge, Repeat } from 'lucide-react';
 import { BILLING_CADENCE, INVOICE_CADENCE } from '@/models/Invoice';
 import { BILLING_MODEL, PRICE_TYPE, PRICE_ENTITY_TYPE, PRICE_UNIT_TYPE } from '@/models/Price';
 import { logger } from '@/utils/common/Logger';
+import { refetchQueries } from '@/core/services/tanstack/ReactQueryProvider';
 
 // ===== TYPES & CONSTANTS =====
 
@@ -202,17 +203,10 @@ const EntityChargesPage: React.FC<EntityChargesPageProps> = ({ entityType, entit
 		mutationFn: async (prices: CreateBulkPriceRequest) => {
 			return await PriceApi.CreateBulkPrice(prices);
 		},
-		onError: (error: ServerError) => {
-			toast.error(error?.error?.message || 'Error creating prices');
-			setShowRolloutModal(false);
-		},
 	});
 
 	const { mutateAsync: syncPlanCharges, isPending: isSyncing } = useMutation({
 		mutationFn: () => PlanApi.synchronizePlanPricesWithSubscription(entityId),
-		onError: (error: ServerError) => {
-			toast.error(error?.error?.message || 'Error synchronizing charges with subscriptions');
-		},
 	});
 
 	const isPending = isCreatingPrices || isSyncing;
@@ -293,6 +287,7 @@ const EntityChargesPage: React.FC<EntityChargesPageProps> = ({ entityType, entit
 				invoice_cadence: price.invoice_cadence || INVOICE_CADENCE.ARREAR,
 				trial_period: price.trial_period,
 				description: price.description,
+				display_name: price.display_name,
 				metadata: price.metadata || undefined,
 				tier_mode: price.tier_mode,
 				tiers:
@@ -304,6 +299,7 @@ const EntityChargesPage: React.FC<EntityChargesPageProps> = ({ entityType, entit
 				transform_quantity: price.transform_quantity || undefined,
 				price_unit_config: price.price_unit_config,
 				group_id: price.group_id,
+				min_quantity: price.min_quantity,
 				start_date: price.start_date ? new Date(price.start_date).toISOString() : undefined,
 			}));
 
@@ -314,20 +310,32 @@ const EntityChargesPage: React.FC<EntityChargesPageProps> = ({ entityType, entit
 			setShowRolloutModal(false);
 
 			try {
-				// Create prices using bulk API
+				// Create prices using bulk API - wait for success response
 				await createBulkPrices(bulkPriceRequest);
 				toast.success(`Prices created successfully for ${entityType.toLowerCase()}`);
+				refetchQueries(['fetchPlan', entityId]);
+				if (entityType === ENTITY_TYPE.ADDON) {
+					refetchQueries(['fetchAddon', entityId]);
+				} else if (entityType === ENTITY_TYPE.COST_SHEET) {
+					refetchQueries(['fetchCostSheet', entityId]);
+				}
 
 				// If user selected to sync with existing subscriptions (only for plans)
 				if (entityType === ENTITY_TYPE.PLAN && option === RolloutOption.EXISTING_ALSO) {
+					// Wait for sync to complete successfully
 					await syncPlanCharges();
+					toast.success('Charges synchronized with existing subscriptions');
 				}
 
-				// Navigate to entity details page
+				// Only navigate after all operations succeed
 				navigate(`${routeName}/${entityId}`);
 				onSuccess?.();
-			} catch (error) {
+			} catch (error: any) {
 				logger.error('Error in rollout process:', error);
+				const errorMessage = error?.error?.message || error?.message || 'An error occurred while processing charges';
+				toast.error(errorMessage);
+				// Keep modal open on error so user can retry
+				setShowRolloutModal(true);
 			}
 		},
 		[
@@ -448,6 +456,7 @@ const EntityChargesPage: React.FC<EntityChargesPageProps> = ({ entityType, entit
 								price={charge}
 								entityType={priceEntityType}
 								entityId={entityId}
+								entityName={entityData?.name || entityName}
 								onAdd={(charge) => handleRecurringChargeAdd(index, charge)}
 								onUpdate={(price) => handleRecurringChargeUpdate(index, price)}
 								onDeleteClicked={() => handleRecurringChargeDelete(index)}

@@ -14,7 +14,7 @@ interface TaskRunsTableProps {
 const TaskRunsTable: FC<TaskRunsTableProps> = ({ scheduledTaskId, taskType = 'EXPORT' }) => {
 	const [statusFilter, setStatusFilter] = useState<string>('all');
 	const [dateRangeFilter, setDateRangeFilter] = useState<string>('all');
-	const { limit, offset, page, reset } = usePagination(10);
+	const { limit, offset, page, reset } = usePagination();
 
 	// Reset pagination when filters change
 	useEffect(() => {

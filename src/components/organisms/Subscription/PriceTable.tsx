@@ -1,9 +1,10 @@
 import { FC, useState, useMemo } from 'react';
 import { ColumnData, FlexpriceTable, LineItemCoupon } from '@/components/molecules';
 import PriceOverrideDialog from '@/components/molecules/PriceOverrideDialog/PriceOverrideDialog';
+import CommitmentConfigDialog from '@/components/molecules/CommitmentConfigDialog';
 import { Price, PRICE_TYPE } from '@/models';
-import { ChevronDownIcon, ChevronUpIcon, Pencil, RotateCcw, Tag } from 'lucide-react';
-import { FormHeader } from '@/components/atoms';
+import { ChevronDownIcon, ChevronUpIcon, Pencil, RotateCcw, Tag, Target } from 'lucide-react';
+import { FormHeader, DecimalUsageInput } from '@/components/atoms';
 import { motion } from 'framer-motion';
 import { ChargeValueCell } from '@/components/molecules';
 import { capitalize } from 'es-toolkit';
@@ -11,6 +12,7 @@ import { Coupon } from '@/models';
 import { BsThreeDots } from 'react-icons/bs';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui';
 import { ExtendedPriceOverride } from '@/utils';
+import { LineItemCommitmentConfig } from '@/types/dto/LineItemCommitmentConfig';
 
 export interface Props {
 	data: Price[];
@@ -21,13 +23,14 @@ export interface Props {
 	overriddenPrices?: Record<string, ExtendedPriceOverride>;
 	lineItemCoupons?: Record<string, Coupon>;
 	onLineItemCouponsChange?: (priceId: string, coupon: Coupon | null) => void;
+	onCommitmentChange?: (priceId: string, config: LineItemCommitmentConfig | null) => void;
 	disabled?: boolean;
 	subscriptionLevelCoupon?: Coupon | null; // For tracking subscription level coupon
 }
 
 type ChargeTableData = {
 	charge: JSX.Element;
-	quantity: string;
+	quantity: string | JSX.Element;
 	price: JSX.Element;
 	invoice_cadence: string;
 	actions?: JSX.Element;
@@ -43,12 +46,15 @@ const PriceTable: FC<Props> = ({
 	overriddenPrices = {},
 	lineItemCoupons = {},
 	onLineItemCouponsChange,
+	onCommitmentChange,
 	disabled = false,
 	subscriptionLevelCoupon = null,
 }) => {
 	const [showAllRows, setShowAllRows] = useState(false);
 	const [selectedPrice, setSelectedPrice] = useState<Price | null>(null);
 	const [isDialogOpen, setIsDialogOpen] = useState(false);
+	const [selectedCommitmentPrice, setSelectedCommitmentPrice] = useState<Price | null>(null);
+	const [isCommitmentDialogOpen, setIsCommitmentDialogOpen] = useState(false);
 	const [couponModalState, setCouponModalState] = useState<{ isOpen: boolean; priceId: string | null }>({
 		isOpen: false,
 		priceId: null,
@@ -80,11 +86,17 @@ const PriceTable: FC<Props> = ({
 		setIsDialogOpen(true);
 	};
 
+	const handleConfigureCommitment = (price: Price) => {
+		setSelectedCommitmentPrice(price);
+		setIsCommitmentDialogOpen(true);
+	};
+
 	// Custom action component for price rows
 	const PriceActionMenu: FC<{ price: Price }> = ({ price }) => {
 		const [isDropdownOpen, setIsDropdownOpen] = useState(false);
 		// Now all billing models are overridable with the new comprehensive dialog
 		const isOverridden = overriddenPrices[price.id] !== undefined;
+		const priceHasCommitment = overriddenPrices[price.id]?.commitment !== undefined;
 
 		const handleClick = (e: React.MouseEvent) => {
 			e.preventDefault();
@@ -111,6 +123,10 @@ const PriceTable: FC<Props> = ({
 								Reset Override
 							</DropdownMenuItem>
 						)}
+						<DropdownMenuItem onClick={() => handleConfigureCommitment(price)}>
+							<Target className='mr-2 h-4 w-4' />
+							{priceHasCommitment ? 'Edit Commitment' : 'Configure Commitment'}
+						</DropdownMenuItem>
 						{!isOverridden && (
 							<DropdownMenuItem onClick={() => setCouponModalState({ isOpen: true, priceId: price.id })}>
 								<Tag className='mr-2 h-4 w-4' />
@@ -131,33 +147,56 @@ const PriceTable: FC<Props> = ({
 			priceId: price.id,
 			charge: (
 				<div>
-					<div>{price.meter?.name ? `${price.meter.name}` : price.description || 'Charge'}</div>
+					<div>{price.display_name ? `${price.display_name}` : price.meter?.name || 'Charge'}</div>
 				</div>
 			),
 			quantity: (() => {
-				if (price.type === PRICE_TYPE.FIXED) return '1';
+				if (price.type === PRICE_TYPE.FIXED) {
+					// Calculate minimum quantity from price or default to 1
+					const minQuantity = price.min_quantity || 1;
+					// Get current quantity from override or default to min_quantity
+					const currentQuantity = overriddenPrices[price.id]?.quantity || minQuantity;
 
-				// const override = overriddenPrices[price.id];
+					return (
+						<div className='w-20' data-interactive='true'>
+							<DecimalUsageInput
+								value={currentQuantity.toString()}
+								onChange={(value) => {
+									const quantity = parseInt(value) || minQuantity;
 
-				// // PRIORITY 1: Check for any package overrides first (including transform_quantity)
-				// if (override?.billing_model === BILLING_MODEL.PACKAGE) {
-				// 	if (override?.quantity) {
-				// 		return override.quantity.toString();
-				// 	}
-				// 	if (override?.transform_quantity) {
-				// 		return `${override.transform_quantity.divide_by} units`;
-				// 	}
-				// }
+									if (quantity === minQuantity) {
+										// If quantity is back to default (min_quantity), remove the override if it only contains quantity
+										const currentOverride = overriddenPrices[price.id];
+										if (
+											currentOverride &&
+											Object.keys(currentOverride).length === 2 &&
+											currentOverride.price_id &&
+											currentOverride.quantity
+										) {
+											onResetOverride?.(price.id);
+										} else if (currentOverride) {
+											// Remove only the quantity from the override
+											const { quantity: _, ...restOverride } = currentOverride;
+											onPriceOverride?.(price.id, restOverride);
+										}
+									} else {
+										// Clear any existing coupon when quantity is overridden
+										const appliedCoupon = lineItemCoupons[price.id];
+										if (appliedCoupon) {
+											onLineItemCouponsChange?.(price.id, null);
+										}
 
-				// // PRIORITY 2: Check for transform_quantity overrides even when billing model hasn't changed
-				// if (override?.transform_quantity && price.billing_model === BILLING_MODEL.PACKAGE) {
-				// 	return `${override.transform_quantity.divide_by} units`;
-				// }
-
-				// // PRIORITY 3: Show original package transform_quantity if no overrides
-				// if (price.billing_model === BILLING_MODEL.PACKAGE && price.transform_quantity) {
-				// 	return `${price.transform_quantity.divide_by} units`;
-				// }
+										// Create or update override with quantity
+										onPriceOverride?.(price.id, { quantity });
+									}
+								}}
+								placeholder={minQuantity.toString()}
+								disabled={disabled}
+								precision={0}
+							/>
+						</div>
+					);
+				}
 
 				return 'pay as you go';
 			})(),
@@ -247,6 +286,19 @@ const PriceTable: FC<Props> = ({
 					onPriceOverride={onPriceOverride || (() => {})}
 					onResetOverride={onResetOverride || (() => {})}
 					overriddenPrices={overriddenPrices}
+				/>
+			)}
+
+			{/* Commitment Configuration Dialog */}
+			{selectedCommitmentPrice && (
+				<CommitmentConfigDialog
+					isOpen={isCommitmentDialogOpen}
+					onOpenChange={setIsCommitmentDialogOpen}
+					price={selectedCommitmentPrice}
+					onSave={(priceId, config) => {
+						onCommitmentChange?.(priceId, config);
+					}}
+					currentConfig={overriddenPrices[selectedCommitmentPrice.id]?.commitment}
 				/>
 			)}
 

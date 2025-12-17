@@ -8,7 +8,7 @@ import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import RecurringChargePreview from './RecurringChargePreview';
 import { BILLING_CADENCE, INVOICE_CADENCE } from '@/models/Invoice';
-import { BILLING_PERIOD, PRICE_ENTITY_TYPE } from '@/models/Price';
+import { BILLING_PERIOD, PRICE_ENTITY_TYPE, PRICE_TYPE } from '@/models/Price';
 import SelectGroup from './SelectGroup';
 import { Group } from '@/models/Group';
 
@@ -20,6 +20,7 @@ interface Props {
 	onDeleteClicked: () => void;
 	entityType?: PRICE_ENTITY_TYPE;
 	entityId?: string;
+	entityName?: string;
 }
 
 const RecurringChargesForm = ({
@@ -30,19 +31,50 @@ const RecurringChargesForm = ({
 	onDeleteClicked,
 	entityType = PRICE_ENTITY_TYPE.PLAN,
 	entityId,
+	entityName,
 }: Props) => {
-	const [localPrice, setLocalPrice] = useState<Partial<InternalPrice>>(price);
-	const [startDate, setStartDate] = useState<Date | undefined>(price.start_date ? new Date(price.start_date) : undefined);
+	// Helper function to compute default values for price state
+	const computePriceDefaults = (priceProp: Partial<InternalPrice>, entityNameProp?: string) => {
+		return {
+			display_name: priceProp.display_name || entityNameProp || '',
+			min_quantity: priceProp.min_quantity ?? (priceProp.type === PRICE_TYPE.FIXED ? 1 : undefined),
+		};
+	};
+
+	const [localPrice, setLocalPrice] = useState<Partial<InternalPrice>>(() => ({
+		...price,
+		...computePriceDefaults(price, entityName),
+	}));
+	const [startDate, setStartDate] = useState<Date | undefined>(() => (price.start_date ? new Date(price.start_date) : undefined));
 	const [errors, setErrors] = useState<Partial<Record<keyof InternalPrice, string>>>({});
 
-	// Update startDate when price changes (e.g., when editing)
+	// Sync localPrice and startDate when price prop or entityName changes
 	useEffect(() => {
-		if (price.start_date) {
-			setStartDate(new Date(price.start_date));
-		} else {
-			setStartDate(undefined);
-		}
-	}, [price.start_date]);
+		setStartDate(price.start_date ? new Date(price.start_date) : undefined);
+
+		setLocalPrice((prev) => {
+			// Merge price changes, preserving user edits where appropriate
+			const updated = { ...prev, ...price };
+
+			// Apply display_name: always prefer price prop value if it exists (including empty string for explicit clearing)
+			// Only fallback to entityName if price.display_name is undefined/null and we don't have a previous value
+			if (price.display_name !== undefined && price.display_name !== null) {
+				updated.display_name = price.display_name;
+			} else if (entityName && (!prev.display_name || prev.display_name === '')) {
+				updated.display_name = entityName;
+			}
+			// If price.display_name is undefined/null and we have a prev value, keep it (preserves user edits)
+
+			// Apply min_quantity: for fixed charges, prefer price prop value, default to 1 if not set
+			if (price.type === PRICE_TYPE.FIXED) {
+				updated.min_quantity = price.min_quantity !== undefined ? price.min_quantity : (prev.min_quantity ?? 1);
+			} else if (price.min_quantity !== undefined) {
+				updated.min_quantity = price.min_quantity;
+			}
+
+			return updated;
+		});
+	}, [price, entityName]);
 
 	const validate = () => {
 		const newErrors: Partial<Record<keyof InternalPrice, string>> = {};
@@ -102,6 +134,15 @@ const RecurringChargesForm = ({
 
 	return (
 		<div className='card'>
+			<Input
+				onChange={(value) => setLocalPrice({ ...localPrice, display_name: value })}
+				value={localPrice.display_name || ''}
+				variant='text'
+				label='Display Name'
+				placeholder={entityName || 'Enter display name'}
+				error={errors.display_name}
+			/>
+			<Spacer height={'8px'} />
 			<Select
 				value={localPrice.currency}
 				options={currencyOptions}
@@ -177,6 +218,22 @@ const RecurringChargesForm = ({
 				error={errors.invoice_cadence}
 			/>
 			<Spacer height={'16px'} />
+			{localPrice.type === PRICE_TYPE.FIXED && (
+				<>
+					<Input
+						variant='number'
+						error={errors.min_quantity}
+						value={localPrice.min_quantity?.toString() || ''}
+						onChange={(value) => {
+							const numValue = value === '' ? undefined : Math.floor(Number(value));
+							setLocalPrice({ ...localPrice, min_quantity: numValue });
+						}}
+						label='Minimum Quantity'
+						placeholder='1'
+					/>
+					<Spacer height={'16px'} />
+				</>
+			)}
 			<div>
 				<FormHeader title='Trial Period' variant='form-component-title' />
 				<div className='flex items-center space-x-4 s'>

@@ -1,5 +1,6 @@
 import { cn } from '@/lib/utils';
-import { FC, useState } from 'react';
+import { FC, useMemo } from 'react';
+import useQueryParam from '@/hooks/useQueryParam';
 
 interface TabItem {
 	value: string;
@@ -14,7 +15,17 @@ interface FlatTabsProps {
 }
 
 const FlatTabs: FC<FlatTabsProps> = ({ tabs, defaultValue = tabs[0]?.value, className }) => {
-	const [activeTab, setActiveTab] = useState(defaultValue);
+	// Validate that the tab value exists in the tabs array
+	const validateTab = useMemo(() => {
+		const validValues = new Set(tabs.map((tab) => tab.value));
+		return (value: string) => validValues.has(value);
+	}, [tabs]);
+
+	const { value: activeTab, setValue: setActiveTab } = useQueryParam({
+		key: 'tab',
+		defaultValue: defaultValue || '',
+		validate: validateTab,
+	});
 
 	const onTabChange = (tab: string) => {
 		setActiveTab(tab);
