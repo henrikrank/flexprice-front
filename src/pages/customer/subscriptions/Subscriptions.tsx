@@ -22,6 +22,8 @@ import { BILLING_CADENCE } from '@/models/Invoice';
 import { BILLING_PERIOD } from '@/constants/constants';
 import { SUBSCRIPTION_STATUS } from '@/models/Subscription';
 import { toSentenceCase } from '@/utils/common/helper_functions';
+import { EXPAND } from '@/models/expand';
+import { generateExpandQueryParams } from '@/utils/common/api_helper';
 
 const sortingOptions: SortOption[] = [
 	{
@@ -131,6 +133,7 @@ const SubscriptionsPage = () => {
 			offset: offset,
 			filters: sanitizedFilters,
 			sort: sanitizedSorts,
+			expand: generateExpandQueryParams([EXPAND.CUSTOMER]),
 		});
 	};
 
