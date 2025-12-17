@@ -5,7 +5,6 @@ export interface GetCustomerResponse {
 	items: Customer[];
 	pagination: Pagination;
 }
-
 export interface GetCustomerSubscriptionsResponse {
 	items: SubscriptionResponse[];
 	pagination: Pagination;

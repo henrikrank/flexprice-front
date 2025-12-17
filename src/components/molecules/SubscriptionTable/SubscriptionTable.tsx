@@ -8,6 +8,7 @@ import { RouteNames } from '@/core/routes/Routes';
 import SubscriptionApi from '@/api/SubscriptionApi';
 import RedirectCell from '../Table/RedirectCell';
 import { Trash2 } from 'lucide-react';
+import { SubscriptionResponse } from '@/types/dto/Subscription';
 
 interface Props {
 	data: Subscription[];
@@ -41,7 +42,7 @@ const getSubscriptionStatusChip = (status: SUBSCRIPTION_STATUS) => {
 const SubscriptionTable: FC<Props> = ({ data, onEdit }) => {
 	const navigate = useNavigate();
 
-	const columns: ColumnData<Subscription>[] = [
+	const columns: ColumnData<SubscriptionResponse>[] = [
 		{
 			title: 'Customer',
 			render: (row) => (

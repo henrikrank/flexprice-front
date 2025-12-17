@@ -135,7 +135,7 @@ export interface SubscriptionPauseResponse {
 export type SubscriptionResumeResponse = SubscriptionPauseResponse;
 
 export interface ListSubscriptionsResponse extends QueryFilter, TimeRangeFilter {
-	items: Subscription[];
+	items: SubscriptionResponse[];
 	pagination: Pagination;
 	sort: TypedBackendSort[];
 	filters: TypedBackendFilter[];

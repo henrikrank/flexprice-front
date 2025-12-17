@@ -303,8 +303,8 @@ const PriceTable: FC<Props> = ({
 					isOpen={isDialogOpen}
 					onOpenChange={setIsDialogOpen}
 					price={selectedPrice}
-					onPriceOverride={onPriceOverride || (() => { })}
-					onResetOverride={onResetOverride || (() => { })}
+					onPriceOverride={onPriceOverride || (() => {})}
+					onResetOverride={onResetOverride || (() => {})}
 					overriddenPrices={overriddenPrices}
 				/>
 			)}
