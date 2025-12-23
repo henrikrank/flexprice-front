@@ -3,19 +3,34 @@ import { AddButton, Card, CardHeader, NoDataCard } from '@/components/atoms';
 import CustomerApi from '@/api/CustomerApi';
 import { useQuery } from '@tanstack/react-query';
 import { SubscriptionTable } from '@/components/organisms';
-import { Subscription } from '@/models';
+import { Subscription, SUBSCRIPTION_STATUS } from '@/models';
 import { Loader } from '@/components/atoms';
 import toast from 'react-hot-toast';
 import { RouteNames } from '@/core/routes/Routes';
 import CustomerUsageTable from '@/components/molecules/CustomerUsageTable';
 import { UpcomingCreditGrantApplicationsTable } from '@/components/molecules';
+import SubscriptionApi from '@/api/SubscriptionApi';
 
 type ContextType = {
 	isArchived: boolean;
 };
 
 const fetchAllSubscriptions = async (customerId: string) => {
-	const subs = await CustomerApi.getCustomerSubscriptions(customerId);
+	const subs = await SubscriptionApi.searchSubscriptions({
+		customer_id: customerId,
+		limit: 1000,
+		subscription_status: [
+			SUBSCRIPTION_STATUS.ACTIVE,
+			SUBSCRIPTION_STATUS.PAUSED,
+			SUBSCRIPTION_STATUS.CANCELLED,
+			SUBSCRIPTION_STATUS.INCOMPLETE,
+			SUBSCRIPTION_STATUS.INCOMPLETE_EXPIRED,
+			SUBSCRIPTION_STATUS.PAST_DUE,
+			SUBSCRIPTION_STATUS.TRIALING,
+			SUBSCRIPTION_STATUS.UNPAID,
+			SUBSCRIPTION_STATUS.DRAFT,
+		],
+	});
 	return subs.items;
 };
 

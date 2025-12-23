@@ -51,7 +51,7 @@ class SubscriptionApi {
 	/**
 	 * List subscriptions
 	 */
-	public static async listSubscriptions(payload: ListSubscriptionsPayload) {
+	public static async listSubscriptions(payload: ListSubscriptionsPayload): Promise<ListSubscriptionsResponse> {
 		const url = generateQueryParams(this.baseUrl, payload);
 		return await AxiosClient.get<ListSubscriptionsResponse>(url);
 	}
