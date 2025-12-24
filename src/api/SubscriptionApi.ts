@@ -19,6 +19,7 @@ import {
 	AddAddonRequest,
 	RemoveAddonRequest,
 	AddonAssociationResponse,
+	ListAddonAssociationsResponse,
 	CreateSubscriptionLineItemRequest,
 	UpdateSubscriptionLineItemRequest,
 	DeleteSubscriptionLineItemRequest,
@@ -139,10 +140,17 @@ class SubscriptionApi {
 	}
 
 	/**
+	 * Get active addons for a subscription
+	 */
+	public static async getActiveAddons(subscriptionId: string): Promise<ListAddonAssociationsResponse> {
+		return await AxiosClient.get<ListAddonAssociationsResponse>(`${this.baseUrl}/${subscriptionId}/addons/associations`);
+	}
+
+	/**
 	 * Remove addon from subscription
 	 */
 	public static async removeAddonFromSubscription(payload: RemoveAddonRequest): Promise<{ message: string }> {
-		return await AxiosClient.delete(`${this.baseUrl}/addon`, { data: payload });
+		return await AxiosClient.delete(`${this.baseUrl}/addon`, payload);
 	}
 
 	// =============================================================================
