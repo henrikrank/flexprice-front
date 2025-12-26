@@ -20,18 +20,10 @@ const getSubscriptionStatusChip = (status: SUBSCRIPTION_STATUS) => {
 			return <Chip variant='success' label='Active' />;
 		case SUBSCRIPTION_STATUS.CANCELLED:
 			return <Chip variant='failed' label='Cancelled' />;
-		case SUBSCRIPTION_STATUS.PAUSED:
-			return <Chip variant='warning' label='Paused' />;
 		case SUBSCRIPTION_STATUS.INCOMPLETE:
 			return <Chip variant='warning' label='Incomplete' />;
-		case SUBSCRIPTION_STATUS.INCOMPLETE_EXPIRED:
-			return <Chip variant='failed' label='Incomplete Expired' />;
-		case SUBSCRIPTION_STATUS.PAST_DUE:
-			return <Chip variant='failed' label='Past Due' />;
 		case SUBSCRIPTION_STATUS.TRIALING:
 			return <Chip variant='warning' label='Trialing' />;
-		case SUBSCRIPTION_STATUS.UNPAID:
-			return <Chip variant='failed' label='Unpaid' />;
 		case SUBSCRIPTION_STATUS.DRAFT:
 			return <Chip variant='warning' label='Draft' />;
 		default:

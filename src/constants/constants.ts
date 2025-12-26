@@ -73,7 +73,7 @@ export const currencyOptions = Array.from(
 	).values(),
 );
 export const billlingPeriodOptions = [
-	// { label: 'Daily', value: 'DAILY' },
+	{ label: 'Daily', value: BILLING_PERIOD.DAILY },
 	{ label: 'Weekly', value: BILLING_PERIOD.WEEKLY },
 	{ label: 'Monthly', value: BILLING_PERIOD.MONTHLY },
 	{ label: 'Yearly', value: BILLING_PERIOD.ANNUAL },
@@ -82,7 +82,7 @@ export const billlingPeriodOptions = [
 ];
 
 export const creditGrantPeriodOptions = [
-	// { label: 'Daily', value: 'DAILY' },
+	{ label: 'Daily', value: CREDIT_GRANT_PERIOD.DAILY },
 	{ label: 'Weekly', value: CREDIT_GRANT_PERIOD.WEEKLY },
 	{ label: 'Monthly', value: CREDIT_GRANT_PERIOD.MONTHLY },
 	{ label: 'Yearly', value: CREDIT_GRANT_PERIOD.ANNUAL },
@@ -123,13 +123,9 @@ export const invoiceCadenceOptions = [
 // Subscription-related options
 export const subscriptionStatusOptions = [
 	{ label: 'Active', value: SUBSCRIPTION_STATUS.ACTIVE },
-	{ label: 'Paused', value: SUBSCRIPTION_STATUS.PAUSED },
 	{ label: 'Cancelled', value: SUBSCRIPTION_STATUS.CANCELLED },
 	{ label: 'Incomplete', value: SUBSCRIPTION_STATUS.INCOMPLETE },
-	{ label: 'Incomplete Expired', value: SUBSCRIPTION_STATUS.INCOMPLETE_EXPIRED },
-	{ label: 'Past Due', value: SUBSCRIPTION_STATUS.PAST_DUE },
 	{ label: 'Trialing', value: SUBSCRIPTION_STATUS.TRIALING },
-	{ label: 'Unpaid', value: SUBSCRIPTION_STATUS.UNPAID },
 	{ label: 'Draft', value: SUBSCRIPTION_STATUS.DRAFT },
 ];
 

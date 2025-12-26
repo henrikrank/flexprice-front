@@ -25,11 +25,11 @@ interface FormErrors {
 }
 
 const expirationTypeOptions: SelectOption[] = [
-	{
-		label: 'Expires in some days',
-		value: CREDIT_GRANT_EXPIRATION_TYPE.DURATION,
-		description: 'Any unused credits disappear after some days.',
-	},
+	// {
+	// 	label: 'Expires in some days',
+	// 	value: CREDIT_GRANT_EXPIRATION_TYPE.DURATION,
+	// 	description: 'Any unused credits disappear after some days.',
+	// },
 	{
 		label: 'Expires with subscription period',
 		value: CREDIT_GRANT_EXPIRATION_TYPE.BILLING_CYCLE,

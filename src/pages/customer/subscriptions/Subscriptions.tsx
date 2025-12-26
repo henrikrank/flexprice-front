@@ -72,12 +72,8 @@ const filterOptions: FilterField[] = [
 		options: [
 			{ value: SUBSCRIPTION_STATUS.ACTIVE, label: 'Active' },
 			{ value: SUBSCRIPTION_STATUS.CANCELLED, label: 'Cancelled' },
-			{ value: SUBSCRIPTION_STATUS.PAUSED, label: 'Paused' },
 			{ value: SUBSCRIPTION_STATUS.INCOMPLETE, label: 'Incomplete' },
-			{ value: SUBSCRIPTION_STATUS.INCOMPLETE_EXPIRED, label: 'Incomplete Expired' },
-			{ value: SUBSCRIPTION_STATUS.PAST_DUE, label: 'Past Due' },
 			{ value: SUBSCRIPTION_STATUS.TRIALING, label: 'Trialing' },
-			{ value: SUBSCRIPTION_STATUS.UNPAID, label: 'Unpaid' },
 		],
 	},
 	{

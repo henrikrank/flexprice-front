@@ -16,20 +16,12 @@ export const getSubscriptionStatus = (status: string) => {
 	switch (status) {
 		case SUBSCRIPTION_STATUS.ACTIVE:
 			return <Chip variant='success' label='Active' />;
-		case SUBSCRIPTION_STATUS.PAUSED:
-			return <Chip variant='warning' label='Paused' />;
 		case SUBSCRIPTION_STATUS.CANCELLED:
 			return <Chip variant='failed' label='Cancelled' />;
 		case SUBSCRIPTION_STATUS.INCOMPLETE:
 			return <Chip variant='warning' label='Incomplete' />;
-		case SUBSCRIPTION_STATUS.INCOMPLETE_EXPIRED:
-			return <Chip variant='failed' label='Incomplete Expired' />;
-		case SUBSCRIPTION_STATUS.PAST_DUE:
-			return <Chip variant='failed' label='Past Due' />;
 		case SUBSCRIPTION_STATUS.TRIALING:
 			return <Chip variant='warning' label='Trialing' />;
-		case SUBSCRIPTION_STATUS.UNPAID:
-			return <Chip variant='failed' label='Unpaid' />;
 		case SUBSCRIPTION_STATUS.DRAFT:
 			return <Chip variant='warning' label='Draft' />;
 		default:
@@ -41,20 +33,12 @@ export const formatSubscriptionStatus = (status: string) => {
 	switch (status) {
 		case SUBSCRIPTION_STATUS.ACTIVE:
 			return 'Active';
-		case SUBSCRIPTION_STATUS.PAUSED:
-			return 'Paused';
 		case SUBSCRIPTION_STATUS.CANCELLED:
 			return 'Cancelled';
 		case SUBSCRIPTION_STATUS.INCOMPLETE:
 			return 'Incomplete';
-		case SUBSCRIPTION_STATUS.INCOMPLETE_EXPIRED:
-			return 'Incomplete Expired';
-		case SUBSCRIPTION_STATUS.PAST_DUE:
-			return 'Past Due';
 		case SUBSCRIPTION_STATUS.TRIALING:
 			return 'Trialing';
-		case SUBSCRIPTION_STATUS.UNPAID:
-			return 'Unpaid';
 		case SUBSCRIPTION_STATUS.DRAFT:
 			return 'Draft';
 		default:

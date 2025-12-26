@@ -4,7 +4,6 @@ import SubscriptionApi from '@/api/SubscriptionApi';
 import InvoiceApi from '@/api/InvoiceApi';
 import CostSheetApi from '@/api/CostSheetApi';
 import EnvironmentApi from '@/api/EnvironmentApi';
-import { SUBSCRIPTION_STATUS } from '@/models';
 import { PAYMENT_STATUS } from '@/constants/payment';
 import { SortDirection } from '@/types/common/QueryBuilder';
 
@@ -181,7 +180,6 @@ export const useInvoiceIssues = () => {
 		queryKey: ['subscriptions', 'past-due', environmentId],
 		queryFn: async () => {
 			return await SubscriptionApi.listSubscriptions({
-				subscription_status: [SUBSCRIPTION_STATUS.PAST_DUE],
 				limit: 100,
 			});
 		},
