@@ -19,6 +19,7 @@ export { MeterApi } from './MeterApi';
 export { default as PaymentApi } from './PaymentApi';
 export { PlanApi } from './PlanApi';
 export { PriceApi } from './PriceApi';
+export { PriceUnitApi } from './PriceUnitApi';
 export { default as SecretKeysApi } from './SecretKeysApi';
 export { default as SubscriptionApi } from './SubscriptionApi';
 export { default as TaskApi } from './TaskApi';

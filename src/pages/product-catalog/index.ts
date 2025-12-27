@@ -25,3 +25,6 @@ export { default as Pricing, PlanType } from './plans/Pricing';
 
 // Groups
 export { default as Groups } from './groups/Groups';
+
+// Price Units
+export { PriceUnits } from './price-units';

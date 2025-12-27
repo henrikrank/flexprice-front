@@ -79,6 +79,8 @@ export { default as TierBreakdown } from './TierBreakdown';
 export { default as PriceOverrideDialog } from './PriceOverrideDialog';
 export { default as UpdatePriceDialog } from './UpdatePriceDialog';
 export { UpdatePriceDetailsDrawer } from './UpdatePriceDetailsDrawer';
+export { default as PriceUnitDrawer } from './PriceUnitDrawer';
+export { default as PriceUnitTable } from './PriceUnitTable';
 
 // Addons & Features
 export { AddonTable, AddonModal } from './AddonTable';

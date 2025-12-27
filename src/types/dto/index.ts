@@ -60,7 +60,6 @@ export type {
 	CreateBulkPriceRequest,
 	CreateBulkPriceResponse,
 	PriceResponse,
-	PriceUnitResponse,
 	DeletePriceRequest,
 	CostBreakup,
 } from './Price';
@@ -271,3 +270,12 @@ export type {
 	GroupFilter,
 	AddEntityToGroupRequest,
 } from './Group';
+
+export type {
+	CreatePriceUnitRequest,
+	UpdatePriceUnitRequest,
+	PriceUnitResponse,
+	CreatePriceUnitResponse,
+	ListPriceUnitsResponse,
+	PriceUnitFilter,
+} from './PriceUnit';

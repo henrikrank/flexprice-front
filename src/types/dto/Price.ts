@@ -13,6 +13,7 @@ import {
 	Meter,
 	Metadata,
 	Pagination,
+	PriceUnit,
 } from '@/models';
 import { QueryFilter, TimeRangeFilter } from './base';
 
@@ -99,17 +100,10 @@ export interface CreateBulkPriceResponse {
 
 // Response types for individual price operations
 export interface PriceResponse extends Price {
-	pricing_unit?: PriceUnitResponse;
+	pricing_unit?: PriceUnit;
 	meter?: Meter;
 	plan?: Plan;
 	addon?: Addon;
-}
-
-export interface PriceUnitResponse {
-	// Add price unit response fields as needed
-	id: string;
-	name: string;
-	// Add other fields based on backend response
 }
 
 // Delete price request
