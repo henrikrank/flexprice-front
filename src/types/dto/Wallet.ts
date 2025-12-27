@@ -3,7 +3,6 @@ import {
 	Metadata,
 	Pagination,
 	WALLET_TRANSACTION_REASON,
-	WALLET_AUTO_TOPUP_TRIGGER,
 	WALLET_STATUS,
 	WALLET_TYPE,
 	WALLET_CONFIG_PRICE_TYPE,
@@ -24,9 +23,12 @@ export interface CreateWalletPayload {
 	initial_credits_to_load?: number;
 	conversion_rate?: number;
 	initial_credits_expiry_date_utc?: Date;
-	auto_topup_trigger?: WALLET_AUTO_TOPUP_TRIGGER;
-	auto_topup_min_balance?: string;
-	auto_topup_amount?: string;
+	auto_topup?: {
+		enabled: boolean;
+		threshold: string;
+		amount: string;
+		invoicing: boolean;
+	};
 	wallet_type?: WALLET_TYPE;
 	config?: {
 		allowed_price_types: WALLET_CONFIG_PRICE_TYPE[];
@@ -66,9 +68,12 @@ export interface UpdateWalletRequest {
 	name?: string;
 	description?: string;
 	metadata?: Metadata;
-	auto_topup_trigger?: WALLET_AUTO_TOPUP_TRIGGER;
-	auto_topup_min_balance?: string;
-	auto_topup_amount?: string;
+	auto_topup?: {
+		enabled: boolean;
+		threshold: string;
+		amount: string;
+		invoicing: boolean;
+	};
 	alert_enabled?: boolean;
 	alert_config?: {
 		threshold: {
@@ -88,9 +93,12 @@ export interface WalletResponse {
 	credit_balance: string;
 	wallet_status: WALLET_STATUS;
 	metadata: Metadata;
-	auto_topup_trigger: WALLET_AUTO_TOPUP_TRIGGER;
-	auto_topup_min_balance: string;
-	auto_topup_amount: string;
+	auto_topup?: {
+		enabled: boolean;
+		threshold: string;
+		amount: string;
+		invoicing: boolean;
+	};
 	wallet_type: WALLET_TYPE;
 	config: {
 		allowed_price_types: WALLET_CONFIG_PRICE_TYPE[];
@@ -108,9 +116,12 @@ export interface WalletResponse {
 }
 
 export interface GetCustomerWalletsResponse extends BaseModel {
-	auto_topup_amount: number;
-	auto_topup_min_balance: number;
-	auto_topup_trigger: string;
+	auto_topup?: {
+		enabled: boolean;
+		threshold: string;
+		amount: string;
+		invoicing: boolean;
+	};
 	balance: number;
 	config: {
 		allowed_price_types: WALLET_CONFIG_PRICE_TYPE[];

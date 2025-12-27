@@ -17,6 +17,12 @@ export interface Wallet extends BaseModel {
 			value: string;
 		};
 	};
+	readonly auto_topup?: {
+		enabled: boolean;
+		threshold: string;
+		amount: string;
+		invoicing: boolean;
+	};
 }
 
 export enum WALLET_STATUS {

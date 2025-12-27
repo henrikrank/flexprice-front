@@ -68,6 +68,7 @@ export { default as WalletTransactionsTable, AllWalletTransactionsTable } from '
 export { default as TopupCard } from './WalletTopupCard';
 export { default as DebitCard } from './WalletDebitCard';
 export { default as WalletAlertDialog } from './WalletAlertDialog';
+export { default as WalletAutoTopup } from './WalletAutoTopup';
 export { default as TerminateWalletModal } from './TerminateWalletModal';
 
 // Plans & Pricing
