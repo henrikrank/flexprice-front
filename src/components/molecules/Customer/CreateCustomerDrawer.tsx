@@ -241,7 +241,7 @@ const CreateCustomerDrawer: FC<Props> = ({ data, onOpenChange, open, trigger }) 
 								error={errors.name}
 							/>
 							<Input
-								label='Lookup Key'
+								label='External ID'
 								placeholder='customer-'
 								value={formData.external_id || ''}
 								onChange={(e) => handleChange('external_id', e)}
@@ -250,7 +250,7 @@ const CreateCustomerDrawer: FC<Props> = ({ data, onOpenChange, open, trigger }) 
 							/>
 							<Input
 								label='Email (Optional)'
-								placeholder='e.g. kaavya@gmail.com'
+								placeholder='e.g. example@gmail.com'
 								type='email'
 								value={formData.email || ''}
 								onChange={(e) => handleChange('email', e)}

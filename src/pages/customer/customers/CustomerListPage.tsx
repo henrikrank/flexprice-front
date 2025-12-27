@@ -55,7 +55,7 @@ const filterOptions: FilterField[] = [
 	},
 	{
 		field: 'external_id',
-		label: 'Lookup Key',
+		label: 'External ID',
 		fieldType: FilterFieldType.INPUT,
 		operators: DEFAULT_OPERATORS_PER_DATA_TYPE[DataType.STRING],
 		dataType: DataType.STRING,
