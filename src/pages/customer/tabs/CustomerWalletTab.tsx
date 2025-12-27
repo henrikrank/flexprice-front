@@ -136,7 +136,7 @@ const CustomerWalletTab = () => {
 				? [
 						{
 							icon: <RefreshCw />,
-							label: 'AutoTopup',
+							label: 'Auto Topup',
 							onSelect: () => setShowAutoTopupModal(true),
 						},
 						{
