@@ -9,24 +9,27 @@ import {
 	TerminateWalletModal,
 	MetadataModal,
 	WalletAlertDialog,
+	WalletAutoTopup,
 } from '@/components/molecules';
+import type { AutoTopupConfig } from '@/components/molecules/WalletAutoTopup/WalletAutoTopup';
 import { Dialog, Skeleton, Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui';
 import usePagination from '@/hooks/usePagination';
 import { Wallet } from '@/models/Wallet';
 import WalletApi from '@/api/WalletApi';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation } from '@tanstack/react-query';
 import { useEffect, useMemo, useState } from 'react';
 import toast from 'react-hot-toast';
 import { IoSearch } from 'react-icons/io5';
 import { useParams, useOutletContext } from 'react-router';
 import CreateCustomerWalletModal from '../customers/CreateCustomerWalletModal';
-import { EllipsisVertical, Info, Pencil, SlidersHorizontal, Trash2, Wallet as WalletIcon, Bell, Minus } from 'lucide-react';
+import { EllipsisVertical, Info, Pencil, SlidersHorizontal, Trash2, Wallet as WalletIcon, Bell, Minus, RefreshCw } from 'lucide-react';
 import { getCurrencySymbol } from '@/utils/common/helper_functions';
 import useQueryParams from '@/hooks/useQueryParams';
 import { DetailsCard } from '@/components/molecules';
 import { formatAmount } from '@/components/atoms/Input/Input';
 import { refetchQueries } from '@/core/services/tanstack/ReactQueryProvider';
 import { logger } from '@/utils/common/Logger';
+import { ServerError } from '@/core/axios/types';
 
 const formatWalletStatus = (status?: string) => {
 	const statusMap: Record<string, string> = {
@@ -56,6 +59,7 @@ const CustomerWalletTab = () => {
 	const [showTerminateModal, setShowTerminateModal] = useState(false);
 	const [showMetadataModal, setShowMetadataModal] = useState(false);
 	const [showAlertDialog, setShowAlertDialog] = useState(false);
+	const [showAutoTopupModal, setShowAutoTopupModal] = useState(false);
 	const [activeWallet, setActiveWallet] = useState<Wallet | null>();
 	const [metadata, setMetadata] = useState<Record<string, string>>({});
 
@@ -93,6 +97,24 @@ const CustomerWalletTab = () => {
 		enabled: !!customerId && !!activeWallet,
 	});
 
+	// Mutations
+	const { mutate: updateAutoTopup } = useMutation({
+		mutationFn: async ({ walletId, config }: { walletId: string; config: AutoTopupConfig }) => {
+			return await WalletApi.updateWallet(walletId, {
+				auto_topup: config,
+			});
+		},
+		onSuccess: async () => {
+			setShowAutoTopupModal(false);
+			await refetchQueries(['fetchWallets', customerId!]);
+			toast.success('Auto top-up settings updated successfully');
+		},
+		onError: (error: ServerError) => {
+			logger.error('Failed to update auto top-up settings', error);
+			toast.error(error.error.message || 'Failed to update auto top-up settings');
+		},
+	});
+
 	// Memoized and derived data
 	const walletOptions = useMemo(
 		() =>
@@ -113,9 +135,9 @@ const CustomerWalletTab = () => {
 			...(activeWallet
 				? [
 						{
-							icon: <Pencil />,
-							label: 'Edit',
-							disabled: true,
+							icon: <RefreshCw />,
+							label: 'AutoTopup',
+							onSelect: () => setShowAutoTopupModal(true),
 						},
 						{
 							icon: <Bell />,
@@ -255,6 +277,17 @@ const CustomerWalletTab = () => {
 					}
 				}}
 				onClose={() => setShowAlertDialog(false)}
+			/>
+
+			{/* Auto Top-Up Dialog */}
+			<WalletAutoTopup
+				open={showAutoTopupModal}
+				autoTopupConfig={activeWallet?.auto_topup}
+				onSave={(config: AutoTopupConfig) => {
+					if (!activeWallet?.id) return;
+					updateAutoTopup({ walletId: activeWallet.id!, config });
+				}}
+				onClose={() => setShowAutoTopupModal(false)}
 			/>
 
 			{!wallets?.length ? (
