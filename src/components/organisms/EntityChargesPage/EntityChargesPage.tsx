@@ -8,7 +8,7 @@ import { PlanApi, AddonApi, PriceApi, SubscriptionApi, CostSheetApi } from '@/ap
 import { CreateBulkPriceRequest } from '@/types/dto';
 import toast from 'react-hot-toast';
 import { AddChargesButton, InternalPrice } from '@/components/organisms/PlanForm/SetupChargesSection';
-import { billlingPeriodOptions, currencyOptions } from '@/constants/constants';
+import { currencyOptions } from '@/constants/constants';
 import { RecurringChargesForm } from '@/components/organisms/PlanForm';
 import UsagePricingForm, { PriceInternalState } from '@/components/organisms/PlanForm/UsagePricingForm';
 import { RouteNames } from '@/core/routes/Routes';
@@ -17,7 +17,7 @@ import { RectangleRadiogroup, RectangleRadiogroupOption, RolloutChargesModal, Ro
 import { Dialog } from '@/components/ui';
 import { Gauge, Repeat } from 'lucide-react';
 import { BILLING_CADENCE, INVOICE_CADENCE } from '@/models/Invoice';
-import { BILLING_MODEL, PRICE_TYPE, PRICE_ENTITY_TYPE, PRICE_UNIT_TYPE } from '@/models/Price';
+import { BILLING_MODEL, PRICE_TYPE, PRICE_ENTITY_TYPE, PRICE_UNIT_TYPE, BILLING_PERIOD } from '@/models/Price';
 import { logger } from '@/utils/common/Logger';
 import { refetchQueries } from '@/core/services/tanstack/ReactQueryProvider';
 
@@ -50,7 +50,7 @@ const CHARGE_OPTIONS: RectangleRadiogroupOption[] = [
 const createEmptyPrice = (type: PRICE_TYPE): InternalPrice => ({
 	amount: '',
 	currency: currencyOptions[0].value,
-	billing_period: billlingPeriodOptions[1].value,
+	billing_period: BILLING_PERIOD.MONTHLY,
 	type: type,
 	isEdit: true,
 	billing_period_count: 1,

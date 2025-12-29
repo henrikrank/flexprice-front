@@ -4,7 +4,7 @@ import { FiDatabase } from 'react-icons/fi';
 import { cn } from '@/lib/utils';
 import { Plan } from '@/models/Plan';
 import { useState } from 'react';
-import { BILLING_MODEL, Price, PRICE_TYPE } from '@/models/Price';
+import { BILLING_MODEL, BILLING_PERIOD, Price, PRICE_TYPE } from '@/models/Price';
 import { currencyOptions, billlingPeriodOptions } from '@/constants/constants';
 import RecurringChargesForm from './RecurringChargesForm';
 import UsagePricingForm, { PriceInternalState } from './UsagePricingForm';
@@ -67,7 +67,7 @@ const SetupChargesSection: React.FC<Props> = ({ plan, setPlanField }) => {
 	const getEmptyPrice = (type: SubscriptionType): InternalPrice => ({
 		amount: '',
 		currency: currencyOptions[0].value,
-		billing_period: billlingPeriodOptions[1].value,
+		billing_period: BILLING_PERIOD.MONTHLY,
 		type: type === SubscriptionType.FIXED ? PRICE_TYPE.FIXED : PRICE_TYPE.USAGE,
 		isEdit: true,
 		billing_period_count: 1,
