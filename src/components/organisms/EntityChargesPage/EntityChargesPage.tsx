@@ -5,7 +5,7 @@ import { useCallback, useEffect, useMemo, useReducer, useState } from 'react';
 import { useNavigate } from 'react-router';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { PlanApi, AddonApi, PriceApi, SubscriptionApi, CostSheetApi } from '@/api';
-import { CreateBulkPriceRequest } from '@/types/dto';
+import { CreateBulkPriceRequest, CreatePriceRequest } from '@/types/dto';
 import toast from 'react-hot-toast';
 import { AddChargesButton, InternalPrice } from '@/components/organisms/PlanForm/SetupChargesSection';
 import { currencyOptions } from '@/constants/constants';
@@ -270,38 +270,49 @@ const EntityChargesPage: React.FC<EntityChargesPageProps> = ({ entityType, entit
 			}
 
 			// Convert internal prices to CreatePriceRequest format, filtering out invalid ones
-			const priceRequests = allPrices.map((price) => ({
-				amount: price.amount!,
-				currency: price.currency!,
-				entity_type: priceEntityType,
-				entity_id: entityId,
-				type: price.type!,
-				price_unit_type: price.price_unit_type || PRICE_UNIT_TYPE.FIAT,
-				billing_period: price.billing_period!,
-				billing_period_count: price.billing_period_count || 1,
-				billing_model: price.billing_model!,
-				billing_cadence: price.billing_cadence || BILLING_CADENCE.RECURRING,
-				meter_id: price.meter_id,
-				filter_values: price.filter_values || undefined,
-				lookup_key: price.lookup_key,
-				invoice_cadence: price.invoice_cadence || INVOICE_CADENCE.ARREAR,
-				trial_period: price.trial_period,
-				description: price.description,
-				display_name: price.display_name,
-				metadata: price.metadata || undefined,
-				tier_mode: price.tier_mode,
-				tiers:
-					price.tiers?.map((tier) => ({
-						up_to: tier.up_to,
-						unit_amount: tier.unit_amount,
-						flat_amount: tier.flat_amount,
-					})) || undefined,
-				transform_quantity: price.transform_quantity || undefined,
-				price_unit_config: price.price_unit_config,
-				group_id: price.group_id,
-				min_quantity: price.min_quantity,
-				start_date: price.start_date ? new Date(price.start_date).toISOString() : undefined,
-			}));
+			const priceRequests = allPrices.map((price) => {
+				const isTieredBilling = price.billing_model === BILLING_MODEL.TIERED;
+
+				// For tiered/slab-tiered billing models, exclude amount field
+				const baseRequest: CreatePriceRequest = {
+					currency: price.currency!,
+					entity_type: priceEntityType,
+					entity_id: entityId,
+					type: price.type!,
+					price_unit_type: price.price_unit_type || PRICE_UNIT_TYPE.FIAT,
+					billing_period: price.billing_period!,
+					billing_period_count: price.billing_period_count || 1,
+					billing_model: price.billing_model!,
+					billing_cadence: price.billing_cadence || BILLING_CADENCE.RECURRING,
+					meter_id: price.meter_id,
+					filter_values: price.filter_values || undefined,
+					lookup_key: price.lookup_key,
+					invoice_cadence: price.invoice_cadence || INVOICE_CADENCE.ARREAR,
+					trial_period: price.trial_period,
+					description: price.description,
+					display_name: price.display_name,
+					metadata: price.metadata || undefined,
+					tier_mode: price.tier_mode,
+					tiers:
+						price.tiers?.map((tier) => ({
+							up_to: tier.up_to,
+							unit_amount: tier.unit_amount,
+							flat_amount: tier.flat_amount,
+						})) || undefined,
+					transform_quantity: price.transform_quantity || undefined,
+					price_unit_config: price.price_unit_config,
+					group_id: price.group_id,
+					min_quantity: price.min_quantity,
+					start_date: price.start_date ? new Date(price.start_date).toISOString() : undefined,
+				};
+
+				// Only include amount if billing model is not tiered or slab-tiered
+				if (!isTieredBilling && price.amount) {
+					baseRequest.amount = price.amount;
+				}
+
+				return baseRequest;
+			});
 
 			const bulkPriceRequest: CreateBulkPriceRequest = {
 				items: priceRequests,
