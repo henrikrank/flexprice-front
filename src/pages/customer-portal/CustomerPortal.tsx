@@ -7,7 +7,7 @@ import CustomerApi from '@/api/CustomerApi';
 import WalletApi from '@/api/WalletApi';
 import { Customer } from '@/models';
 import { Loader } from '@/components/atoms';
-import { PortalHeader, OverviewTab, InvoicesTab, WalletTab, UsageEventsTab } from '@/components/customer-portal';
+import { PortalHeader, OverviewTab, InvoicesTab, WalletTab, UsageAnalyticsTab } from '@/components/customer-portal';
 import { cn } from '@/lib/utils';
 
 /**
@@ -144,7 +144,7 @@ const CustomerPortal = ({ customerId, token, envId }: CustomerPortalProps) => {
 					{activeTab === PortalTab.OVERVIEW && <OverviewTab customerId={customerId} />}
 					{activeTab === PortalTab.CREDITS && hasWallets && <WalletTab customerId={customerId} />}
 					{activeTab === PortalTab.INVOICES && <InvoicesTab customerId={customerId} />}
-					{activeTab === PortalTab.EVENTS && <UsageEventsTab customerId={customerId} />}
+					{activeTab === PortalTab.EVENTS && <UsageAnalyticsTab customerId={customerId} />}
 				</div>
 
 				{/* Footer */}
