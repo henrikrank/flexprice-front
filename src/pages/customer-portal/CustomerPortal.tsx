@@ -7,7 +7,7 @@ import CustomerApi from '@/api/CustomerApi';
 import WalletApi from '@/api/WalletApi';
 import { Customer } from '@/models';
 import { Loader } from '@/components/atoms';
-import { PortalHeader, OverviewTab, InvoicesTab, WalletTab } from '@/components/customer-portal';
+import { PortalHeader, OverviewTab, InvoicesTab, WalletTab, UsageEventsTab } from '@/components/customer-portal';
 import { cn } from '@/lib/utils';
 
 /**
@@ -34,6 +34,7 @@ enum PortalTab {
 	OVERVIEW = 'overview',
 	CREDITS = 'credits',
 	INVOICES = 'invoices',
+	EVENTS = 'events',
 }
 
 const CustomerPortal = ({ customerId, token, envId }: CustomerPortalProps) => {
@@ -105,6 +106,7 @@ const CustomerPortal = ({ customerId, token, envId }: CustomerPortalProps) => {
 		{ id: PortalTab.OVERVIEW, label: 'Overview', show: true },
 		{ id: PortalTab.CREDITS, label: 'Credits', show: hasWallets || false },
 		{ id: PortalTab.INVOICES, label: 'Invoices', show: true },
+		{ id: PortalTab.EVENTS, label: 'Usage', show: true },
 	];
 
 	const visibleTabs = tabs.filter((tab) => tab.show);
@@ -142,6 +144,7 @@ const CustomerPortal = ({ customerId, token, envId }: CustomerPortalProps) => {
 					{activeTab === PortalTab.OVERVIEW && <OverviewTab customerId={customerId} />}
 					{activeTab === PortalTab.CREDITS && hasWallets && <WalletTab customerId={customerId} />}
 					{activeTab === PortalTab.INVOICES && <InvoicesTab customerId={customerId} />}
+					{activeTab === PortalTab.EVENTS && <UsageEventsTab customerId={customerId} />}
 				</div>
 
 				{/* Footer */}

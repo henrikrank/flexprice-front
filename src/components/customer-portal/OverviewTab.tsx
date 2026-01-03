@@ -168,7 +168,6 @@ const OverviewTab = ({ customerId }: OverviewTabProps) => {
 	const subscriptions = subscriptionsData?.items || [];
 	const usage = usageData?.features || [];
 	const currencySymbol = getCurrencySymbol(walletBalance?.currency ?? firstWallet?.currency ?? 'USD');
-
 	return (
 		<div className='space-y-6'>
 			{/* Wallet Balance */}
@@ -208,7 +207,6 @@ const OverviewTab = ({ customerId }: OverviewTabProps) => {
 
 			{/* Active Subscriptions */}
 			<SubscriptionsSection subscriptions={subscriptions} />
-
 			{/* Usage Analytics Chart */}
 			{analyticsData && (
 				<Card className='bg-white border border-[#E9E9E9] rounded-xl p-6'>
