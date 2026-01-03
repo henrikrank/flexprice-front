@@ -1,4 +1,7 @@
 import { useParams, useSearchParams } from 'react-router';
+import { RefreshCw, Shield, User } from 'lucide-react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/atoms/Button';
 import CustomerPortal from './CustomerPortal';
 
 /**
@@ -7,11 +10,39 @@ import CustomerPortal from './CustomerPortal';
  * - token from query params (required)
  * - env_id from query params (optional)
  *
- * Handles validation and error cases:
- * - Missing customerId: redirects to error or shows error message
- * - Missing token: shows error message (token is required for authentication)
+ * Handles validation and error cases with proper UI components:
+ * - Missing customerId: shows error card with refresh option
+ * - Missing token: shows authentication error card
  * - Missing env_id: allows request to proceed (env_id is optional, backend may handle default)
  */
+
+interface ErrorStateProps {
+	icon: React.ReactNode;
+	title: string;
+	description: string;
+	actionLabel?: string;
+	onAction?: () => void;
+}
+
+const ErrorState = ({ icon, title, description, actionLabel, onAction }: ErrorStateProps) => (
+	<div className='min-h-screen flex items-center justify-center bg-gray-50 px-4 py-12'>
+		<Card className='w-full max-w-md'>
+			<CardHeader className='text-center pb-4'>
+				<div className='mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-red-50'>{icon}</div>
+				<CardTitle className='text-xl font-semibold text-gray-900'>{title}</CardTitle>
+			</CardHeader>
+			<CardContent className='text-center'>
+				<p className='text-gray-600 mb-6'>{description}</p>
+				{actionLabel && onAction && (
+					<Button onClick={onAction} className='w-full' variant='outline'>
+						<RefreshCw className='w-4 h-4 mr-2' />
+						{actionLabel}
+					</Button>
+				)}
+			</CardContent>
+		</Card>
+	</div>
+);
 const CustomerPortalWrapper = () => {
 	const { customerId } = useParams<{ customerId: string }>();
 	const [searchParams] = useSearchParams();
@@ -21,26 +52,26 @@ const CustomerPortalWrapper = () => {
 
 	// Validate required parameters
 	if (!customerId) {
-		// Customer ID is required from path params
 		return (
-			<div className='flex items-center justify-center min-h-screen'>
-				<div className='text-center'>
-					<h1 className='text-2xl font-bold text-red-600 mb-2'>Invalid Customer Portal Link</h1>
-					<p className='text-gray-600'>Customer ID is missing from the URL.</p>
-				</div>
-			</div>
+			<ErrorState
+				icon={<User className='h-8 w-8 text-red-500' />}
+				title='Invalid Customer Portal Link'
+				description='Customer ID is missing from the URL. Please check your link and try again.'
+				actionLabel='Refresh Page'
+				onAction={() => window.location.reload()}
+			/>
 		);
 	}
 
 	if (!token) {
-		// Token is required for authentication
 		return (
-			<div className='flex items-center justify-center min-h-screen'>
-				<div className='text-center'>
-					<h1 className='text-2xl font-bold text-red-600 mb-2'>Authentication Required</h1>
-					<p className='text-gray-600'>Access token is missing. Please provide a valid token in the query parameters.</p>
-				</div>
-			</div>
+			<ErrorState
+				icon={<Shield className='h-8 w-8 text-red-500' />}
+				title='Authentication Required'
+				description='Access token is missing. Please provide a valid token in the query parameters to access this customer portal.'
+				actionLabel='Refresh Page'
+				onAction={() => window.location.reload()}
+			/>
 		);
 	}
 

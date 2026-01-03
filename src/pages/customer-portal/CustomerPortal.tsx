@@ -1,5 +1,9 @@
-import { useMemo } from 'react';
-import { createStatelessClient } from '@/core/axios/verbs';
+import { useEffect } from 'react';
+import { useQuery } from '@tanstack/react-query';
+import toast from 'react-hot-toast';
+import { setRuntimeCredentials, clearRuntimeCredentials } from '@/core/axios/config';
+import CustomerApi from '@/api/CustomerApi';
+import { Customer } from '@/models';
 
 /**
  * Customer Portal Page
@@ -12,8 +16,8 @@ import { createStatelessClient } from '@/core/axios/verbs';
  * - token: Access token (typically Supabase access token) passed via query parameter `token`
  * - env_id: Environment ID passed via query parameter `env_id` (optional but recommended)
  *
- * This page uses a stateless axios client that extracts credentials from query parameters
- * on each request, making it suitable for embedded or shared portal experiences.
+ * This page uses runtime credential override to set credentials dynamically,
+ * allowing existing API classes to work in stateless contexts.
  */
 interface CustomerPortalProps {
 	customerId: string;
@@ -22,37 +26,48 @@ interface CustomerPortalProps {
 }
 
 const CustomerPortal = ({ customerId, token, envId }: CustomerPortalProps) => {
-	// Create stateless axios client that uses the provided token and env_id
-	// This client will automatically include the token and env_id in all requests
-	// The client is ready to use for API calls - implement portal features as needed
-	const statelessClient = useMemo(() => {
-		return createStatelessClient(
-			() => token, // getToken function
-			() => envId, // getEnvId function
-		);
+	useEffect(() => {
+		// Set runtime credentials for this session
+		setRuntimeCredentials(token, envId);
+
+		// Cleanup on unmount
+		return () => clearRuntimeCredentials();
 	}, [token, envId]);
 
-	// Example usage of the stateless client:
-	// const fetchCustomerData = async () => {
-	//   try {
-	//     const data = await statelessClient.get(`/customers/${customerId}`);
-	//     return data;
-	//   } catch (error) {
-	//     console.error('Error fetching customer data:', error);
-	//   }
-	// };
+	const {
+		data: customerData,
+		isLoading,
+		isError,
+		error,
+	} = useQuery<Customer>({
+		queryKey: ['customer', customerId, token, envId],
+		queryFn: async () => {
+			// Use existing API classes - they now use runtime credentials
+			return await CustomerApi.getCustomerById(customerId);
+		},
+		enabled: !!customerId && !!token,
+		retry: 1,
+		staleTime: 0, // Always fetch fresh data for customer portal
+		gcTime: 0, // Don't cache data for customer portal
+	});
 
-	// Note: statelessClient is ready to use for API calls
-	// It will be used when implementing portal features (invoices, subscriptions, etc.)
-	// For now, we reference it to satisfy the linter - remove this when implementing features
-	void statelessClient;
+	// Show toast notification for errors
+	useEffect(() => {
+		if (isError) {
+			const err = error as any;
+			toast.error(err?.error?.message || err?.message || 'Failed to fetch customer data');
+		}
+	}, [isError, error]);
+
+	if (isLoading) return <div>Loading...</div>;
+	if (isError) return null; // Error is handled by toast notification
+	if (!customerData) return <div>No customer found</div>;
 
 	return (
 		<div>
 			<h1>Customer Portal</h1>
-			<p>Customer ID: {customerId}</p>
-			{/* The statelessClient is available for making API calls */}
-			{/* All requests will automatically include the token and env_id */}
+			<p>Customer: {customerData.name}</p>
+			<p>Email: {customerData.email}</p>
 		</div>
 	);
 };

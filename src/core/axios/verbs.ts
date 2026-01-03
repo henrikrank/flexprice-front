@@ -1,4 +1,4 @@
-import axiosClient, { createStatelessAxiosClient } from './config';
+import axiosClient from './config';
 import { AxiosInstance, AxiosRequestConfig, AxiosResponse } from 'axios';
 
 type DataObject = Record<string, any>;
@@ -85,17 +85,3 @@ export class AxiosClient {
 		return response as T;
 	}
 }
-
-/**
- * Creates a stateless AxiosClient instance for out-of-auth-scope pages.
- * This client uses token and environment ID provided via functions,
- * making it suitable for pages like customer portal where credentials come from query params.
- *
- * @param getToken - Function that returns the access token (typically from query params)
- * @param getEnvId - Function that returns the environment ID (typically from query params)
- * @returns AxiosClient instance configured with stateless credentials
- */
-export const createStatelessClient = (getToken: () => string | null, getEnvId: () => string | null): AxiosClient => {
-	const statelessAxiosInstance = createStatelessAxiosClient(getToken, getEnvId);
-	return new AxiosClient(statelessAxiosInstance);
-};
