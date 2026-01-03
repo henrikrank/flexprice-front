@@ -9,18 +9,17 @@ import { CustomerUsageChart } from '@/components/molecules';
 import { WindowSize } from '@/models';
 import { WALLET_STATUS } from '@/models/Wallet';
 import { GetUsageAnalyticsRequest } from '@/types';
-import { cn } from '@/lib/utils';
 import { formatAmount } from '@/components/atoms/Input/Input';
 import { getCurrencySymbol } from '@/utils/common/helper_functions';
 import { Wallet as WalletIcon } from 'lucide-react';
 import SubscriptionsSection from './SubscriptionsSection';
 import UsageSection from './UsageSection';
+import TimePeriodSelector from './TimePeriodSelector';
+import { CustomerPortalTimePeriod, DEFAULT_TIME_PERIOD, calculateTimeRange } from './constants';
 
 interface OverviewTabProps {
 	customerId: string;
 }
-
-type TimePeriod = '1d' | '7d' | '30d';
 
 const OverviewSkeleton = () => (
 	<div className='space-y-6'>
@@ -51,7 +50,7 @@ const OverviewSkeleton = () => (
 );
 
 const OverviewTab = ({ customerId }: OverviewTabProps) => {
-	const [selectedPeriod, setSelectedPeriod] = useState<TimePeriod>('30d');
+	const [selectedPeriod, setSelectedPeriod] = useState<CustomerPortalTimePeriod>(DEFAULT_TIME_PERIOD);
 
 	// Fetch customer to get external_id for analytics
 	const { data: customer } = useQuery({
@@ -107,23 +106,13 @@ const OverviewTab = ({ customerId }: OverviewTabProps) => {
 	const analyticsParams: GetUsageAnalyticsRequest | null = useMemo(() => {
 		if (!customer?.external_id) return null;
 
-		const endDate = new Date();
-		const startDate = new Date();
-
-		// Calculate days based on selected period
-		const daysMap: Record<TimePeriod, number> = {
-			'1d': 1,
-			'7d': 7,
-			'30d': 30,
-		};
-
-		startDate.setDate(startDate.getDate() - daysMap[selectedPeriod]);
+		const timeRange = calculateTimeRange(selectedPeriod);
 
 		return {
 			external_customer_id: customer.external_id,
 			window_size: WindowSize.DAY,
-			start_time: startDate.toISOString(),
-			end_time: endDate.toISOString(),
+			start_time: timeRange.start_time,
+			end_time: timeRange.end_time,
 		};
 	}, [customer?.external_id, selectedPeriod]);
 
@@ -212,19 +201,7 @@ const OverviewTab = ({ customerId }: OverviewTabProps) => {
 				<Card className='bg-white border border-[#E9E9E9] rounded-xl p-6'>
 					<div className='flex items-center justify-between mb-4'>
 						<h3 className='text-base font-medium text-zinc-950'>Usage</h3>
-						<div className='flex items-center gap-1 bg-zinc-50 rounded-lg p-1'>
-							{(['1d', '7d', '30d'] as TimePeriod[]).map((period) => (
-								<button
-									key={period}
-									onClick={() => setSelectedPeriod(period)}
-									className={cn(
-										'px-3 py-1.5 text-sm font-medium rounded-md transition-colors',
-										selectedPeriod === period ? 'bg-white text-zinc-900 shadow-sm' : 'text-zinc-500 hover:text-zinc-700',
-									)}>
-									{period}
-								</button>
-							))}
-						</div>
+						<TimePeriodSelector selectedPeriod={selectedPeriod} onPeriodChange={setSelectedPeriod} />
 					</div>
 					<CustomerUsageChart data={analyticsData} />
 				</Card>
