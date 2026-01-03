@@ -30,3 +30,5 @@ export * from './webhooks';
 
 // Home pages
 export * from './home';
+
+export * from './customer-portal';

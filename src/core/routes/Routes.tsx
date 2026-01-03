@@ -75,10 +75,14 @@ import {
 	// Error pages
 	ErrorPage,
 	DashboardPage,
+	CustomerPortalWrapper,
 } from '@/pages';
 import { RouterErrorElement } from '@/components/atoms/ErrorBoundary';
 
 export const RouteNames = {
+	// customer portal
+	customerPortal: '/customer-portal',
+
 	home: '/',
 	login: '/login',
 	auth: '/auth',
@@ -189,6 +193,10 @@ export const MainRouter = createBrowserRouter([
 	{
 		path: RouteNames.verifyEmail,
 		element: <EmailVerification />,
+	},
+	{
+		path: `${RouteNames.customerPortal}/:customerId`,
+		element: <CustomerPortalWrapper />,
 	},
 	// private routes
 	{

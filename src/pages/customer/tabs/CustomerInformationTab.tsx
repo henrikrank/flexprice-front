@@ -5,13 +5,16 @@ import { useQuery } from '@tanstack/react-query';
 import { Country } from 'country-state-city';
 import { CreateCustomerDrawer, Detail, DetailsCard, MetadataModal, SaveCardModal } from '@/components/molecules';
 import { useParams, useOutletContext, Link } from 'react-router';
-import { Pencil, CreditCard, ExternalLink } from 'lucide-react';
+import { Pencil, CreditCard, ExternalLink, Share2 } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { getTypographyClass } from '@/lib/typography';
 import { refetchQueries } from '@/core/services/tanstack/ReactQueryProvider';
 import { logger } from '@/utils/common/Logger';
 import { CONNECTION_PROVIDER_TYPE } from '@/models/Connection';
 import { RouteNames } from '@/core/routes/Routes';
+import AuthService from '@/core/auth/AuthService';
+import EnvironmentApi from '@/api/EnvironmentApi';
+import toast from 'react-hot-toast';
 
 type ContextType = {
 	isArchived: boolean;
@@ -55,6 +58,48 @@ const CustomerInformationTab = () => {
 	useEffect(() => {
 		setMetadata(filterStringMetadata(customer?.metadata));
 	}, [customer]);
+
+	// Generate and copy customer portal link
+	const handleShareCustomerPortal = async () => {
+		if (!customerId) {
+			toast.error('Customer ID is missing');
+			return;
+		}
+
+		try {
+			// Get Supabase access token
+			const token = await AuthService.getAcessToken();
+			if (!token) {
+				toast.error('Unable to get access token. Please ensure you are logged in.');
+				return;
+			}
+
+			// Get environment ID
+			const envId = EnvironmentApi.getActiveEnvironmentId();
+
+			// Build the customer portal URL
+			const baseUrl = window.location.origin;
+			const portalPath = `${RouteNames.customerPortal}/${customerId}`;
+			const url = new URL(portalPath, baseUrl);
+
+			// Add token as query parameter
+			url.searchParams.set('token', token);
+
+			// Add env_id if available
+			if (envId) {
+				url.searchParams.set('env_id', envId);
+			}
+
+			const portalUrl = url.toString();
+
+			// Copy to clipboard
+			await navigator.clipboard.writeText(portalUrl);
+			toast.success('Customer portal link copied to clipboard!');
+		} catch (error) {
+			logger.error('Failed to generate customer portal link', error);
+			toast.error('Failed to generate customer portal link. Please try again.');
+		}
+	};
 
 	const billingDetails: Detail[] = [
 		{
@@ -141,16 +186,21 @@ const CustomerInformationTab = () => {
 								</Button>
 							)}
 							{!isArchived && (
-								<CreateCustomerDrawer
-									trigger={
-										<Button variant={'outline'} size={'icon'}>
-											<Pencil />
-										</Button>
-									}
-									open={customerDrawerOpen}
-									onOpenChange={setcustomerDrawerOpen}
-									data={customer}
-								/>
+								<>
+									<Button variant='outline' size='icon' onClick={handleShareCustomerPortal} title='Share Customer Portal Link'>
+										<Share2 className='size-4' />
+									</Button>
+									<CreateCustomerDrawer
+										trigger={
+											<Button variant={'outline'} size={'icon'}>
+												<Pencil />
+											</Button>
+										}
+										open={customerDrawerOpen}
+										onOpenChange={setcustomerDrawerOpen}
+										data={customer}
+									/>
+								</>
 							)}
 						</div>
 					</div>
