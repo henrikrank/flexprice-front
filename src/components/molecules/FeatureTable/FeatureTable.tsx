@@ -12,6 +12,7 @@ import FeatureApi from '@/api/FeatureApi';
 import { getFeatureIcon } from '@/components/atoms/SelectFeature/SelectFeature';
 interface Props {
 	data: Feature[];
+	onEdit?: (feature: Feature) => void;
 }
 
 export const getFeatureTypeChips = (type: string, addIcon: boolean = false) => {
@@ -29,7 +30,7 @@ export const getFeatureTypeChips = (type: string, addIcon: boolean = false) => {
 	}
 };
 
-const FeatureTable: FC<Props> = ({ data }) => {
+const FeatureTable: FC<Props> = ({ data, onEdit }) => {
 	const navigate = useNavigate();
 
 	const columnData: ColumnData<Feature>[] = [
@@ -71,7 +72,8 @@ const FeatureTable: FC<Props> = ({ data }) => {
 							enabled: row?.status !== ENTITY_STATUS.ARCHIVED,
 						}}
 						edit={{
-							enabled: false,
+							enabled: !!onEdit,
+							onClick: onEdit ? () => onEdit(row) : undefined,
 						}}
 					/>
 				);

@@ -3,7 +3,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { useParams } from 'react-router';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import toast from 'react-hot-toast';
-import { EyeOff, Bell, EllipsisVertical } from 'lucide-react';
+import { EyeOff, Bell, EllipsisVertical, Pencil } from 'lucide-react';
 import { v4 as uuidv4 } from 'uuid';
 // Core utilities and APIs
 import { RouteNames } from '@/core/routes/Routes';
@@ -16,7 +16,15 @@ import { useBreadcrumbsStore } from '@/store/useBreadcrumbsStore';
 
 // Components
 import { Button, Card, CardHeader, Chip, Divider, Loader, NoDataCard, Page, Spacer } from '@/components/atoms';
-import { ApiDocsContent, ColumnData, FlexpriceTable, RedirectCell, DropdownMenu, DropdownMenuOption } from '@/components/molecules';
+import {
+	ApiDocsContent,
+	ColumnData,
+	FlexpriceTable,
+	RedirectCell,
+	DropdownMenu,
+	DropdownMenuOption,
+	FeatureDrawer,
+} from '@/components/molecules';
 import { FeatureAlertDialog } from '@/components/molecules/FeatureAlertDialog';
 
 // Models and types
@@ -92,6 +100,7 @@ const FeatureDetails = () => {
 	const { id: featureId } = useParams() as { id: string };
 	const { updateBreadcrumb } = useBreadcrumbsStore();
 	const [showAlertDialog, setShowAlertDialog] = useState(false);
+	const [isDrawerOpen, setIsDrawerOpen] = useState(false);
 
 	const { data, isLoading, isError } = useQuery({
 		queryKey: ['fetchFeatureDetails', featureId],
@@ -150,6 +159,11 @@ const FeatureDetails = () => {
 
 	const dropdownOptions: DropdownMenuOption[] = useMemo(
 		() => [
+			{
+				icon: <Pencil />,
+				label: 'Edit',
+				onSelect: () => setIsDrawerOpen(true),
+			},
 			{
 				icon: <Bell />,
 				label: 'Alert Settings',
@@ -386,6 +400,14 @@ const FeatureDetails = () => {
 					</Card>
 				)}
 			</div>
+			{data && (
+				<FeatureDrawer
+					data={data}
+					open={isDrawerOpen}
+					onOpenChange={setIsDrawerOpen}
+					refetchQueryKeys={['fetchFeatureDetails', featureId]}
+				/>
+			)}
 		</Page>
 	);
 };

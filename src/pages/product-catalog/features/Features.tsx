@@ -1,5 +1,5 @@
 import { AddButton, Loader, Page, ShortPagination, Spacer } from '@/components/atoms';
-import { ApiDocsContent, FeatureTable } from '@/components/molecules';
+import { ApiDocsContent, FeatureTable, FeatureDrawer } from '@/components/molecules';
 import EmptyPage from '@/components/organisms/EmptyPage/EmptyPage';
 import { RouteNames } from '@/core/routes/Routes';
 import GUIDES from '@/constants/guides';
@@ -7,7 +7,8 @@ import usePagination from '@/hooks/usePagination';
 import FeatureApi from '@/api/FeatureApi';
 import toast from 'react-hot-toast';
 import { Link, useNavigate } from 'react-router';
-import { useEffect, useMemo } from 'react';
+import { useEffect, useMemo, useState } from 'react';
+import Feature from '@/models/Feature';
 import {
 	FilterField,
 	FilterFieldType,
@@ -83,6 +84,8 @@ const filterOptions: FilterField[] = [
 
 const FeaturesPage = () => {
 	const { limit, offset, page, reset } = usePagination();
+	const [isDrawerOpen, setIsDrawerOpen] = useState(false);
+	const [selectedFeature, setSelectedFeature] = useState<Feature | null>(null);
 
 	// Add debounce to search query
 
@@ -206,10 +209,19 @@ const FeaturesPage = () => {
 					onSortChange={setSorts}
 					selectedSorts={sorts}
 				/>
-				<FeatureTable data={featureData?.items || []} />
+				<FeatureTable
+					data={featureData?.items || []}
+					onEdit={(feature) => {
+						setSelectedFeature(feature);
+						setIsDrawerOpen(true);
+					}}
+				/>
 				<Spacer className='!h-4' />
 				<ShortPagination unit='Features' totalItems={featureData?.pagination.total ?? 0} />
 			</div>
+			{selectedFeature && (
+				<FeatureDrawer data={selectedFeature} open={isDrawerOpen} onOpenChange={setIsDrawerOpen} refetchQueryKeys={['fetchFeatures']} />
+			)}
 		</Page>
 	);
 };

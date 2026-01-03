@@ -134,6 +134,7 @@ export interface UpdatePriceRequest {
 	lookup_key?: string;
 	description?: string;
 	metadata?: Metadata;
+	display_name?: string;
 	effective_from?: string; // ISO date string
 
 	// Critical fields (require creating a new price)
