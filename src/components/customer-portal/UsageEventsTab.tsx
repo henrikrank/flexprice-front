@@ -7,22 +7,21 @@ import EventsApi from '@/api/EventsApi';
 import CustomerApi from '@/api/CustomerApi';
 import { Skeleton } from '@/components/ui/skeleton';
 import { logger } from '@/utils/common/Logger';
-import { cn } from '@/lib/utils';
 import EmptyState from './EmptyState';
 import EventsTable from './EventsTable';
+import TimePeriodSelector from './TimePeriodSelector';
+import { CustomerPortalTimePeriod, DEFAULT_TIME_PERIOD, calculateTimeRange } from './constants';
 
 interface UsageEventsTabProps {
 	customerId: string;
 }
-
-type TimePeriod = '1d' | '7d' | '30d';
 
 const UsageEventsTab = ({ customerId }: UsageEventsTabProps) => {
 	const [events, setEvents] = useState<Event[]>([]);
 	const [hasMore, setHasMore] = useState(true);
 	const [loading, setLoading] = useState(false);
 	const [iterLastKey, setIterLastKey] = useState<string | undefined>(undefined);
-	const [selectedPeriod, setSelectedPeriod] = useState<TimePeriod>('7d');
+	const [selectedPeriod, setSelectedPeriod] = useState<CustomerPortalTimePeriod>(DEFAULT_TIME_PERIOD);
 	const observer = useRef<IntersectionObserver | null>(null);
 	const loadingRef = useRef(false);
 
@@ -35,20 +34,7 @@ const UsageEventsTab = ({ customerId }: UsageEventsTabProps) => {
 
 	// Calculate time range based on selected period
 	const timeRange = useMemo(() => {
-		const endDate = new Date();
-		const startDate = new Date();
-
-		const daysMap: Record<TimePeriod, number> = {
-			'1d': 1,
-			'7d': 7,
-			'30d': 30,
-		};
-
-		startDate.setDate(startDate.getDate() - daysMap[selectedPeriod]);
-		return {
-			start_time: startDate.toISOString(),
-			end_time: endDate.toISOString(),
-		};
+		return calculateTimeRange(selectedPeriod);
 	}, [selectedPeriod]);
 
 	// Fetch events from API
@@ -168,19 +154,7 @@ const UsageEventsTab = ({ customerId }: UsageEventsTabProps) => {
 			<Card className='bg-white border border-[#E9E9E9] rounded-xl overflow-hidden'>
 				<div className='flex items-center justify-between p-6 border-b border-[#E9E9E9]'>
 					<h3 className='text-base font-medium text-zinc-950'>Usage</h3>
-					<div className='flex items-center gap-1 bg-zinc-50 rounded-lg p-1'>
-						{(['1d', '7d', '30d'] as TimePeriod[]).map((period) => (
-							<button
-								key={period}
-								onClick={() => setSelectedPeriod(period)}
-								className={cn(
-									'px-3 py-1.5 text-sm font-medium rounded-md transition-colors',
-									selectedPeriod === period ? 'bg-white text-zinc-900 shadow-sm' : 'text-zinc-500 hover:text-zinc-700',
-								)}>
-								{period}
-							</button>
-						))}
-					</div>
+					<TimePeriodSelector selectedPeriod={selectedPeriod} onPeriodChange={setSelectedPeriod} />
 				</div>
 				{events.length > 0 ? (
 					<>
