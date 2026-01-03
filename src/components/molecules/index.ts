@@ -78,12 +78,14 @@ export { default as PricingCard, type PricingCardProps } from './PricingCard';
 export { default as TierBreakdown } from './TierBreakdown';
 export { default as PriceOverrideDialog } from './PriceOverrideDialog';
 export { default as UpdatePriceDialog } from './UpdatePriceDialog';
+export { UpdatePriceDetailsDrawer } from './UpdatePriceDetailsDrawer';
 
 // Addons & Features
 export { AddonTable, AddonModal } from './AddonTable';
 export { default as AddonDrawer } from './AddonDrawer';
 export { default as FeatureTable } from './FeatureTable';
 export { FeatureAlertDialog } from './FeatureAlertDialog';
+export { FeatureDrawer } from './FeatureDrawer';
 
 // Entitlements
 export { default as AddEntitlementDrawer } from './AddEntitlementDrawer';

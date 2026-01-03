@@ -1,8 +1,16 @@
 import React, { FC, useCallback, useState, useMemo } from 'react';
 import { Button, Card, CardHeader, NoDataCard, Chip, Tooltip } from '@/components/atoms';
-import { FlexpriceTable, ColumnData, DropdownMenu, TerminatePriceModal, SyncOption, UpdatePriceDialog } from '@/components/molecules';
+import {
+	FlexpriceTable,
+	ColumnData,
+	DropdownMenu,
+	TerminatePriceModal,
+	SyncOption,
+	UpdatePriceDialog,
+	UpdatePriceDetailsDrawer,
+} from '@/components/molecules';
 import { Price, Plan, PRICE_STATUS } from '@/models';
-import { Plus, Trash2, Pencil } from 'lucide-react';
+import { Plus, Trash2, Pencil, FileText } from 'lucide-react';
 import { useMutation } from '@tanstack/react-query';
 import { PriceApi } from '@/api/PriceApi';
 import { PlanApi } from '@/api/PlanApi';
@@ -35,10 +43,11 @@ interface PriceDropdownProps {
 	row: Price;
 	hasEndDate: boolean;
 	onEditPrice: (price: Price) => void;
+	onEditDetails: (price: Price) => void;
 	onTerminatePrice: (priceId: string) => void;
 }
 
-const PriceDropdown: FC<PriceDropdownProps> = ({ row, hasEndDate, onEditPrice, onTerminatePrice }) => {
+const PriceDropdown: FC<PriceDropdownProps> = ({ row, hasEndDate, onEditPrice, onEditDetails, onTerminatePrice }) => {
 	const [isOpen, setIsOpen] = useState(false);
 
 	const handleClick = (e: React.MouseEvent) => {
@@ -54,12 +63,22 @@ const PriceDropdown: FC<PriceDropdownProps> = ({ row, hasEndDate, onEditPrice, o
 				onOpenChange={setIsOpen}
 				options={[
 					{
-						label: 'Edit Price',
+						label: 'Update Price',
 						icon: <Pencil />,
 						onSelect: (e: Event) => {
 							e.preventDefault();
 							setIsOpen(false);
 							onEditPrice(row);
+						},
+						disabled: hasEndDate,
+					},
+					{
+						label: 'Edit Details',
+						icon: <FileText />,
+						onSelect: (e: Event) => {
+							e.preventDefault();
+							setIsOpen(false);
+							onEditDetails(row);
 						},
 						disabled: hasEndDate,
 					},
@@ -184,6 +203,8 @@ const PlanPriceTable: FC<PlanChargesTableProps> = ({ plan, onPriceUpdate }) => {
 	const [selectedPriceForTermination, setSelectedPriceForTermination] = useState<Price | null>(null);
 	const [selectedPriceForEdit, setSelectedPriceForEdit] = useState<Price | null>(null);
 	const [isPriceDialogOpen, setIsPriceDialogOpen] = useState(false);
+	const [selectedPriceForDetailsEdit, setSelectedPriceForDetailsEdit] = useState<Price | null>(null);
+	const [isDetailsDrawerOpen, setIsDetailsDrawerOpen] = useState(false);
 
 	// ===== MUTATIONS =====
 	const { mutateAsync: deletePrice, isPending: isDeletingPrice } = useMutation({
@@ -211,6 +232,11 @@ const PlanPriceTable: FC<PlanChargesTableProps> = ({ plan, onPriceUpdate }) => {
 	const handleEditPrice = useCallback((price: Price) => {
 		setSelectedPriceForEdit(price);
 		setIsPriceDialogOpen(true);
+	}, []);
+
+	const handleEditDetails = useCallback((price: Price) => {
+		setSelectedPriceForDetailsEdit(price);
+		setIsDetailsDrawerOpen(true);
 	}, []);
 
 	const handlePriceUpdateSuccess = useCallback(() => {
@@ -350,7 +376,15 @@ const PlanPriceTable: FC<PlanChargesTableProps> = ({ plan, onPriceUpdate }) => {
 			hideOnEmpty: true,
 			render(row) {
 				const hasEndDate = !!(row.end_date && row.end_date.trim() !== '');
-				return <PriceDropdown row={row} hasEndDate={hasEndDate} onEditPrice={handleEditPrice} onTerminatePrice={handleTerminatePrice} />;
+				return (
+					<PriceDropdown
+						row={row}
+						hasEndDate={hasEndDate}
+						onEditPrice={handleEditPrice}
+						onEditDetails={handleEditDetails}
+						onTerminatePrice={handleTerminatePrice}
+					/>
+				);
 			},
 		},
 	];
@@ -379,6 +413,16 @@ const PlanPriceTable: FC<PlanChargesTableProps> = ({ plan, onPriceUpdate }) => {
 					price={selectedPriceForEdit}
 					planId={plan.id}
 					onSuccess={handlePriceUpdateSuccess}
+				/>
+			)}
+
+			{/* Update Price Details Drawer */}
+			{selectedPriceForDetailsEdit && (
+				<UpdatePriceDetailsDrawer
+					price={selectedPriceForDetailsEdit}
+					open={isDetailsDrawerOpen}
+					onOpenChange={setIsDetailsDrawerOpen}
+					refetchQueryKeys={['fetchPlan']}
 				/>
 			)}
 

@@ -234,8 +234,8 @@ const UpdatePriceDialog: FC<UpdatePriceDialogProps> = ({ isOpen, onOpenChange, p
 		<Dialog
 			isOpen={isOpen}
 			onOpenChange={onOpenChange}
-			title='Update Price Configuration'
-			description={`Update the pricing configuration for ${price.meter?.name || price.description || 'this charge'}`}
+			title='Update Price'
+			description={`Update the pricing configuration (amount, billing model, tiers) for ${price.meter?.name || price.description || 'this charge'}`}
 			className='w-auto min-w-[32rem] max-w-[90vw]'>
 			<div className='space-y-6 max-h-[80vh] overflow-y-auto'>
 				<div className='space-y-4'>
