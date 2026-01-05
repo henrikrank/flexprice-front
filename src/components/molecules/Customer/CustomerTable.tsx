@@ -12,7 +12,7 @@ import { ExternalLink } from 'lucide-react';
 import { useCustomerPortalUrl } from '@/hooks/useCustomerPortalUrl';
 
 const ActionButtonWithPortal: FC<{ customer: Customer; onEdit: (customer: Customer) => void }> = ({ customer, onEdit }) => {
-	const { openInNewTab } = useCustomerPortalUrl(customer.id);
+	const { openInNewTab } = useCustomerPortalUrl(customer.external_id);
 
 	return (
 		<ActionButton

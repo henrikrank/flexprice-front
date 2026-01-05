@@ -1,47 +1,37 @@
 import { useMemo } from 'react';
-import AuthService from '@/core/auth/AuthService';
-import EnvironmentApi from '@/api/EnvironmentApi';
+import CustomerApi from '@/api/CustomerApi';
 import { RouteNames } from '@/core/routes/Routes';
 import toast from 'react-hot-toast';
 import { logger } from '@/utils/common/Logger';
 
 /**
  * Custom hook to generate and manage customer portal URL
- * @param customerId - The customer ID to generate portal URL for
+ * @param customerExternalId - The customer external ID to generate portal URL for
  * @returns Object with portalUrl and copyToClipboard function
  */
-export const useCustomerPortalUrl = (customerId: string | undefined) => {
+export const useCustomerPortalUrl = (customerExternalId: string | undefined) => {
 	const portalUrl = useMemo(() => {
-		if (!customerId) return null;
+		if (!customerExternalId) return null;
 
 		try {
-			// Get environment ID
-			const envId = EnvironmentApi.getActiveEnvironmentId();
-
-			// Build the customer portal URL
+			// Build the base customer portal URL (token will be added dynamically)
 			const baseUrl = window.location.origin;
-			const portalPath = `${RouteNames.customerPortal}/${customerId}`;
+			const portalPath = RouteNames.customerPortal;
 			const url = new URL(portalPath, baseUrl);
-
-			// Note: Token will be added dynamically when needed
-			// For now, return URL structure without token
-			if (envId) {
-				url.searchParams.set('env_id', envId);
-			}
 
 			return url.toString();
 		} catch (error) {
 			logger.error('Failed to generate customer portal URL', error);
 			return null;
 		}
-	}, [customerId]);
+	}, [customerExternalId]);
 
 	/**
-	 * Generates a complete portal URL with token and copies it to clipboard
+	 * Generates a complete portal URL with dashboard session token and copies it to clipboard
 	 */
 	const copyToClipboard = async () => {
-		if (!customerId) {
-			toast.error('Customer ID is missing');
+		if (!customerExternalId) {
+			toast.error('Customer external ID is missing');
 			return;
 		}
 
@@ -51,16 +41,16 @@ export const useCustomerPortalUrl = (customerId: string | undefined) => {
 		}
 
 		try {
-			// Get Supabase access token
-			const token = await AuthService.getAcessToken();
-			if (!token) {
-				toast.error('Unable to get access token. Please ensure you are logged in.');
+			// Create dashboard session to get token
+			const sessionData = await CustomerApi.createDashboardSession(customerExternalId);
+			if (!sessionData?.token) {
+				toast.error('Unable to create dashboard session.');
 				return;
 			}
 
 			// Add token to URL
 			const urlWithToken = new URL(portalUrl);
-			urlWithToken.searchParams.set('token', token);
+			urlWithToken.searchParams.set('token', sessionData.token);
 
 			// Copy to clipboard
 			await navigator.clipboard.writeText(urlWithToken.toString());
@@ -72,11 +62,11 @@ export const useCustomerPortalUrl = (customerId: string | undefined) => {
 	};
 
 	/**
-	 * Opens the customer portal in a new tab
+	 * Opens the customer portal in a new tab with dashboard session token
 	 */
 	const openInNewTab = async () => {
-		if (!customerId) {
-			toast.error('Customer ID is missing');
+		if (!customerExternalId) {
+			toast.error('Customer external ID is missing');
 			return;
 		}
 
@@ -86,16 +76,16 @@ export const useCustomerPortalUrl = (customerId: string | undefined) => {
 		}
 
 		try {
-			// Get Supabase access token
-			const token = await AuthService.getAcessToken();
-			if (!token) {
-				toast.error('Unable to get access token. Please ensure you are logged in.');
+			// Create dashboard session to get token
+			const sessionData = await CustomerApi.createDashboardSession(customerExternalId);
+			if (!sessionData?.token) {
+				toast.error('Unable to create dashboard session.');
 				return;
 			}
 
 			// Add token to URL
 			const urlWithToken = new URL(portalUrl);
-			urlWithToken.searchParams.set('token', token);
+			urlWithToken.searchParams.set('token', sessionData.token);
 
 			// Open in new tab
 			window.open(urlWithToken.toString(), '_blank', 'noopener,noreferrer');

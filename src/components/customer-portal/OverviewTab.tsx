@@ -1,14 +1,12 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import toast from 'react-hot-toast';
-import CustomerApi from '@/api/CustomerApi';
-import EventsApi from '@/api/EventsApi';
-import WalletApi from '@/api/WalletApi';
+import CustomerPortalApi from '@/api/CustomerPortalApi';
 import { Card } from '@/components/atoms';
 import { CustomerUsageChart } from '@/components/molecules';
 import { WindowSize } from '@/models';
 import { WALLET_STATUS } from '@/models/Wallet';
-import { GetUsageAnalyticsRequest } from '@/types';
+import { DashboardAnalyticsRequest } from '@/types';
 import { formatAmount } from '@/components/atoms/Input/Input';
 import { getCurrencySymbol } from '@/utils/common/helper_functions';
 import { Wallet as WalletIcon } from 'lucide-react';
@@ -16,10 +14,6 @@ import SubscriptionsSection from './SubscriptionsSection';
 import UsageSection from './UsageSection';
 import TimePeriodSelector from './TimePeriodSelector';
 import { CustomerPortalTimePeriod, DEFAULT_TIME_PERIOD, calculateTimeRange } from './constants';
-
-interface OverviewTabProps {
-	customerId: string;
-}
 
 const OverviewSkeleton = () => (
 	<div className='space-y-6'>
@@ -49,15 +43,8 @@ const OverviewSkeleton = () => (
 	</div>
 );
 
-const OverviewTab = ({ customerId }: OverviewTabProps) => {
+const OverviewTab = () => {
 	const [selectedPeriod, setSelectedPeriod] = useState<CustomerPortalTimePeriod>(DEFAULT_TIME_PERIOD);
-
-	// Fetch customer to get external_id for analytics
-	const { data: customer } = useQuery({
-		queryKey: ['portal-customer-overview', customerId],
-		queryFn: () => CustomerApi.getCustomerById(customerId),
-		enabled: !!customerId,
-	});
 
 	// Fetch subscriptions
 	const {
@@ -65,9 +52,8 @@ const OverviewTab = ({ customerId }: OverviewTabProps) => {
 		isLoading: subscriptionsLoading,
 		isError: subscriptionsError,
 	} = useQuery({
-		queryKey: ['portal-subscriptions', customerId],
-		queryFn: () => CustomerApi.getCustomerSubscriptions(customerId),
-		enabled: !!customerId,
+		queryKey: ['portal-subscriptions'],
+		queryFn: () => CustomerPortalApi.getSubscriptions({ limit: 10, offset: 0 }),
 	});
 
 	// Fetch wallets
@@ -76,20 +62,12 @@ const OverviewTab = ({ customerId }: OverviewTabProps) => {
 		isLoading: walletsLoading,
 		isError: walletsError,
 	} = useQuery({
-		queryKey: ['portal-wallets', customerId],
-		queryFn: () => WalletApi.getCustomerWallets({ id: customerId }),
-		enabled: !!customerId,
+		queryKey: ['portal-wallets'],
+		queryFn: () => CustomerPortalApi.getWallets(),
 	});
 
 	// Get first wallet (prefer active, otherwise first available)
 	const firstWallet = wallets?.find((w) => w.wallet_status === WALLET_STATUS.ACTIVE) || wallets?.[0];
-
-	// Fetch wallet balance for first wallet
-	const { data: walletBalance, isLoading: balanceLoading } = useQuery({
-		queryKey: ['portal-wallet-balance', firstWallet?.id],
-		queryFn: () => WalletApi.getWalletBalance(firstWallet!.id),
-		enabled: !!firstWallet?.id,
-	});
 
 	// Fetch usage summary
 	const {
@@ -97,29 +75,25 @@ const OverviewTab = ({ customerId }: OverviewTabProps) => {
 		isLoading: usageLoading,
 		isError: usageError,
 	} = useQuery({
-		queryKey: ['portal-usage', customerId],
-		queryFn: () => CustomerApi.getUsageSummary({ customer_id: customerId }),
-		enabled: !!customerId,
+		queryKey: ['portal-usage'],
+		queryFn: () => CustomerPortalApi.getUsageSummary(),
 	});
 
 	// Prepare analytics params based on selected period
-	const analyticsParams: GetUsageAnalyticsRequest | null = useMemo(() => {
-		if (!customer?.external_id) return null;
-
+	const analyticsParams: DashboardAnalyticsRequest | null = useMemo(() => {
 		const timeRange = calculateTimeRange(selectedPeriod);
 
 		return {
-			external_customer_id: customer.external_id,
 			window_size: WindowSize.DAY,
 			start_time: timeRange.start_time,
 			end_time: timeRange.end_time,
 		};
-	}, [customer?.external_id, selectedPeriod]);
+	}, [selectedPeriod]);
 
 	// Fetch usage analytics for chart
 	const { data: analyticsData, isError: analyticsError } = useQuery({
-		queryKey: ['portal-analytics', customerId, analyticsParams],
-		queryFn: () => EventsApi.getUsageAnalytics(analyticsParams!),
+		queryKey: ['portal-analytics', analyticsParams],
+		queryFn: () => CustomerPortalApi.getAnalytics(analyticsParams!),
 		enabled: !!analyticsParams,
 	});
 
@@ -156,7 +130,7 @@ const OverviewTab = ({ customerId }: OverviewTabProps) => {
 
 	const subscriptions = subscriptionsData?.items || [];
 	const usage = usageData?.features || [];
-	const currencySymbol = getCurrencySymbol(walletBalance?.currency ?? firstWallet?.currency ?? 'USD');
+	const currencySymbol = getCurrencySymbol(firstWallet?.currency ?? 'USD');
 	return (
 		<div className='space-y-6'>
 			{/* Wallet Balance */}
@@ -174,22 +148,14 @@ const OverviewTab = ({ customerId }: OverviewTabProps) => {
 					{/* Balance */}
 					<div>
 						<span className='text-sm text-zinc-500 block mb-2'>Balance</span>
-						{balanceLoading ? (
-							<div className='h-10 w-32 bg-zinc-100 animate-pulse rounded'></div>
-						) : (
-							<>
-								<div className='flex items-baseline gap-2'>
-									<span className='text-4xl font-semibold text-zinc-950'>
-										{formatAmount(walletBalance?.real_time_credit_balance?.toString() ?? '0')}
-									</span>
-									<span className='text-base font-normal text-zinc-500'>credits</span>
-								</div>
-								<p className='text-sm text-zinc-500 mt-1'>
-									{currencySymbol}
-									{formatAmount(walletBalance?.real_time_balance?.toString() ?? '0')} value
-								</p>
-							</>
-						)}
+						<div className='flex items-baseline gap-2'>
+							<span className='text-4xl font-semibold text-zinc-950'>{formatAmount(firstWallet.credit_balance?.toString() ?? '0')}</span>
+							<span className='text-base font-normal text-zinc-500'>credits</span>
+						</div>
+						<p className='text-sm text-zinc-500 mt-1'>
+							{currencySymbol}
+							{formatAmount(firstWallet.balance?.toString() ?? '0')} value
+						</p>
 					</div>
 				</Card>
 			)}

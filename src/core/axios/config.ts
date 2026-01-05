@@ -1,21 +1,21 @@
 import axios, { AxiosInstance, AxiosResponse, InternalAxiosRequestConfig } from 'axios';
 import EnvironmentApi from '@/api/EnvironmentApi';
 import AuthService from '@/core/auth/AuthService';
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
 
-// Runtime credential overrides for stateless pages
-let runtimeToken: string | null = null;
-let runtimeEnvId: string | null = null;
+interface RuntimeCredentials {
+	sessionToken: string;
+}
+let runtimeCredentials: RuntimeCredentials | null = null; // runtime credentials for customer dashboard
 
-export const setRuntimeCredentials = (token: string | null, envId: string | null) => {
-	runtimeToken = token;
-	runtimeEnvId = envId;
+export const setRuntimeCredentials = (credentials: RuntimeCredentials) => {
+	runtimeCredentials = credentials;
 };
 
 export const clearRuntimeCredentials = () => {
-	runtimeToken = null;
-	runtimeEnvId = null;
+	runtimeCredentials = null;
 };
+
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
 
 const axiosClient: AxiosInstance = axios.create({
 	baseURL: API_URL,
@@ -27,10 +27,16 @@ const axiosClient: AxiosInstance = axios.create({
 
 axiosClient.interceptors.request.use(
 	async (config: InternalAxiosRequestConfig) => {
-		// Use runtime credentials if set, otherwise use services
-		const token = runtimeToken || (await AuthService.getAcessToken());
-		const activeEnvId = runtimeEnvId || EnvironmentApi.getActiveEnvironmentId();
+		// Customer portal mode: only use session token, skip JWT and env ID
+		if (runtimeCredentials) {
+			config.headers['X-Session-Token'] = runtimeCredentials.sessionToken;
+			return config;
+		}
 
+		// Normal app mode: use JWT token and environment ID
+		const token = await AuthService.getAcessToken();
+		// add active environment to the request
+		const activeEnvId = EnvironmentApi.getActiveEnvironmentId();
 		if (activeEnvId) {
 			config.headers['X-Environment-ID'] = activeEnvId;
 		}

@@ -11,6 +11,7 @@ import {
 	UpdateCustomerRequest,
 	ListCreditGrantApplicationsResponse,
 } from '@/types/dto';
+import { DashboardSessionResponse } from '@/types/dto/Dashboard';
 import { generateQueryParams } from '@/utils/common/api_helper';
 import { TypedBackendFilter } from '@/types/formatters/QueryBuilder';
 import { DataType, FilterOperator } from '@/types/common/QueryBuilder';
@@ -63,6 +64,15 @@ class CustomerApi {
 	 */
 	public static async getUpcomingCreditGrantApplications(customerId: string): Promise<ListCreditGrantApplicationsResponse> {
 		return await AxiosClient.get<ListCreditGrantApplicationsResponse>(`${this.baseUrl}/${customerId}/grants/upcoming`);
+	}
+
+	/**
+	 * Create a dashboard session for a customer
+	 * @param externalId - Customer external ID
+	 * @returns Promise with dashboard session response containing URL, token, and expiration
+	 */
+	public static async createDashboardSession(externalId: string): Promise<DashboardSessionResponse> {
+		return await AxiosClient.get<DashboardSessionResponse>(`${this.baseUrl}/dashboard/${externalId}`);
 	}
 
 	/**

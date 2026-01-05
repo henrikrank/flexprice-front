@@ -3,8 +3,7 @@ import { useQuery } from '@tanstack/react-query';
 import toast from 'react-hot-toast';
 import { motion } from 'framer-motion';
 import { setRuntimeCredentials, clearRuntimeCredentials } from '@/core/axios/config';
-import CustomerApi from '@/api/CustomerApi';
-import WalletApi from '@/api/WalletApi';
+import CustomerPortalApi from '@/api/CustomerPortalApi';
 import { Customer } from '@/models';
 import { Loader } from '@/components/atoms';
 import { PortalHeader, OverviewTab, InvoicesTab, WalletTab, UsageAnalyticsTab } from '@/components/customer-portal';
@@ -17,17 +16,13 @@ import { cn } from '@/lib/utils';
  * It operates independently of the main application's authentication system.
  *
  * Required Parameters:
- * - customerId: Extracted from URL path parameter
- * - token: Access token (typically Supabase access token) passed via query parameter `token`
- * - env_id: Environment ID passed via query parameter `env_id` (required)
+ * - token: Dashboard session token (passed from URL query parameter)
  *
- * This page uses runtime credential override to set credentials dynamically,
- * allowing existing API classes to work in stateless contexts.
+ * This page uses runtime credential override to set dashboard token dynamically,
+ * allowing CustomerPortalApi to work in stateless contexts without JWT or environment ID.
  */
 interface CustomerPortalProps {
-	customerId: string;
 	token: string;
-	envId: string;
 }
 
 enum PortalTab {
@@ -37,16 +32,16 @@ enum PortalTab {
 	EVENTS = 'events',
 }
 
-const CustomerPortal = ({ customerId, token, envId }: CustomerPortalProps) => {
+const CustomerPortal = ({ token }: CustomerPortalProps) => {
 	const [activeTab, setActiveTab] = useState<PortalTab>(PortalTab.OVERVIEW);
 
 	useEffect(() => {
 		// Set runtime credentials for this session
-		setRuntimeCredentials(token, envId);
+		setRuntimeCredentials({ sessionToken: token });
 
 		// Cleanup on unmount
 		return () => clearRuntimeCredentials();
-	}, [token, envId]);
+	}, [token]);
 
 	// Fetch customer data
 	const {
@@ -55,11 +50,11 @@ const CustomerPortal = ({ customerId, token, envId }: CustomerPortalProps) => {
 		isError: customerError,
 		error,
 	} = useQuery<Customer>({
-		queryKey: ['portal-customer', customerId, token, envId],
+		queryKey: ['portal-customer', token],
 		queryFn: async () => {
-			return await CustomerApi.getCustomerById(customerId);
+			return await CustomerPortalApi.getCustomer();
 		},
-		enabled: !!customerId && !!token && !!envId,
+		enabled: !!token,
 		retry: 1,
 		staleTime: 0,
 		gcTime: 0,
@@ -67,15 +62,15 @@ const CustomerPortal = ({ customerId, token, envId }: CustomerPortalProps) => {
 
 	// Check if customer has wallets (to conditionally show wallet tab)
 	const { data: wallets } = useQuery({
-		queryKey: ['portal-wallets-check', customerId],
-		queryFn: () => WalletApi.getCustomerWallets({ id: customerId }),
-		enabled: !!customerId && !!token && !!envId,
+		queryKey: ['portal-wallets-check', token],
+		queryFn: () => CustomerPortalApi.getWallets(),
+		enabled: !!token,
 	});
 
 	// Show toast notification for errors
 	useEffect(() => {
 		if (customerError) {
-			const err = error as any;
+			const err = error as { error?: { message?: string }; message?: string };
 			toast.error(err?.error?.message || err?.message || 'Failed to fetch customer data');
 		}
 	}, [customerError, error]);
@@ -141,10 +136,10 @@ const CustomerPortal = ({ customerId, token, envId }: CustomerPortalProps) => {
 
 				{/* Tab Content */}
 				<div>
-					{activeTab === PortalTab.OVERVIEW && <OverviewTab customerId={customerId} />}
-					{activeTab === PortalTab.CREDITS && hasWallets && <WalletTab customerId={customerId} />}
-					{activeTab === PortalTab.INVOICES && <InvoicesTab customerId={customerId} />}
-					{activeTab === PortalTab.EVENTS && <UsageAnalyticsTab customerId={customerId} />}
+					{activeTab === PortalTab.OVERVIEW && <OverviewTab />}
+					{activeTab === PortalTab.CREDITS && hasWallets && <WalletTab />}
+					{activeTab === PortalTab.INVOICES && <InvoicesTab />}
+					{activeTab === PortalTab.EVENTS && <UsageAnalyticsTab />}
 				</div>
 
 				{/* Footer */}
