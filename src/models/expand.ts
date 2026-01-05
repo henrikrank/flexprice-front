@@ -17,4 +17,5 @@ export enum EXPAND {
 	ADDONS = 'addons',
 	PARENT_CUSTOMER = 'parent_customer',
 	CREATED_BY_USER = 'created_by_user',
+	PRICEUNIT = 'priceunit',
 }

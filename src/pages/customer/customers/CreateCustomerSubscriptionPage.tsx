@@ -27,7 +27,7 @@ import { InternalCreditGrantRequest, creditGrantToInternal, internalToCreateRequ
 import { BILLING_PERIOD } from '@/constants/constants';
 
 import {
-	ExpandedPlan,
+	PlanResponse,
 	CreateSubscriptionRequest,
 	AddAddonToSubscriptionRequest,
 	TaxRateOverride,
@@ -56,7 +56,7 @@ export enum SubscriptionPhaseState {
 
 export type SubscriptionFormState = {
 	selectedPlan: string;
-	prices: ExpandedPlan | null;
+	prices: PlanResponse | null;
 	billingPeriod: BILLING_PERIOD;
 	currency: string;
 	billingPeriodOptions: SelectOption[];
@@ -140,6 +140,20 @@ const useAddons = (addonIds: string[]) => {
 	});
 };
 
+const usePlanDetails = (planId: string | undefined) => {
+	return useQuery({
+		queryKey: ['planDetails', planId],
+		queryFn: async () => {
+			if (!planId) return null;
+			const planResponse = await PlanApi.getPlanById(planId);
+			return planResponse;
+		},
+		enabled: !!planId,
+		staleTime: 5 * 60 * 1000,
+		refetchOnWindowFocus: false,
+	});
+};
+
 const CreateCustomerSubscriptionPage: React.FC = () => {
 	const { id: customerId, subscription_id } = useParams<Params>();
 	const navigate = useNavigate();
@@ -207,6 +221,11 @@ const CreateCustomerSubscriptionPage: React.FC = () => {
 	const { data: plans, isLoading: plansLoading, isError: plansError } = usePlans();
 	const { data: customerData } = useCustomerData(customerId);
 	const { data: subscriptionData } = useSubscriptionData(subscription_id);
+	const {
+		data: planDetails,
+		isLoading: isLoadingPlanDetails,
+		isError: isPlanDetailsError,
+	} = usePlanDetails(subscriptionState.selectedPlan);
 
 	const { data: couponsResponse } = useQuery({
 		queryKey: ['coupons'],
@@ -240,44 +259,77 @@ const CreateCustomerSubscriptionPage: React.FC = () => {
 		}
 	}, [customerData, updateBreadcrumb]);
 
+	// Initialize subscription state from existing subscription data
 	useEffect(() => {
-		if (subscriptionData?.details && plans) {
-			const planDetails = plans.find((plan) => plan.id === subscriptionData.details.plan_id);
-			if (planDetails) {
-				const billingPeriods = [...new Set(planDetails.prices?.map((price) => price.billing_period) || [])];
-
-				setSubscriptionState({
-					selectedPlan: subscriptionData.details.plan_id,
-					prices: planDetails,
-					billingPeriod: subscriptionData.details.billing_period.toLowerCase() as BILLING_PERIOD,
-					currency: subscriptionData.details.currency,
-					billingPeriodOptions: billingPeriods.map((period) => ({
-						label: toSentenceCase(period.replace('_', ' ')),
-						value: period,
-					})),
-					billingCycle: subscriptionData.details.billing_cycle || BILLING_CYCLE.ANNIVERSARY,
-					startDate: subscriptionData.details.start_date,
-					endDate: subscriptionData.details.end_date || undefined,
-					commitmentAmount: subscriptionData.details.commitment_amount?.toString() ?? '',
-					overageFactor: subscriptionData.details.overage_factor?.toString() ?? '',
-					phases: [],
-					selectedPhase: -1,
-					phaseStates: [],
-					isPhaseEditing: false,
-					originalPhases: [],
-					priceOverrides: {},
-					linkedCoupon: null,
-					lineItemCoupons: {},
-					addons: [],
-					customerId: customerId!,
-					tax_rate_overrides: [],
-					entitlementOverrides: {},
-					creditGrants: (subscriptionData.details.credit_grants || []).map(creditGrantToInternal),
-					enable_true_up: (subscriptionData.details as any).enable_true_up ?? false,
-				});
-			}
+		if (subscriptionData?.details) {
+			setSubscriptionState((prev) => ({
+				...prev,
+				selectedPlan: subscriptionData.details.plan_id,
+				billingPeriod: subscriptionData.details.billing_period.toLowerCase() as BILLING_PERIOD,
+				currency: subscriptionData.details.currency,
+				billingCycle: subscriptionData.details.billing_cycle || BILLING_CYCLE.ANNIVERSARY,
+				startDate: subscriptionData.details.start_date,
+				endDate: subscriptionData.details.end_date || undefined,
+				commitmentAmount: subscriptionData.details.commitment_amount?.toString() ?? '',
+				overageFactor: subscriptionData.details.overage_factor?.toString() ?? '',
+				phases: [],
+				selectedPhase: -1,
+				phaseStates: [],
+				isPhaseEditing: false,
+				originalPhases: [],
+				priceOverrides: {},
+				linkedCoupon: null,
+				lineItemCoupons: {},
+				addons: [],
+				customerId: customerId!,
+				tax_rate_overrides: [],
+				entitlementOverrides: {},
+				creditGrants: (subscriptionData.details.credit_grants || []).map(creditGrantToInternal),
+				enable_true_up: (subscriptionData.details as any).enable_true_up ?? false,
+			}));
 		}
-	}, [subscriptionData, plans, customerId]);
+	}, [subscriptionData, customerId]);
+
+	// Sync plan details from usePlanDetails hook to state
+	useEffect(() => {
+		if (planDetails) {
+			const billingPeriods = [...new Set(planDetails.prices?.map((price) => price.billing_period) || [])];
+			const billingPeriodOptions = billingPeriods.map((period) => ({
+				label: toSentenceCase(period.replace('_', ' ')),
+				value: period,
+			}));
+
+			setSubscriptionState((prev) => {
+				// Determine the billing period to use
+				const currentBillingPeriod = prev.billingPeriod;
+				const isValidBillingPeriod =
+					currentBillingPeriod && billingPeriods.some((bp) => bp.toLowerCase() === currentBillingPeriod.toLowerCase());
+				const selectedBillingPeriod = isValidBillingPeriod
+					? currentBillingPeriod
+					: (billingPeriods[0]?.toLowerCase() as BILLING_PERIOD) || currentBillingPeriod;
+
+				// Determine the currency to use
+				const availableCurrencies = [
+					...new Set(
+						planDetails.prices
+							?.filter((price) => price.billing_period.toLowerCase() === selectedBillingPeriod.toLowerCase())
+							.map((price) => price.currency) || [],
+					),
+				];
+				const currentCurrency = prev.currency;
+				const isValidCurrency = currentCurrency && availableCurrencies.includes(currentCurrency);
+				const selectedCurrency = isValidCurrency ? currentCurrency : availableCurrencies[0] || currentCurrency;
+
+				return {
+					...prev,
+					prices: planDetails,
+					billingPeriodOptions,
+					billingPeriod: selectedBillingPeriod,
+					currency: selectedCurrency,
+				};
+			});
+		}
+	}, [planDetails]);
 
 	const { mutate: createSubscription, isPending: isCreating } = useMutation({
 		mutationKey: ['createSubscription'],
@@ -530,6 +582,8 @@ const CreateCustomerSubscriptionPage: React.FC = () => {
 					plans={plans}
 					plansLoading={plansLoading}
 					plansError={plansError}
+					isLoadingPlanDetails={isLoadingPlanDetails}
+					isPlanDetailsError={isPlanDetailsError}
 					isDisabled={!!subscription_id}
 					phases={subscriptionState.phases}
 					onPhasesChange={(newPhases) => {

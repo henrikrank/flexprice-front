@@ -1,6 +1,6 @@
 import { AxiosClient } from '@/core/axios/verbs';
-import { Pagination } from '@/models';
-import { generateQueryParams } from '@/utils/common/api_helper';
+import { EXPAND, Pagination } from '@/models';
+import { generateExpandQueryParams, generateQueryParams } from '@/utils/common/api_helper';
 import {
 	CreatePlanRequest,
 	UpdatePlanRequest,
@@ -9,12 +9,11 @@ import {
 	ListPlansResponse,
 	GetPlanCreditGrantsResponse,
 	SynchronizePlanPricesWithSubscriptionResponse,
-	ExpandedPlan,
 } from '@/types/dto';
 import { TypedBackendFilter, TypedBackendSort } from '@/types/formatters/QueryBuilder';
 
 export interface GetAllPlansResponse {
-	items: PlanResponse[] | ExpandedPlan[];
+	items: PlanResponse[];
 	pagination: Pagination;
 }
 
@@ -71,24 +70,24 @@ export class PlanApi {
 		};
 		const url = generateQueryParams(this.baseUrl, payload);
 		const response = await AxiosClient.get<GetAllPlansResponse>(url);
-		return response.items as ExpandedPlan[];
+		return response.items;
 	}
 
 	public static async getActiveExpandedPlan(query?: Pagination) {
 		const payload = {
-			expand: 'prices,meters,credit_grants',
+			expand: generateExpandQueryParams([EXPAND.PRICES, EXPAND.METERS, EXPAND.CREDIT_GRANT, EXPAND.PRICEUNIT]),
 			status: 'published',
 			limit: query?.limit,
 			offset: query?.offset,
 		};
 		const url = generateQueryParams(this.baseUrl, payload);
 		const response = await AxiosClient.get<GetAllPlansResponse>(url);
-		return response.items as ExpandedPlan[];
+		return response.items;
 	}
 
 	public static async getPlanById(id: string) {
 		const payload = {
-			expand: 'meters,entitlements,prices,features,credit_grants',
+			expand: generateExpandQueryParams([EXPAND.METERS, EXPAND.ENTITLEMENTS, EXPAND.PRICES, EXPAND.FEATURES, EXPAND.CREDIT_GRANT]),
 		};
 		const url = generateQueryParams(`${this.baseUrl}/${id}`, payload);
 		return await AxiosClient.get<PlanResponse>(url);

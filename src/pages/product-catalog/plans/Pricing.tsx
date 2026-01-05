@@ -5,7 +5,7 @@ import { useQuery } from '@tanstack/react-query';
 import toast from 'react-hot-toast';
 import { billlingPeriodOptions } from '@/constants/constants';
 import { useState, useMemo } from 'react';
-import { ExpandedPlan } from '@/types';
+import { PlanResponse } from '@/types';
 import { GetAllPlansResponse } from '@/api/PlanApi';
 import { PricingCard, type PricingCardProps } from '@/components/molecules';
 import { ApiDocsContent } from '@/components/molecules';
@@ -85,7 +85,7 @@ const getPriceDisplayType = (prices: PriceType[]): PlanType => {
 };
 
 const findBestPriceCombination = (
-	plans: ExpandedPlan[],
+	plans: PlanResponse[],
 	availableCurrencyOptions: Array<{ value: string }>,
 	availablePeriodOptions: Array<{ value: string }>,
 ) => {
@@ -167,7 +167,7 @@ const PricingPage = () => {
 			return { uniqueCurrencies: [], uniqueBillingPeriods: [], filteredPlans: [] };
 		}
 
-		const plans = plansData.items as ExpandedPlan[];
+		const plans = plansData.items;
 
 		// Collect unique currencies and billing periods
 		const currencies = new Set<string>();

@@ -181,7 +181,6 @@ export type {
 	SynchronizationSummary,
 	SynchronizePlanPricesWithSubscriptionResponse,
 	GetPlanCreditGrantsResponse,
-	ExpandedPlan,
 } from './Plan';
 
 export type { CreateCouponRequest, UpdateCouponRequest, GetCouponResponse, ListCouponsResponse, CouponFilter } from './Coupon';
