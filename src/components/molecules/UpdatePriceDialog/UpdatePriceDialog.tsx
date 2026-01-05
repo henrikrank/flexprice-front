@@ -2,7 +2,7 @@ import { FC, useState, useEffect, useMemo } from 'react';
 import { Dialog } from '@/components/atoms';
 import { Input, Button, Select, SelectOption, DatePicker } from '@/components/atoms';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
-import { Price, BILLING_MODEL, TIER_MODE, CreatePriceTier, TransformQuantity, PRICE_TYPE } from '@/models/Price';
+import { Price, BILLING_MODEL, TIER_MODE, CreatePriceTier, TransformQuantity, PRICE_TYPE, PRICE_UNIT_TYPE } from '@/models/Price';
 import { formatAmount, removeFormatting } from '@/components/atoms/Input/Input';
 import { getCurrencySymbol } from '@/utils/common/helper_functions';
 import VolumeTieredPricingForm from '@/components/organisms/PlanForm/VolumeTieredPricingForm';
@@ -64,6 +64,9 @@ const UpdatePriceDialog: FC<UpdatePriceDialogProps> = ({ isOpen, onOpenChange, p
 	const [effectiveFrom, setEffectiveFrom] = useState<Date | undefined>(undefined);
 	const [selectedSyncOption, setSelectedSyncOption] = useState<SyncOption>(SyncOption.NEW_ONLY);
 
+	// Detect price unit type
+	const isCustomPriceUnit = price.price_unit_type === PRICE_UNIT_TYPE.CUSTOM;
+
 	// Hide sync option if price type is FIXED
 	const isFixedPrice = price.type === PRICE_TYPE.FIXED;
 
@@ -82,34 +85,61 @@ const UpdatePriceDialog: FC<UpdatePriceDialogProps> = ({ isOpen, onOpenChange, p
 	// Initialize state when price or dialog opens
 	useEffect(() => {
 		if (isOpen) {
-			setOverrideAmount(price.amount);
 			setOverrideQuantity(1);
 			setOverrideBillingModel(price.billing_model);
 			setOverrideTierMode(price.tier_mode || TIER_MODE.VOLUME);
 
-			if (price.tiers && price.tiers.length > 0) {
-				setOverrideTiers(
-					price.tiers.map((tier) => ({
-						unit_amount: tier.unit_amount,
-						flat_amount: tier.flat_amount || '0',
-						up_to: tier.up_to,
-					})),
-				);
+			// Initialize amount and tiers based on price unit type
+			if (isCustomPriceUnit) {
+				// For CUSTOM prices, use price_unit_amount and price_unit_tiers
+				const initialAmount = price.price_unit_amount || price.price_unit_config?.amount || '';
+				setOverrideAmount(initialAmount);
+
+				if (price.price_unit_tiers && price.price_unit_tiers.length > 0) {
+					setOverrideTiers(
+						price.price_unit_tiers.map((tier) => ({
+							unit_amount: tier.unit_amount,
+							flat_amount: tier.flat_amount || '0',
+							up_to: tier.up_to,
+						})),
+					);
+				} else {
+					setOverrideTiers([
+						{
+							unit_amount: initialAmount,
+							flat_amount: '0',
+							up_to: null,
+						},
+					]);
+				}
 			} else {
-				setOverrideTiers([
-					{
-						unit_amount: price.amount,
-						flat_amount: '0',
-						up_to: null,
-					},
-				]);
+				// For FIAT prices, use amount and tiers
+				setOverrideAmount(price.amount);
+
+				if (price.tiers && price.tiers.length > 0) {
+					setOverrideTiers(
+						price.tiers.map((tier) => ({
+							unit_amount: tier.unit_amount,
+							flat_amount: tier.flat_amount || '0',
+							up_to: tier.up_to,
+						})),
+					);
+				} else {
+					setOverrideTiers([
+						{
+							unit_amount: price.amount,
+							flat_amount: '0',
+							up_to: null,
+						},
+					]);
+				}
 			}
 
 			setOverrideTransformQuantity(price.transform_quantity || { divide_by: 1, round: 'up' });
 			setEffectiveFrom(undefined);
 			setSelectedSyncOption(SyncOption.NEW_ONLY);
 		}
-	}, [isOpen, price]);
+	}, [isOpen, price, isCustomPriceUnit]);
 
 	const { mutateAsync: updatePrice, isPending: isUpdatingPrice } = useMutation({
 		mutationFn: async ({ priceId, data }: { priceId: string; data: UpdatePriceRequest }) => {
@@ -135,10 +165,19 @@ const UpdatePriceDialog: FC<UpdatePriceDialogProps> = ({ isOpen, onOpenChange, p
 	const handleUpdate = async () => {
 		const updateData: UpdatePriceRequest = {};
 
-		// Only include amount if billing model is not tiered
+		// Handle amount/price_unit_amount based on price unit type and billing model
 		if (overrideBillingModel !== BILLING_MODEL.TIERED && overrideBillingModel !== 'SLAB_TIERED') {
-			if (overrideAmount && removeFormatting(overrideAmount) !== price.amount) {
-				updateData.amount = removeFormatting(overrideAmount);
+			if (isCustomPriceUnit) {
+				// For CUSTOM prices, use price_unit_amount
+				const originalAmount = price.price_unit_amount || price.price_unit_config?.amount || '';
+				if (overrideAmount && removeFormatting(overrideAmount) !== originalAmount) {
+					updateData.price_unit_amount = removeFormatting(overrideAmount);
+				}
+			} else {
+				// For FIAT prices, use amount
+				if (overrideAmount && removeFormatting(overrideAmount) !== price.amount) {
+					updateData.amount = removeFormatting(overrideAmount);
+				}
 			}
 		}
 
@@ -156,12 +195,18 @@ const UpdatePriceDialog: FC<UpdatePriceDialogProps> = ({ isOpen, onOpenChange, p
 			updateData.tier_mode = overrideTierMode;
 		}
 
-		// Only include tiers if billing model is tiered
+		// Handle tiers/price_unit_tiers based on price unit type and billing model
 		if ((overrideBillingModel === BILLING_MODEL.TIERED || overrideBillingModel === 'SLAB_TIERED') && overrideTiers.length > 0) {
-			updateData.tiers = overrideTiers;
+			if (isCustomPriceUnit) {
+				// For CUSTOM prices, use price_unit_tiers
+				updateData.price_unit_tiers = overrideTiers;
+			} else {
+				// For FIAT prices, use tiers
+				updateData.tiers = overrideTiers;
+			}
 		}
 
-		// Only include transform_quantity if billing model is package
+		// Only include transform_quantity if billing model is package (same for both types)
 		if (overrideBillingModel === BILLING_MODEL.PACKAGE) {
 			updateData.transform_quantity = {
 				...overrideTransformQuantity,
@@ -217,18 +262,80 @@ const UpdatePriceDialog: FC<UpdatePriceDialogProps> = ({ isOpen, onOpenChange, p
 			billingModelChanged = overrideBillingModel !== originalBillingModel;
 		}
 
+		// Compare amount/price_unit_amount based on price unit type
+		let amountChanged = false;
+		if (isCustomPriceUnit) {
+			const originalAmount = price.price_unit_amount || price.price_unit_config?.amount || '';
+			amountChanged = !!(overrideAmount && removeFormatting(overrideAmount) !== originalAmount);
+		} else {
+			amountChanged = !!(overrideAmount && removeFormatting(overrideAmount) !== price.amount);
+		}
+
+		// Compare tiers/price_unit_tiers based on price unit type
+		let tiersChanged = false;
+		if (isCustomPriceUnit) {
+			const originalTiers = price.price_unit_tiers || [];
+			if (originalTiers.length === 0 && overrideTiers.length > 0) {
+				tiersChanged = true;
+			} else if (originalTiers.length > 0) {
+				// Compare tier values
+				tiersChanged =
+					JSON.stringify(overrideTiers) !==
+					JSON.stringify(
+						originalTiers.map((tier) => ({
+							unit_amount: tier.unit_amount,
+							flat_amount: tier.flat_amount || '0',
+							up_to: tier.up_to,
+						})),
+					);
+			}
+		} else {
+			const originalTiers = price.tiers || [];
+			if (originalTiers.length === 0 && overrideTiers.length > 0) {
+				tiersChanged = true;
+			} else if (originalTiers.length > 0) {
+				// Compare tier values
+				tiersChanged =
+					JSON.stringify(overrideTiers) !==
+					JSON.stringify(
+						originalTiers.map((tier) => ({
+							unit_amount: tier.unit_amount,
+							flat_amount: tier.flat_amount || '0',
+							up_to: tier.up_to,
+						})),
+					);
+			}
+		}
+
 		return (
-			(overrideAmount && removeFormatting(overrideAmount) !== price.amount) ||
+			amountChanged ||
 			overrideQuantity !== undefined ||
 			billingModelChanged ||
-			overrideTiers.length > 0 ||
+			tiersChanged ||
 			overrideTransformQuantity !== undefined ||
 			effectiveFrom !== undefined
 		);
 	};
 
-	const originalFormatted = formatAmount(price.amount);
-	const currencySymbol = getCurrencySymbol(price.currency);
+	// Get display amount and symbol based on price unit type
+	const getDisplayAmount = () => {
+		if (isCustomPriceUnit) {
+			return price.price_unit_amount || price.price_unit_config?.amount || price.amount || '0';
+		}
+		return price.amount || '0';
+	};
+
+	const getDisplaySymbol = () => {
+		if (isCustomPriceUnit) {
+			// Try to get price unit symbol from pricing_unit if available (from PriceResponse)
+			// Otherwise fall back to price_unit_config.price_unit or price_unit
+			return price.price_unit_config?.price_unit || price.price_unit || price.currency;
+		}
+		return getCurrencySymbol(price.currency);
+	};
+
+	const originalFormatted = formatAmount(getDisplayAmount());
+	const displaySymbol = getDisplaySymbol();
 
 	return (
 		<Dialog
@@ -243,7 +350,7 @@ const UpdatePriceDialog: FC<UpdatePriceDialogProps> = ({ isOpen, onOpenChange, p
 					<div className='flex items-center justify-between p-3 bg-gray-50 rounded-lg'>
 						<div className='text-sm text-gray-600'>Original Price</div>
 						<div className='font-medium'>
-							{currencySymbol}
+							{displaySymbol}
 							{originalFormatted}
 						</div>
 					</div>
@@ -264,13 +371,15 @@ const UpdatePriceDialog: FC<UpdatePriceDialogProps> = ({ isOpen, onOpenChange, p
 					{/* Amount Override - only show if billing model is not TIERED or SLAB_TIERED */}
 					{overrideBillingModel !== BILLING_MODEL.TIERED && overrideBillingModel !== 'SLAB_TIERED' && (
 						<div className='space-y-2'>
-							<label className='text-sm font-medium text-gray-700'>Override Amount ({price.currency})</label>
+							<label className='text-sm font-medium text-gray-700'>
+								Override Amount ({isCustomPriceUnit ? displaySymbol : price.currency})
+							</label>
 							<Input
 								type='formatted-number'
 								value={overrideAmount}
 								onChange={setOverrideAmount}
 								placeholder='Enter new amount (optional)'
-								suffix={currencySymbol}
+								suffix={displaySymbol}
 								className='w-full'
 							/>
 						</div>
@@ -326,7 +435,7 @@ const UpdatePriceDialog: FC<UpdatePriceDialogProps> = ({ isOpen, onOpenChange, p
 									}));
 									setOverrideTiers(convertedTiers);
 								}}
-								currency={price.currency}
+								currency={isCustomPriceUnit ? displaySymbol : price.currency}
 								tierMode={overrideBillingModel === BILLING_MODEL.TIERED ? TIER_MODE.VOLUME : TIER_MODE.SLAB}
 							/>
 						</div>

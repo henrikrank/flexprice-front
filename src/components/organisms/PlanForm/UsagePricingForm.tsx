@@ -136,8 +136,11 @@ const UsagePricingForm: FC<Props> = ({
 
 	// Get currency symbol for display
 	const displayCurrencySymbol = useMemo(() => {
-		return getCurrencySymbol(currency || '');
-	}, [currency]);
+		if (priceUnitType === PRICE_UNIT_TYPE.CUSTOM && priceUnitConfig?.price_unit) {
+			return priceUnitConfig.price_unit; // Return price unit code (e.g., "BTC", "TOK")
+		}
+		return getCurrencySymbol(currency || ''); // Return currency symbol for FIAT
+	}, [currency, priceUnitType, priceUnitConfig]);
 
 	// Handle currency/price unit selection
 	const handleCurrencyPriceUnitChange = (selection: CurrencyPriceUnitSelection) => {
@@ -600,7 +603,7 @@ const UsagePricingForm: FC<Props> = ({
 					<VolumeTieredPricingForm
 						setTieredPrices={setTieredPrices}
 						tieredPrices={tieredPrices}
-						currency={currency}
+						currency={priceUnitType === PRICE_UNIT_TYPE.CUSTOM ? priceUnitConfig?.price_unit || currency : currency}
 						tierMode={billingModel === billingModels[2].value ? TIER_MODE.VOLUME : TIER_MODE.SLAB}
 					/>
 					{inputErrors.tieredModelError && <p className='text-red-500 text-sm'>{inputErrors.tieredModelError}</p>}
