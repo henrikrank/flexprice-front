@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import toast from 'react-hot-toast';
-import InvoiceApi from '@/api/InvoiceApi';
+import CustomerPortalApi from '@/api/CustomerPortalApi';
 import { Card, Chip } from '@/components/atoms';
 import { Invoice, INVOICE_STATUS } from '@/models/Invoice';
 import { PAYMENT_STATUS } from '@/constants/payment';
@@ -10,10 +10,6 @@ import { formatAmount } from '@/components/atoms/Input/Input';
 import { Download, Search } from 'lucide-react';
 import { Input } from '@/components/ui';
 import EmptyState from './EmptyState';
-
-interface InvoicesTabProps {
-	customerId: string;
-}
 
 const getStatusChip = (invoice: Invoice) => {
 	// Check payment status first
@@ -38,7 +34,7 @@ const getStatusChip = (invoice: Invoice) => {
 	return <Chip label='Pending' variant='warning' />;
 };
 
-const InvoicesTab = ({ customerId }: InvoicesTabProps) => {
+const InvoicesTab = () => {
 	const [searchQuery, setSearchQuery] = useState('');
 
 	const {
@@ -46,9 +42,8 @@ const InvoicesTab = ({ customerId }: InvoicesTabProps) => {
 		isLoading,
 		isError,
 	} = useQuery({
-		queryKey: ['portal-invoices-tab', customerId],
-		queryFn: () => InvoiceApi.getCustomerInvoices(customerId),
-		enabled: !!customerId,
+		queryKey: ['portal-invoices-tab'],
+		queryFn: () => CustomerPortalApi.getInvoices({ limit: 100, offset: 0 }),
 	});
 
 	if (isError) {
@@ -120,9 +115,9 @@ const InvoicesTab = ({ customerId }: InvoicesTabProps) => {
 
 	const handleDownloadPdf = async (invoice: Invoice) => {
 		try {
-			await InvoiceApi.downloadInvoicePdf(invoice.id);
+			await CustomerPortalApi.downloadInvoicePdf(invoice.id);
 			toast.success('Invoice downloaded');
-		} catch (err) {
+		} catch {
 			toast.error('Failed to download invoice');
 		}
 	};

@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import toast from 'react-hot-toast';
-import WalletApi from '@/api/WalletApi';
+import CustomerPortalApi from '@/api/CustomerPortalApi';
 import { Card, Chip, Loader, Select, ShortPagination } from '@/components/atoms';
 import EmptyState from './EmptyState';
 import { WalletTransactionsTable } from '@/components/molecules';
@@ -10,10 +10,6 @@ import { formatAmount } from '@/components/atoms/Input/Input';
 import { getCurrencySymbol } from '@/utils/common/helper_functions';
 import { Wallet as WalletIcon } from 'lucide-react';
 import usePagination from '@/hooks/usePagination';
-
-interface WalletTabProps {
-	customerId: string;
-}
 
 const getWalletStatusChip = (status: WALLET_STATUS) => {
 	const statusConfig: Record<WALLET_STATUS, { label: string; variant: 'success' | 'warning' | 'failed' | 'default' }> = {
@@ -26,7 +22,7 @@ const getWalletStatusChip = (status: WALLET_STATUS) => {
 	return <Chip label={config.label} variant={config.variant} />;
 };
 
-const WalletTab = ({ customerId }: WalletTabProps) => {
+const WalletTab = () => {
 	const { limit, offset } = usePagination();
 	const [selectedWalletId, setSelectedWalletId] = useState<string>('');
 
@@ -36,9 +32,8 @@ const WalletTab = ({ customerId }: WalletTabProps) => {
 		isLoading: walletsLoading,
 		isError: walletsError,
 	} = useQuery({
-		queryKey: ['portal-wallets', customerId],
-		queryFn: () => WalletApi.getCustomerWallets({ id: customerId }),
-		enabled: !!customerId,
+		queryKey: ['portal-wallets'],
+		queryFn: () => CustomerPortalApi.getWallets(),
 	});
 
 	// Set initial selected wallet
@@ -49,7 +44,7 @@ const WalletTab = ({ customerId }: WalletTabProps) => {
 	// Fetch wallet balance
 	const { data: walletBalance, isLoading: balanceLoading } = useQuery({
 		queryKey: ['portal-wallet-balance', activeWallet?.id],
-		queryFn: () => WalletApi.getWalletBalance(activeWallet!.id),
+		queryFn: () => CustomerPortalApi.getWalletBalance(activeWallet!.id),
 		enabled: !!activeWallet?.id,
 	});
 
@@ -61,7 +56,7 @@ const WalletTab = ({ customerId }: WalletTabProps) => {
 	} = useQuery({
 		queryKey: ['portal-wallet-transactions', activeWallet?.id, limit, offset],
 		queryFn: () =>
-			WalletApi.getWalletTransactions({
+			CustomerPortalApi.getWalletTransactions({
 				walletId: activeWallet!.id,
 				limit,
 				offset,
@@ -124,25 +119,27 @@ const WalletTab = ({ customerId }: WalletTabProps) => {
 				</div>
 
 				{/* Balance */}
-				<div>
-					<span className='text-sm text-zinc-500 block mb-2'>Balance</span>
-					{balanceLoading ? (
-						<div className='h-10 w-32 bg-zinc-100 animate-pulse rounded'></div>
-					) : (
-						<>
-							<div className='flex items-baseline gap-2'>
-								<span className='text-4xl font-semibold text-zinc-950'>
-									{formatAmount(walletBalance?.real_time_credit_balance?.toString() ?? '0')}
-								</span>
-								<span className='text-base font-normal text-zinc-500'>credits</span>
-							</div>
-							<p className='text-sm text-zinc-500 mt-1'>
-								{currencySymbol}
-								{formatAmount(walletBalance?.real_time_balance?.toString() ?? '0')}
-							</p>
-						</>
-					)}
-				</div>
+				{balanceLoading ? (
+					<div className='animate-pulse space-y-3'>
+						<div className='h-4 bg-zinc-100 rounded w-20'></div>
+						<div className='h-10 bg-zinc-100 rounded w-32'></div>
+						<div className='h-4 bg-zinc-100 rounded w-24'></div>
+					</div>
+				) : (
+					<div>
+						<span className='text-sm text-zinc-500 block mb-2'>Balance</span>
+						<div className='flex items-baseline gap-2'>
+							<span className='text-4xl font-semibold text-zinc-950'>
+								{formatAmount(walletBalance?.real_time_credit_balance ?? activeWallet?.credit_balance?.toString() ?? '0')}
+							</span>
+							<span className='text-base font-normal text-zinc-500'>credits</span>
+						</div>
+						<p className='text-sm text-zinc-500 mt-1'>
+							{currencySymbol}
+							{formatAmount(walletBalance?.real_time_balance ?? activeWallet?.balance?.toString() ?? '0')}
+						</p>
+					</div>
+				)}
 			</Card>
 
 			{/* Transactions */}

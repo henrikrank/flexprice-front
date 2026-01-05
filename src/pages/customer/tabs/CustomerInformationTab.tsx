@@ -45,8 +45,8 @@ const CustomerInformationTab = () => {
 	const [showSaveCardModal, setShowSaveCardModal] = useState(false);
 	const [metadata, setMetadata] = useState<Record<string, string>>(filterStringMetadata(customer?.metadata));
 
-	// Use customer portal hook
-	const { copyToClipboard } = useCustomerPortalUrl(customerId);
+	// Use customer portal hook with external_id
+	const { copyToClipboard } = useCustomerPortalUrl(customer?.external_id);
 
 	// Check if Stripe connection is available
 	const hasStripeConnection =

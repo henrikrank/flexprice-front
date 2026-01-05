@@ -195,7 +195,7 @@ export const MainRouter = createBrowserRouter([
 		element: <EmailVerification />,
 	},
 	{
-		path: `${RouteNames.customerPortal}/:customerId`,
+		path: RouteNames.customerPortal,
 		element: <CustomerPortalWrapper />,
 	},
 	// private routes

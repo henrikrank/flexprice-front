@@ -78,6 +78,14 @@ export type {
 } from './Customer';
 
 export type {
+	DashboardSessionResponse,
+	DashboardPaginatedRequest,
+	GetCustomerUsageSummaryRequest,
+	DashboardAnalyticsRequest,
+	DashboardCostAnalyticsRequest,
+} from './Dashboard';
+
+export type {
 	EntitlementFilters,
 	EntitlementResponse,
 	CreateEntitlementRequest,

@@ -2,47 +2,32 @@ import { useState, useMemo, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import toast from 'react-hot-toast';
 import { Card } from '@/components/atoms';
-import CustomerApi from '@/api/CustomerApi';
-import EventsApi from '@/api/EventsApi';
+import CustomerPortalApi from '@/api/CustomerPortalApi';
 import { CustomerUsageChart, FlexpriceTable, type ColumnData } from '@/components/molecules';
 import { UsageAnalyticItem, WindowSize } from '@/models';
-import { GetUsageAnalyticsRequest } from '@/types';
+import { DashboardAnalyticsRequest } from '@/types';
 import { formatNumber, getCurrencySymbol } from '@/utils';
 import { Skeleton } from '@/components/ui/skeleton';
 import EmptyState from './EmptyState';
 import TimePeriodSelector from './TimePeriodSelector';
 import { CustomerPortalTimePeriod, DEFAULT_TIME_PERIOD, calculateTimeRange } from './constants';
 
-interface UsageAnalyticsTabProps {
-	customerId: string;
-}
-
-const UsageAnalyticsTab = ({ customerId }: UsageAnalyticsTabProps) => {
+const UsageAnalyticsTab = () => {
 	const [selectedPeriod, setSelectedPeriod] = useState<CustomerPortalTimePeriod>(DEFAULT_TIME_PERIOD);
 
-	// Fetch customer to get external_id
-	const { data: customer, isLoading: customerLoading } = useQuery({
-		queryKey: ['portal-customer-analytics', customerId],
-		queryFn: () => CustomerApi.getCustomerById(customerId),
-		enabled: !!customerId,
-	});
-
 	// Prepare analytics params based on selected period
-	const analyticsParams: GetUsageAnalyticsRequest | null = useMemo(() => {
-		if (!customer?.external_id) return null;
-
+	const analyticsParams: DashboardAnalyticsRequest | null = useMemo(() => {
 		const timeRange = calculateTimeRange(selectedPeriod);
 
 		return {
-			external_customer_id: customer.external_id,
 			window_size: WindowSize.DAY,
 			start_time: timeRange.start_time,
 			end_time: timeRange.end_time,
 		};
-	}, [customer?.external_id, selectedPeriod]);
+	}, [selectedPeriod]);
 
 	// Debounced API parameters with 300ms delay
-	const [debouncedParams, setDebouncedParams] = useState<GetUsageAnalyticsRequest | null>(null);
+	const [debouncedParams, setDebouncedParams] = useState<DashboardAnalyticsRequest | null>(null);
 
 	useEffect(() => {
 		if (analyticsParams) {
@@ -62,12 +47,12 @@ const UsageAnalyticsTab = ({ customerId }: UsageAnalyticsTabProps) => {
 		isLoading: usageLoading,
 		error: usageError,
 	} = useQuery({
-		queryKey: ['portal-usage-analytics', customerId, debouncedParams],
+		queryKey: ['portal-usage-analytics', debouncedParams],
 		queryFn: async () => {
 			if (!debouncedParams) {
 				throw new Error('API parameters not available');
 			}
-			return await EventsApi.getUsageAnalytics(debouncedParams);
+			return await CustomerPortalApi.getAnalytics(debouncedParams);
 		},
 		enabled: !!debouncedParams,
 	});
@@ -77,27 +62,6 @@ const UsageAnalyticsTab = ({ customerId }: UsageAnalyticsTabProps) => {
 			toast.error('Failed to load usage analytics');
 		}
 	}, [usageError]);
-
-	if (customerLoading) {
-		return (
-			<div className='space-y-6'>
-				<Card className='bg-white border border-[#E9E9E9] rounded-xl p-6'>
-					<div className='animate-pulse space-y-4'>
-						<div className='h-10 bg-zinc-100 rounded'></div>
-						<div className='h-64 bg-zinc-100 rounded'></div>
-					</div>
-				</Card>
-			</div>
-		);
-	}
-
-	if (!customer?.external_id) {
-		return (
-			<Card className='bg-white border border-[#E9E9E9] rounded-xl p-6'>
-				<EmptyState title='Unable to load analytics' description='Customer information is missing' />
-			</Card>
-		);
-	}
 
 	return (
 		<div className='space-y-6'>
