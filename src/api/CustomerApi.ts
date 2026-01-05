@@ -72,7 +72,7 @@ class CustomerApi {
 	 * @returns Promise with dashboard session response containing URL, token, and expiration
 	 */
 	public static async createDashboardSession(externalId: string): Promise<DashboardSessionResponse> {
-		return await AxiosClient.get<DashboardSessionResponse>(`${this.baseUrl}/dashboard/${externalId}`);
+		return await AxiosClient.get<DashboardSessionResponse>(`${this.baseUrl}/portal/${externalId}`);
 	}
 
 	/**
