@@ -146,6 +146,26 @@ const usePlanDetails = (planId: string | undefined) => {
 		queryFn: async () => {
 			if (!planId) return null;
 			const planResponse = await PlanApi.getPlanById(planId);
+			// Filter out expired prices (end_date before now)
+			// Keep prices without end_date (they don't expire) and prices where end_date is >= now
+			if (planResponse.prices && planResponse.prices.length > 0) {
+				const now = new Date();
+				planResponse.prices = planResponse.prices.filter((price) => {
+					// Keep prices without an end_date (they don't expire)
+					if (!price.end_date) {
+						return true;
+					}
+					// Parse end_date and check if it's in the future or equal to now
+					const endDate = new Date(price.end_date);
+					// If date is invalid, keep the price (safer default)
+					if (isNaN(endDate.getTime())) {
+						return true;
+					}
+					// Only keep prices where end_date is in the future or equal to now
+					return endDate >= now;
+				});
+			}
+
 			return planResponse;
 		},
 		enabled: !!planId,

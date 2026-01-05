@@ -1,5 +1,5 @@
 import { Price } from '@/models/Price';
-import { BILLING_MODEL, TIER_MODE, CreatePriceTier, TransformQuantity, PRICE_TYPE } from '@/models/Price';
+import { BILLING_MODEL, TIER_MODE, CreatePriceTier, TransformQuantity, PRICE_TYPE, PRICE_UNIT_TYPE } from '@/models/Price';
 import { LineItemCommitmentConfig } from '@/types/dto/LineItemCommitmentConfig';
 
 /**
@@ -9,22 +9,26 @@ import { LineItemCommitmentConfig } from '@/types/dto/LineItemCommitmentConfig';
 export interface SubscriptionLineItemOverrideRequest {
 	price_id: string;
 	quantity?: number;
-	amount?: number;
+	amount?: number; // For FIAT price unit type, FLAT_FEE/PACKAGE billing models
 	billing_model?: BILLING_MODEL | 'SLAB_TIERED';
 	tier_mode?: TIER_MODE;
-	tiers?: CreatePriceTier[];
+	tiers?: CreatePriceTier[]; // For FIAT price unit type, TIERED billing model
 	transform_quantity?: TransformQuantity;
+	price_unit_amount?: string; // For CUSTOM price unit type, FLAT_FEE/PACKAGE billing models
+	price_unit_tiers?: CreatePriceTier[]; // For CUSTOM price unit type, TIERED billing model
 }
 
 // Backend interface (converted format)
 export interface BackendSubscriptionLineItemOverrideRequest {
 	price_id: string;
 	quantity?: number;
-	amount?: number;
+	amount?: number; // For FIAT price unit type
 	billing_model?: BILLING_MODEL;
 	tier_mode?: TIER_MODE;
-	tiers?: CreatePriceTier[];
+	tiers?: CreatePriceTier[]; // For FIAT price unit type
 	transform_quantity?: TransformQuantity;
+	price_unit_amount?: string; // For CUSTOM price unit type
+	price_unit_tiers?: CreatePriceTier[]; // For CUSTOM price unit type
 }
 
 /**
@@ -32,14 +36,16 @@ export interface BackendSubscriptionLineItemOverrideRequest {
  */
 export interface ExtendedPriceOverride {
 	price_id: string;
-	amount?: string;
+	amount?: string; // For FIAT price unit type, FLAT_FEE/PACKAGE billing models
 	quantity?: number;
 	billing_model?: BILLING_MODEL | 'SLAB_TIERED';
 	tier_mode?: TIER_MODE;
-	tiers?: CreatePriceTier[];
+	tiers?: CreatePriceTier[]; // For FIAT price unit type, TIERED billing model
 	transform_quantity?: TransformQuantity;
 	effective_from?: string; // ISO date string for scheduling price changes
 	commitment?: LineItemCommitmentConfig; // Commitment configuration for this price
+	price_unit_amount?: string; // For CUSTOM price unit type, FLAT_FEE/PACKAGE billing models
+	price_unit_tiers?: CreatePriceTier[]; // For CUSTOM price unit type, TIERED billing model
 }
 
 /**
@@ -78,12 +84,15 @@ export const getLineItemOverrides = (
 					override.billing_model !== undefined ||
 					override.tier_mode !== undefined ||
 					override.tiers !== undefined ||
-					override.transform_quantity !== undefined)
+					override.transform_quantity !== undefined ||
+					override.price_unit_amount !== undefined ||
+					override.price_unit_tiers !== undefined)
 			);
 		})
 		.map(([priceId, override]) => {
 			const price = prices.find((p) => p.id === priceId);
 			const isUsagePrice = price?.type === PRICE_TYPE.USAGE;
+			const isCustomPriceUnit = price?.price_unit_type === PRICE_UNIT_TYPE.CUSTOM;
 
 			// Handle SLAB_TIERED and Volume Tiered conversion
 			let billingModel = override.billing_model;
@@ -97,16 +106,35 @@ export const getLineItemOverrides = (
 				tierMode = TIER_MODE.VOLUME;
 			}
 
-			return {
+			const result: any = {
 				price_id: priceId,
-				...(override.amount !== undefined && { amount: parseFloat(override.amount) }),
 				// Exclude quantity for USAGE type prices - quantity is determined by meter usage
 				...(override.quantity !== undefined && !isUsagePrice && { quantity: override.quantity }),
 				...(billingModel !== undefined && { billing_model: billingModel as BILLING_MODEL }),
 				...(tierMode !== undefined && { tier_mode: tierMode }),
-				...(override.tiers !== undefined && { tiers: override.tiers }),
 				...(override.transform_quantity !== undefined && { transform_quantity: override.transform_quantity }),
-			} as BackendSubscriptionLineItemOverrideRequest;
+			};
+
+			// Handle FIAT vs CUSTOM price unit fields (mutually exclusive)
+			if (isCustomPriceUnit) {
+				// For CUSTOM prices, use price_unit_amount and price_unit_tiers
+				if (override.price_unit_amount !== undefined) {
+					result.price_unit_amount = override.price_unit_amount;
+				}
+				if (override.price_unit_tiers !== undefined) {
+					result.price_unit_tiers = override.price_unit_tiers;
+				}
+			} else {
+				// For FIAT prices, use amount and tiers
+				if (override.amount !== undefined) {
+					result.amount = parseFloat(override.amount);
+				}
+				if (override.tiers !== undefined) {
+					result.tiers = override.tiers;
+				}
+			}
+
+			return result as BackendSubscriptionLineItemOverrideRequest;
 		});
 };
 

@@ -91,9 +91,9 @@ type ChargesAction =
 	| { type: ChargeActionType.ADD_RECURRING_CHARGE; payload: InternalPrice }
 	| { type: ChargeActionType.ADD_USAGE_CHARGE; payload: InternalPrice }
 	| {
-		type: ChargeActionType.UPDATE_RECURRING_CHARGE;
-		payload: { index: number; charge: Partial<InternalPrice>; state?: PriceInternalState };
-	}
+			type: ChargeActionType.UPDATE_RECURRING_CHARGE;
+			payload: { index: number; charge: Partial<InternalPrice>; state?: PriceInternalState };
+	  }
 	| { type: ChargeActionType.UPDATE_USAGE_CHARGE; payload: { index: number; charge: Partial<InternalPrice>; state?: PriceInternalState } }
 	| { type: ChargeActionType.DELETE_RECURRING_CHARGE; payload: number }
 	| { type: ChargeActionType.DELETE_USAGE_CHARGE; payload: number };

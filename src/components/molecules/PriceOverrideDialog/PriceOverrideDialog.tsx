@@ -1,7 +1,7 @@
 import { FC, useState, useEffect } from 'react';
 import { Dialog } from '@/components/atoms';
 import { Input, Button, Select, SelectOption, DatePicker } from '@/components/atoms';
-import { Price, BILLING_MODEL, TIER_MODE, CreatePriceTier, TransformQuantity, PRICE_TYPE } from '@/models/Price';
+import { Price, BILLING_MODEL, TIER_MODE, CreatePriceTier, TransformQuantity, PRICE_TYPE, PRICE_UNIT_TYPE } from '@/models/Price';
 import { formatAmount, removeFormatting } from '@/components/atoms/Input/Input';
 import { getCurrencySymbol } from '@/utils/common/helper_functions';
 import { ExtendedPriceOverride } from '@/utils/common/price_override_helpers';
@@ -44,6 +44,9 @@ const PriceOverrideDialog: FC<Props> = ({
 	const [effectiveFrom, setEffectiveFrom] = useState<Date | undefined>(undefined);
 	const [isOverridden, setIsOverridden] = useState(false);
 
+	// Detect price unit type
+	const isCustomPriceUnit = price.price_unit_type === PRICE_UNIT_TYPE.CUSTOM;
+
 	// Check if this price is currently overridden
 	useEffect(() => {
 		const currentOverride = overriddenPrices[price.id];
@@ -51,40 +54,73 @@ const PriceOverrideDialog: FC<Props> = ({
 		setIsOverridden(isCurrentlyOverridden);
 
 		if (isCurrentlyOverridden) {
-			setOverrideAmount(currentOverride.amount || '');
+			// Initialize from override or original price based on price unit type
+			if (isCustomPriceUnit) {
+				setOverrideAmount(currentOverride.price_unit_amount || price.price_unit_amount || price.price_unit_config?.amount || '');
+				setOverrideTiers(currentOverride.price_unit_tiers || price.price_unit_tiers || []);
+			} else {
+				setOverrideAmount(currentOverride.amount || price.amount);
+				setOverrideTiers(currentOverride.tiers || price.tiers || []);
+			}
 			setOverrideQuantity(currentOverride.quantity);
 			setOverrideBillingModel(currentOverride.billing_model || price.billing_model);
 			setOverrideTierMode(currentOverride.tier_mode || price.tier_mode || TIER_MODE.VOLUME);
-			setOverrideTiers(currentOverride.tiers || []);
 			setOverrideTransformQuantity(currentOverride.transform_quantity || { divide_by: 1, round: 'up' });
 			if (showEffectiveFrom && currentOverride.effective_from) {
 				setEffectiveFrom(new Date(currentOverride.effective_from));
 			}
 		} else {
 			// Prefill with original price values
-			setOverrideAmount(price.amount);
 			setOverrideQuantity(1); // Default quantity for usage-based prices
 			setOverrideBillingModel(price.billing_model);
 			setOverrideTierMode(price.tier_mode || TIER_MODE.VOLUME);
 
-			// Initialize with original tiers if they exist, otherwise start with one default tier
-			if (price.tiers && price.tiers.length > 0) {
-				setOverrideTiers(
-					price.tiers.map((tier) => ({
-						unit_amount: tier.unit_amount,
-						flat_amount: tier.flat_amount || '0',
-						up_to: tier.up_to,
-					})),
-				);
+			// Initialize amount and tiers based on price unit type
+			if (isCustomPriceUnit) {
+				const initialAmount = price.price_unit_amount || price.price_unit_config?.amount || '';
+				setOverrideAmount(initialAmount);
+
+				// Initialize with original price_unit_tiers if they exist, otherwise start with one default tier
+				if (price.price_unit_tiers && price.price_unit_tiers.length > 0) {
+					setOverrideTiers(
+						price.price_unit_tiers.map((tier) => ({
+							unit_amount: tier.unit_amount,
+							flat_amount: tier.flat_amount || '0',
+							up_to: tier.up_to,
+						})),
+					);
+				} else {
+					// Start with one default tier
+					setOverrideTiers([
+						{
+							unit_amount: initialAmount, // Prefill with original amount
+							flat_amount: '0',
+							up_to: null,
+						},
+					]);
+				}
 			} else {
-				// Start with one default tier
-				setOverrideTiers([
-					{
-						unit_amount: price.amount, // Prefill with original amount
-						flat_amount: '0',
-						up_to: null,
-					},
-				]);
+				setOverrideAmount(price.amount);
+
+				// Initialize with original tiers if they exist, otherwise start with one default tier
+				if (price.tiers && price.tiers.length > 0) {
+					setOverrideTiers(
+						price.tiers.map((tier) => ({
+							unit_amount: tier.unit_amount,
+							flat_amount: tier.flat_amount || '0',
+							up_to: tier.up_to,
+						})),
+					);
+				} else {
+					// Start with one default tier
+					setOverrideTiers([
+						{
+							unit_amount: price.amount, // Prefill with original amount
+							flat_amount: '0',
+							up_to: null,
+						},
+					]);
+				}
 			}
 
 			// Prefill transform quantity with original value if it exists
@@ -101,16 +137,30 @@ const PriceOverrideDialog: FC<Props> = ({
 		price.tiers,
 		price.amount,
 		price.transform_quantity,
+		price.price_unit_type,
+		price.price_unit_amount,
+		price.price_unit_tiers,
+		price.price_unit_config,
 		showEffectiveFrom,
+		isCustomPriceUnit,
 	]);
 
 	const handleOverride = () => {
 		const override: Partial<ExtendedPriceOverride> = {};
 
-		// Only include amount if billing model is not tiered
+		// Handle amount/price_unit_amount based on price unit type and billing model
 		if (overrideBillingModel !== BILLING_MODEL.TIERED && overrideBillingModel !== 'SLAB_TIERED') {
-			if (overrideAmount && removeFormatting(overrideAmount) !== price.amount) {
-				override.amount = removeFormatting(overrideAmount);
+			if (isCustomPriceUnit) {
+				// For CUSTOM prices, use price_unit_amount
+				const originalAmount = price.price_unit_amount || price.price_unit_config?.amount || '';
+				if (overrideAmount && removeFormatting(overrideAmount) !== originalAmount) {
+					override.price_unit_amount = removeFormatting(overrideAmount);
+				}
+			} else {
+				// For FIAT prices, use amount
+				if (overrideAmount && removeFormatting(overrideAmount) !== price.amount) {
+					override.amount = removeFormatting(overrideAmount);
+				}
 			}
 		}
 
@@ -129,12 +179,18 @@ const PriceOverrideDialog: FC<Props> = ({
 			override.tier_mode = overrideTierMode;
 		}
 
-		// Only include tiers if billing model is tiered
+		// Handle tiers/price_unit_tiers based on price unit type and billing model
 		if ((overrideBillingModel === BILLING_MODEL.TIERED || overrideBillingModel === 'SLAB_TIERED') && overrideTiers.length > 0) {
-			override.tiers = overrideTiers;
+			if (isCustomPriceUnit) {
+				// For CUSTOM prices, use price_unit_tiers
+				override.price_unit_tiers = overrideTiers;
+			} else {
+				// For FIAT prices, use tiers
+				override.tiers = overrideTiers;
+			}
 		}
 
-		// Only include transform_quantity if billing model is package
+		// Only include transform_quantity if billing model is package (same for both types)
 		if (overrideBillingModel === BILLING_MODEL.PACKAGE && overrideTransformQuantity !== undefined) {
 			override.transform_quantity = overrideTransformQuantity;
 		}
@@ -154,49 +210,31 @@ const PriceOverrideDialog: FC<Props> = ({
 
 	const handleReset = () => {
 		onResetOverride(price.id);
-		setOverrideAmount('');
 		setOverrideQuantity(undefined);
 		setOverrideBillingModel(price.billing_model);
-		if (price.tiers && price.tiers.length > 0) {
-			setOverrideTiers(
-				price.tiers.map((tier) => ({
-					unit_amount: tier.unit_amount,
-					flat_amount: tier.flat_amount || '0',
-					up_to: tier.up_to,
-				})),
-			);
-		} else {
-			setOverrideTiers([
-				{
-					unit_amount: '',
-					flat_amount: '0',
-					up_to: null,
-				},
-			]);
-		}
-		// Reset transform_quantity to original value or default
-		setOverrideTransformQuantity(price.transform_quantity || { divide_by: 1, round: 'up' });
-		if (showEffectiveFrom) {
-			setEffectiveFrom(undefined);
-		}
-		setIsOverridden(false);
-	};
 
-	const handleCancel = () => {
-		const currentOverride = overriddenPrices[price.id];
-		if (currentOverride) {
-			setOverrideAmount(currentOverride.amount || '');
-			setOverrideQuantity(currentOverride.quantity);
-			setOverrideBillingModel(currentOverride.billing_model || price.billing_model);
-			setOverrideTiers(currentOverride.tiers || []);
-			setOverrideTransformQuantity(currentOverride.transform_quantity || { divide_by: 1, round: 'up' });
-			if (showEffectiveFrom && currentOverride.effective_from) {
-				setEffectiveFrom(new Date(currentOverride.effective_from));
+		// Reset amount and tiers based on price unit type
+		if (isCustomPriceUnit) {
+			setOverrideAmount(price.price_unit_amount || price.price_unit_config?.amount || '');
+			if (price.price_unit_tiers && price.price_unit_tiers.length > 0) {
+				setOverrideTiers(
+					price.price_unit_tiers.map((tier) => ({
+						unit_amount: tier.unit_amount,
+						flat_amount: tier.flat_amount || '0',
+						up_to: tier.up_to,
+					})),
+				);
+			} else {
+				setOverrideTiers([
+					{
+						unit_amount: '',
+						flat_amount: '0',
+						up_to: null,
+					},
+				]);
 			}
 		} else {
-			setOverrideAmount('');
-			setOverrideQuantity(undefined);
-			setOverrideBillingModel(price.billing_model);
+			setOverrideAmount(price.amount);
 			if (price.tiers && price.tiers.length > 0) {
 				setOverrideTiers(
 					price.tiers.map((tier) => ({
@@ -214,6 +252,76 @@ const PriceOverrideDialog: FC<Props> = ({
 					},
 				]);
 			}
+		}
+
+		// Reset transform_quantity to original value or default
+		setOverrideTransformQuantity(price.transform_quantity || { divide_by: 1, round: 'up' });
+		if (showEffectiveFrom) {
+			setEffectiveFrom(undefined);
+		}
+		setIsOverridden(false);
+	};
+
+	const handleCancel = () => {
+		const currentOverride = overriddenPrices[price.id];
+		if (currentOverride) {
+			// Restore from override based on price unit type
+			if (isCustomPriceUnit) {
+				setOverrideAmount(currentOverride.price_unit_amount || price.price_unit_amount || price.price_unit_config?.amount || '');
+				setOverrideTiers(currentOverride.price_unit_tiers || price.price_unit_tiers || []);
+			} else {
+				setOverrideAmount(currentOverride.amount || price.amount);
+				setOverrideTiers(currentOverride.tiers || price.tiers || []);
+			}
+			setOverrideQuantity(currentOverride.quantity);
+			setOverrideBillingModel(currentOverride.billing_model || price.billing_model);
+			setOverrideTransformQuantity(currentOverride.transform_quantity || { divide_by: 1, round: 'up' });
+			if (showEffectiveFrom && currentOverride.effective_from) {
+				setEffectiveFrom(new Date(currentOverride.effective_from));
+			}
+		} else {
+			// Reset to original values based on price unit type
+			if (isCustomPriceUnit) {
+				setOverrideAmount(price.price_unit_amount || price.price_unit_config?.amount || '');
+				if (price.price_unit_tiers && price.price_unit_tiers.length > 0) {
+					setOverrideTiers(
+						price.price_unit_tiers.map((tier) => ({
+							unit_amount: tier.unit_amount,
+							flat_amount: tier.flat_amount || '0',
+							up_to: tier.up_to,
+						})),
+					);
+				} else {
+					setOverrideTiers([
+						{
+							unit_amount: '',
+							flat_amount: '0',
+							up_to: null,
+						},
+					]);
+				}
+			} else {
+				setOverrideAmount(price.amount);
+				if (price.tiers && price.tiers.length > 0) {
+					setOverrideTiers(
+						price.tiers.map((tier) => ({
+							unit_amount: tier.unit_amount,
+							flat_amount: tier.flat_amount || '0',
+							up_to: tier.up_to,
+						})),
+					);
+				} else {
+					setOverrideTiers([
+						{
+							unit_amount: '',
+							flat_amount: '0',
+							up_to: null,
+						},
+					]);
+				}
+			}
+			setOverrideQuantity(undefined);
+			setOverrideBillingModel(price.billing_model);
 			// Reset to original transform_quantity or default
 			setOverrideTransformQuantity(price.transform_quantity || { divide_by: 1, round: 'up' });
 			if (showEffectiveFrom) {
@@ -241,18 +349,78 @@ const PriceOverrideDialog: FC<Props> = ({
 			billingModelChanged = overrideBillingModel !== originalBillingModel;
 		}
 
+		// Compare amount/price_unit_amount based on price unit type
+		let amountChanged = false;
+		if (isCustomPriceUnit) {
+			const originalAmount = price.price_unit_amount || price.price_unit_config?.amount || '';
+			amountChanged = !!(overrideAmount && removeFormatting(overrideAmount) !== originalAmount);
+		} else {
+			amountChanged = !!(overrideAmount && removeFormatting(overrideAmount) !== price.amount);
+		}
+
+		// Compare tiers/price_unit_tiers based on price unit type
+		let tiersChanged = false;
+		if (isCustomPriceUnit) {
+			const originalTiers = price.price_unit_tiers || [];
+			if (originalTiers.length === 0 && overrideTiers.length > 0) {
+				tiersChanged = true;
+			} else if (originalTiers.length > 0) {
+				tiersChanged =
+					JSON.stringify(overrideTiers) !==
+					JSON.stringify(
+						originalTiers.map((tier) => ({
+							unit_amount: tier.unit_amount,
+							flat_amount: tier.flat_amount || '0',
+							up_to: tier.up_to,
+						})),
+					);
+			}
+		} else {
+			const originalTiers = price.tiers || [];
+			if (originalTiers.length === 0 && overrideTiers.length > 0) {
+				tiersChanged = true;
+			} else if (originalTiers.length > 0) {
+				tiersChanged =
+					JSON.stringify(overrideTiers) !==
+					JSON.stringify(
+						originalTiers.map((tier) => ({
+							unit_amount: tier.unit_amount,
+							flat_amount: tier.flat_amount || '0',
+							up_to: tier.up_to,
+						})),
+					);
+			}
+		}
+
 		return (
-			(overrideAmount && removeFormatting(overrideAmount) !== price.amount) ||
+			amountChanged ||
 			overrideQuantity !== undefined ||
 			billingModelChanged ||
-			overrideTiers.length > 0 ||
+			tiersChanged ||
 			overrideTransformQuantity !== undefined ||
 			(showEffectiveFrom && effectiveFrom !== undefined)
 		);
 	};
 
-	const originalFormatted = formatAmount(price.amount);
-	const currencySymbol = getCurrencySymbol(price.currency);
+	// Get display amount and symbol based on price unit type
+	const getDisplayAmount = () => {
+		if (isCustomPriceUnit) {
+			return price.price_unit_amount || price.price_unit_config?.amount || price.amount || '0';
+		}
+		return price.amount || '0';
+	};
+
+	const getDisplaySymbol = () => {
+		if (isCustomPriceUnit) {
+			// Try to get price unit symbol from pricing_unit if available (from PriceResponse)
+			// Otherwise fall back to price_unit_config.price_unit or price_unit
+			return price.price_unit_config?.price_unit || price.price_unit || price.currency;
+		}
+		return getCurrencySymbol(price.currency);
+	};
+
+	const originalFormatted = formatAmount(getDisplayAmount());
+	const displaySymbol = getDisplaySymbol();
 
 	return (
 		<Dialog
@@ -267,7 +435,7 @@ const PriceOverrideDialog: FC<Props> = ({
 					<div className='flex items-center justify-between p-3 bg-gray-50 rounded-lg'>
 						<div className='text-sm text-gray-600'>Original Price</div>
 						<div className='font-medium'>
-							{currencySymbol}
+							{displaySymbol}
 							{originalFormatted}
 						</div>
 					</div>
@@ -288,13 +456,15 @@ const PriceOverrideDialog: FC<Props> = ({
 					{/* Amount Override - only show if billing model is not TIERED or SLAB_TIERED */}
 					{overrideBillingModel !== BILLING_MODEL.TIERED && overrideBillingModel !== 'SLAB_TIERED' && (
 						<div className='space-y-2'>
-							<label className='text-sm font-medium text-gray-700'>Override Amount ({price.currency})</label>
+							<label className='text-sm font-medium text-gray-700'>
+								Override Amount ({isCustomPriceUnit ? displaySymbol : price.currency})
+							</label>
 							<Input
 								type='formatted-number'
 								value={overrideAmount}
 								onChange={setOverrideAmount}
 								placeholder='Enter new amount (optional)'
-								suffix={currencySymbol}
+								suffix={displaySymbol}
 								className='w-full'
 							/>
 						</div>
@@ -357,7 +527,7 @@ const PriceOverrideDialog: FC<Props> = ({
 									});
 									setOverrideTiers(convertedTiers);
 								}}
-								currency={price.currency}
+								currency={isCustomPriceUnit ? displaySymbol : price.currency}
 								tierMode={overrideBillingModel === BILLING_MODEL.TIERED ? TIER_MODE.VOLUME : TIER_MODE.SLAB}
 							/>
 						</div>

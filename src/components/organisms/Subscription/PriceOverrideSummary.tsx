@@ -1,5 +1,5 @@
 import { FC } from 'react';
-import { Price } from '@/models/Price';
+import { Price, PRICE_UNIT_TYPE } from '@/models/Price';
 import { SubscriptionLineItemOverrideRequest } from '@/utils/common/price_override_helpers';
 import { formatAmount } from '@/components/atoms/Input/Input';
 import { getCurrencySymbol } from '@/utils/common/helper_functions';
@@ -15,14 +15,41 @@ interface Props {
 const PriceOverrideSummary: FC<Props> = ({ overrides, prices, className }) => {
 	if (overrides.length === 0) return null;
 
+	const getDisplaySymbol = (price: Price): string => {
+		if (price.price_unit_type === PRICE_UNIT_TYPE.CUSTOM) {
+			// For CUSTOM prices, return price unit code
+			return price.price_unit_config?.price_unit || price.price_unit || price.currency;
+		}
+		return getCurrencySymbol(price.currency);
+	};
+
+	const getDisplayAmount = (price: Price): string => {
+		if (price.price_unit_type === PRICE_UNIT_TYPE.CUSTOM) {
+			return price.price_unit_amount || price.price_unit_config?.amount || price.amount || '0';
+		}
+		return price.amount || '0';
+	};
+
 	const getOverrideDescription = (override: SubscriptionLineItemOverrideRequest, price: Price): string => {
 		const descriptions: string[] = [];
+		const isCustomPriceUnit = price.price_unit_type === PRICE_UNIT_TYPE.CUSTOM;
+		const displaySymbol = getDisplaySymbol(price);
 
-		if (override.amount !== undefined) {
-			const originalAmount = formatAmount(price.amount);
-			const newAmount = formatAmount(override.amount.toString());
-			const currencySymbol = getCurrencySymbol(price.currency);
-			descriptions.push(`Amount: ${currencySymbol}${originalAmount} → ${currencySymbol}${newAmount}`);
+		// Handle amount/price_unit_amount based on price unit type
+		if (isCustomPriceUnit) {
+			// For CUSTOM prices, use price_unit_amount
+			if (override.price_unit_amount !== undefined) {
+				const originalAmount = formatAmount(getDisplayAmount(price));
+				const newAmount = formatAmount(override.price_unit_amount);
+				descriptions.push(`Amount: ${displaySymbol}${originalAmount} → ${displaySymbol}${newAmount}`);
+			}
+		} else {
+			// For FIAT prices, use amount
+			if (override.amount !== undefined) {
+				const originalAmount = formatAmount(price.amount);
+				const newAmount = formatAmount(override.amount.toString());
+				descriptions.push(`Amount: ${displaySymbol}${originalAmount} → ${displaySymbol}${newAmount}`);
+			}
 		}
 
 		if (override.quantity !== undefined) {
@@ -37,8 +64,17 @@ const PriceOverrideSummary: FC<Props> = ({ overrides, prices, className }) => {
 			descriptions.push(`Tier Mode: ${override.tier_mode}`);
 		}
 
-		if (override.tiers !== undefined && override.tiers.length > 0) {
-			descriptions.push(`Tiers: ${override.tiers.length} tier(s)`);
+		// Handle tiers/price_unit_tiers based on price unit type
+		if (isCustomPriceUnit) {
+			// For CUSTOM prices, use price_unit_tiers
+			if (override.price_unit_tiers !== undefined && override.price_unit_tiers.length > 0) {
+				descriptions.push(`Tiers: ${override.price_unit_tiers.length} tier(s)`);
+			}
+		} else {
+			// For FIAT prices, use tiers
+			if (override.tiers !== undefined && override.tiers.length > 0) {
+				descriptions.push(`Tiers: ${override.tiers.length} tier(s)`);
+			}
 		}
 
 		if (override.transform_quantity !== undefined) {
