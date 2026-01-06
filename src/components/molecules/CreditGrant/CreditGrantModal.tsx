@@ -5,6 +5,7 @@ import { InternalCreditGrantRequest } from '@/types/dto/CreditGrant';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import RectangleRadiogroup, { RectangleRadiogroupOption } from '../RectangleRadiogroup';
 import { creditGrantPeriodOptions } from '@/constants/constants';
+import { cn } from '@/lib/utils';
 
 interface Props {
 	data?: InternalCreditGrantRequest;
@@ -22,6 +23,8 @@ interface FormErrors {
 	priority?: string;
 	expiration_type?: string;
 	period?: string;
+	conversion_rate?: string;
+	topup_conversion_rate?: string;
 }
 
 const expirationTypeOptions: SelectOption[] = [
@@ -83,6 +86,8 @@ const CreditGrantModal: React.FC<Props> = ({ data, isOpen, onOpenChange, onSave,
 			expiration_duration_unit: data.expiration_duration_unit,
 			priority: Math.max(0, Math.floor(Number(data.priority) || 0)),
 			metadata: data.metadata,
+			conversion_rate: data.conversion_rate,
+			topup_conversion_rate: data.topup_conversion_rate,
 		};
 
 		// Remove expiration_duration if not needed
@@ -138,6 +143,22 @@ const CreditGrantModal: React.FC<Props> = ({ data, isOpen, onOpenChange, onSave,
 		const priority = Number(formData.priority);
 		if (formData.priority !== undefined && formData.priority !== null && (isNaN(priority) || priority < 0)) {
 			newErrors.priority = 'Priority must be a non-negative number';
+		}
+
+		// Validate conversion_rate if provided
+		if (formData.conversion_rate !== undefined && formData.conversion_rate !== null) {
+			const conversionRate = Number(formData.conversion_rate);
+			if (isNaN(conversionRate) || conversionRate <= 0) {
+				newErrors.conversion_rate = 'Conversion rate must be greater than 0';
+			}
+		}
+
+		// Validate topup_conversion_rate if provided
+		if (formData.topup_conversion_rate !== undefined && formData.topup_conversion_rate !== null) {
+			const topupConversionRate = Number(formData.topup_conversion_rate);
+			if (isNaN(topupConversionRate) || topupConversionRate <= 0) {
+				newErrors.topup_conversion_rate = 'Top-up conversion rate must be greater than 0';
+			}
 		}
 
 		return {
@@ -248,6 +269,48 @@ const CreditGrantModal: React.FC<Props> = ({ data, isOpen, onOpenChange, onSave,
 						value={formData.credits?.toString() || ''}
 						onChange={(value) => handleFieldChange('credits', value)}
 					/>
+				</div>
+
+				{/* Conversion Rate */}
+				<div className='flex flex-col items-start gap-2 w-full'>
+					<label className={cn('block text-sm font-medium', 'text-zinc-950')}>Conversion Rate</label>
+					<div className='flex items-center gap-2 w-full'>
+						<Input className='w-full' value={'1'} disabled suffix='credit' />
+						<span>=</span>
+						<Input
+							className='w-full'
+							variant='number'
+							value={formData.conversion_rate || 1}
+							onChange={(value) => {
+								handleFieldChange('conversion_rate', parseFloat(value) || 1);
+							}}
+						/>
+					</div>
+					<p className='text-sm text-muted-foreground'>
+						Amount in currency equivalent to 1 credit. For example, if conversion rate is 2, then 1 credit = 2 units of currency.
+					</p>
+					{errors.conversion_rate && <p className='text-sm text-destructive'>{errors.conversion_rate}</p>}
+				</div>
+
+				{/* Top-up Conversion Rate */}
+				<div className='flex flex-col items-start gap-2 w-full'>
+					<label className={cn('block text-sm font-medium', 'text-zinc-950')}>Top-up Conversion Rate</label>
+					<div className='flex items-center gap-2 w-full'>
+						<Input className='w-full' value={'1'} disabled suffix='credit' />
+						<span>=</span>
+						<Input
+							className='w-full'
+							variant='number'
+							value={formData.topup_conversion_rate || formData.conversion_rate || 1}
+							onChange={(value) => {
+								handleFieldChange('topup_conversion_rate', parseFloat(value) || formData.conversion_rate || 1);
+							}}
+						/>
+					</div>
+					<p className='text-sm text-muted-foreground'>
+						Conversion rate for top-ups. Defaults to the main conversion rate if not specified.
+					</p>
+					{errors.topup_conversion_rate && <p className='text-sm text-destructive'>{errors.topup_conversion_rate}</p>}
 				</div>
 
 				{formData.cadence === CREDIT_GRANT_CADENCE.RECURRING && (
