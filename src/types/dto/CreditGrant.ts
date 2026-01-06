@@ -28,6 +28,8 @@ export interface CreateCreditGrantRequest {
 	expiration_duration_unit?: CREDIT_GRANT_PERIOD_UNIT;
 	priority?: number;
 	metadata?: Metadata;
+	conversion_rate?: number;
+	topup_conversion_rate?: number;
 }
 
 export interface UpdateCreditGrantRequest {
@@ -70,6 +72,8 @@ export const creditGrantToInternal = (grant: CreditGrant): InternalCreditGrantRe
 		expiration_duration_unit: grant.expiration_duration_unit,
 		priority: grant.priority,
 		metadata: grant.metadata,
+		conversion_rate: grant.conversion_rate,
+		topup_conversion_rate: grant.topup_conversion_rate,
 	};
 };
 

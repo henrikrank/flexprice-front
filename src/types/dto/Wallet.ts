@@ -22,6 +22,8 @@ export interface CreateWalletPayload {
 	metadata?: Metadata;
 	initial_credits_to_load?: number;
 	conversion_rate?: number;
+	topup_conversion_rate?: number;
+	price_unit?: string;
 	initial_credits_expiry_date_utc?: Date;
 	auto_topup?: {
 		enabled: boolean;
@@ -104,6 +106,7 @@ export interface WalletResponse {
 		allowed_price_types: WALLET_CONFIG_PRICE_TYPE[];
 	};
 	conversion_rate: string;
+	topup_conversion_rate?: string;
 	created_at: string;
 	updated_at: string;
 	alert_enabled?: boolean;
@@ -127,6 +130,7 @@ export interface GetCustomerWalletsResponse extends BaseModel {
 		allowed_price_types: WALLET_CONFIG_PRICE_TYPE[];
 	};
 	conversion_rate: number;
+	topup_conversion_rate?: number;
 	credit_balance: number;
 	currency: string;
 	customer_id: string;

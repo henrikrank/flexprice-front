@@ -9,6 +9,7 @@ export interface Wallet extends BaseModel {
 	readonly metadata: Metadata;
 	readonly wallet_status: WALLET_STATUS;
 	readonly conversion_rate: number;
+	readonly topup_conversion_rate?: number;
 	readonly meter: Meter;
 	readonly alert_enabled?: boolean;
 	readonly alert_config?: {
