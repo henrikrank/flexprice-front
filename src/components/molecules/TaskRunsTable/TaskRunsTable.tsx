@@ -1,10 +1,13 @@
 import { FC, useState, useEffect } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation } from '@tanstack/react-query';
 import { FlexpriceTable, ColumnData } from '@/components/molecules';
-import { Chip, Select, ShortPagination, Spacer } from '@/components/atoms';
+import { Chip, Select, ShortPagination, Spacer, ActionButton } from '@/components/atoms';
 import TaskRunApi, { TaskRun } from '@/api/TaskRunApi';
 import { formatDistanceToNow } from 'date-fns';
 import usePagination from '@/hooks/usePagination';
+import { Download } from 'lucide-react';
+import { TaskApi } from '@/api';
+import toast from 'react-hot-toast';
 
 interface TaskRunsTableProps {
 	scheduledTaskId: string;
@@ -15,6 +18,23 @@ const TaskRunsTable: FC<TaskRunsTableProps> = ({ scheduledTaskId, taskType = 'EX
 	const [statusFilter, setStatusFilter] = useState<string>('all');
 	const [dateRangeFilter, setDateRangeFilter] = useState<string>('all');
 	const { limit, offset, page, reset } = usePagination();
+
+	// Download task file mutation
+	const { mutate: downloadFile } = useMutation({
+		mutationFn: (taskId: string) => TaskApi.downloadTaskFile(taskId),
+		onSuccess: (data) => {
+			// Open the presigned URL in a new window
+			window.open(data.download_url, '_blank');
+			toast.success('Download started');
+		},
+		onError: (error: any) => {
+			toast.error(error?.message || 'Failed to download file');
+		},
+	});
+
+	const handleDownload = (taskId: string) => {
+		downloadFile(taskId);
+	};
 
 	// Reset pagination when filters change
 	useEffect(() => {
@@ -153,6 +173,38 @@ const TaskRunsTable: FC<TaskRunsTableProps> = ({ scheduledTaskId, taskType = 'EX
 			title: 'Run Started',
 			render: (row) => formatRelativeTime(row.started_at),
 			width: 150,
+		},
+		{
+			fieldVariant: 'interactive',
+			width: '50px',
+			render: (row) => {
+				// Only show download action for completed export tasks with file_url
+				const hasFile = row.file_url && row.task_status.toLowerCase() === 'completed';
+
+				if (!hasFile) {
+					return null;
+				}
+
+				return (
+					<ActionButton
+						id={row.id}
+						deleteMutationFn={async () => {}} // No delete action
+						refetchQueryKey='task-runs'
+						entityName='Task'
+						disableToast={true}
+						edit={{ enabled: false }}
+						archive={{ enabled: false }}
+						customActions={[
+							{
+								text: 'Download File',
+								icon: <Download className='size-4' />,
+								onClick: () => handleDownload(row.id),
+								enabled: true,
+							},
+						]}
+					/>
+				);
+			},
 		},
 	];
 
