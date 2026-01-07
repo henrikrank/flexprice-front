@@ -23,8 +23,8 @@ const TaskRunsTable: FC<TaskRunsTableProps> = ({ scheduledTaskId, taskType = 'EX
 	const { mutate: downloadFile } = useMutation({
 		mutationFn: (taskId: string) => TaskApi.downloadTaskFile(taskId),
 		onSuccess: (data) => {
-			// Open the presigned URL in a new window
-			window.open(data.download_url, '_blank');
+			// Open the presigned URL in a new window with security flags
+			window.open(data.download_url, '_blank', 'noopener,noreferrer');
 			toast.success('Download started');
 		},
 		onError: (error: any) => {
