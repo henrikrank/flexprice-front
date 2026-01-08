@@ -119,7 +119,19 @@ const UsageBreakdownTable: React.FC<{ items: UsageAnalyticItem[] }> = ({ items }
 		{
 			title: 'Total Usage',
 			render: (row: UsageAnalyticItem) => {
-				const unit = row.unit ? ` ${row.unit}${row.total_usage !== 1 && row.unit_plural ? 's' : ''}` : '';
+				let unit = '';
+				if (row.unit) {
+					if (row.total_usage !== 1 && row.unit_plural) {
+						// Use the provided plural form when total_usage !== 1 and unit_plural exists
+						unit = ` ${row.unit_plural}`;
+					} else if (row.total_usage !== 1 && !row.unit_plural) {
+						// Fall back to appending 's' only when unit_plural is absent and total_usage !== 1
+						unit = ` ${row.unit}s`;
+					} else {
+						// Use singular form (total_usage === 1)
+						unit = ` ${row.unit}`;
+					}
+				}
 				return (
 					<span>
 						{formatNumber(row.total_usage)}
