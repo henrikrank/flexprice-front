@@ -1,5 +1,5 @@
 import { Price } from '@/models/Price';
-import { FC, useState, useEffect } from 'react';
+import { FC, useState, useEffect, useMemo } from 'react';
 import { Button, Input, Select, SelectOption, Spacer, DatePicker } from '@/components/atoms';
 import SelectFeature from '@/components/atoms/SelectFeature/SelectFeature';
 import SelectGroup from './SelectGroup';
@@ -13,11 +13,13 @@ import { InternalPrice } from './SetupChargesSection';
 import UsageChargePreview from './UsageChargePreview';
 import { toast } from 'react-hot-toast';
 import { BILLING_CADENCE, INVOICE_CADENCE } from '@/models/Invoice';
-import { BILLING_MODEL, TIER_MODE, PRICE_ENTITY_TYPE } from '@/models/Price';
+import { BILLING_MODEL, TIER_MODE, PRICE_ENTITY_TYPE, PRICE_UNIT_TYPE } from '@/models/Price';
 import { BILLING_PERIOD, PRICE_TYPE } from '@/models/Price';
 import { useQuery } from '@tanstack/react-query';
 import FeatureApi from '@/api/FeatureApi';
 import { ENTITY_STATUS } from '@/models/base';
+import { CurrencyPriceUnitSelector } from '@/components/molecules';
+import { CurrencyPriceUnitSelection, isPriceUnitOption } from '@/types/common';
 
 /**
  * Enum for internal price states to avoid typos and provide better type safety
@@ -85,6 +87,8 @@ const UsagePricingForm: FC<Props> = ({
 	entityId,
 }) => {
 	const [currency, setCurrency] = useState(price.currency || currencyOptions[0].value);
+	const [priceUnitType, setPriceUnitType] = useState<PRICE_UNIT_TYPE>(price.price_unit_type || PRICE_UNIT_TYPE.FIAT);
+	const [priceUnitConfig, setPriceUnitConfig] = useState(price.price_unit_config);
 	const [billingModel, setBillingModel] = useState(price.billing_model || billingModels[0].value);
 	const [selectedFeature, setSelectedFeature] = useState<Feature | undefined>(undefined);
 	const [groupId, setGroupId] = useState<string | undefined>(price.group_id);
@@ -122,10 +126,45 @@ const UsagePricingForm: FC<Props> = ({
 		enabled: !!price.meter_id && price.internal_state === PriceInternalState.EDIT,
 	});
 
+	// Get the current currency/price unit value for the selector
+	const currencyPriceUnitValue = useMemo(() => {
+		if (priceUnitType === PRICE_UNIT_TYPE.CUSTOM && priceUnitConfig?.price_unit) {
+			return priceUnitConfig.price_unit;
+		}
+		return currency;
+	}, [currency, priceUnitType, priceUnitConfig]);
+
+	// Get currency symbol for display
+	const displayCurrencySymbol = useMemo(() => {
+		if (priceUnitType === PRICE_UNIT_TYPE.CUSTOM && priceUnitConfig?.price_unit) {
+			return priceUnitConfig.price_unit; // Return price unit code (e.g., "BTC", "TOK")
+		}
+		return getCurrencySymbol(currency || ''); // Return currency symbol for FIAT
+	}, [currency, priceUnitType, priceUnitConfig]);
+
+	// Handle currency/price unit selection
+	const handleCurrencyPriceUnitChange = (selection: CurrencyPriceUnitSelection) => {
+		if (selection.type === PRICE_UNIT_TYPE.FIAT) {
+			// Currency selected (FIAT)
+			setCurrency(selection.data.code);
+			setPriceUnitType(PRICE_UNIT_TYPE.FIAT);
+			setPriceUnitConfig(undefined);
+		} else if (selection.type === PRICE_UNIT_TYPE.CUSTOM && isPriceUnitOption(selection.data)) {
+			// Price unit selected (CUSTOM)
+			setCurrency(selection.data.base_currency);
+			setPriceUnitType(PRICE_UNIT_TYPE.CUSTOM);
+			setPriceUnitConfig({
+				price_unit: selection.data.code,
+			});
+		}
+	};
+
 	// Load price data when editing
 	useEffect(() => {
 		if (price.internal_state === PriceInternalState.EDIT) {
 			setCurrency(price.currency || currencyOptions[0].value);
+			setPriceUnitType(price.price_unit_type || PRICE_UNIT_TYPE.FIAT);
+			setPriceUnitConfig(price.price_unit_config);
 			setBillingModel(price.billing_model || billingModels[0].value);
 			// Set display_name from price or feature name (will be set when feature is loaded)
 			setDisplayName(price.display_name || '');
@@ -304,10 +343,40 @@ const UsagePricingForm: FC<Props> = ({
 	const handleSubmit = () => {
 		if (!validate()) return;
 
+		// Build price_unit_config for custom price units based on billing model
+		let finalPriceUnitConfig = priceUnitConfig;
+		if (priceUnitType === PRICE_UNIT_TYPE.CUSTOM && priceUnitConfig) {
+			if (billingModel === billingModels[0].value) {
+				// FLAT_FEE: Set amount in price_unit_config
+				finalPriceUnitConfig = {
+					...priceUnitConfig,
+					amount: flatFee,
+				};
+			} else if (billingModel === billingModels[1].value) {
+				// PACKAGE: Set amount in price_unit_config
+				finalPriceUnitConfig = {
+					...priceUnitConfig,
+					amount: packagedFee.price,
+				};
+			} else if (billingModel === billingModels[2].value || billingModel === billingModels[3].value) {
+				// TIERED: Set price_unit_tiers in price_unit_config
+				finalPriceUnitConfig = {
+					...priceUnitConfig,
+					price_unit_tiers: tieredPrices.map((tier) => ({
+						up_to: tier.up_to ?? null,
+						unit_amount: tier.unit_amount || '0',
+						flat_amount: tier.flat_amount || '0',
+					})),
+				};
+			}
+		}
+
 		const basePrice: Partial<Price> = {
 			meter_id: selectedFeature?.meter_id || '',
 			meter: selectedFeature?.meter || undefined,
 			currency,
+			price_unit_type: priceUnitType,
+			price_unit_config: finalPriceUnitConfig,
 			billing_period: billingPeriod,
 			billing_model: billingModel as BILLING_MODEL,
 			type: PRICE_TYPE.USAGE,
@@ -324,29 +393,36 @@ const UsagePricingForm: FC<Props> = ({
 		let finalPrice: Partial<Price>;
 
 		if (billingModel === billingModels[0].value) {
+			// FLAT_FEE: For FIAT, set amount directly; for CUSTOM, amount is in price_unit_config
 			finalPrice = {
 				...basePrice,
-				amount: flatFee,
+				...(priceUnitType === PRICE_UNIT_TYPE.FIAT ? { amount: flatFee } : {}),
 			};
 		} else if (billingModel === billingModels[1].value) {
+			// PACKAGE: For FIAT, set amount directly; for CUSTOM, amount is in price_unit_config
 			finalPrice = {
 				...basePrice,
-				amount: packagedFee.price,
+				...(priceUnitType === PRICE_UNIT_TYPE.FIAT ? { amount: packagedFee.price } : {}),
 				transform_quantity: {
 					divide_by: Number(packagedFee.unit),
 				},
 			};
 		} else if (billingModel === billingModels[2].value || billingModel === billingModels[3].value) {
+			// TIERED: For FIAT, set tiers and tier_mode directly; for CUSTOM, tiers are in price_unit_config
 			finalPrice = {
 				...basePrice,
 				billing_model: BILLING_MODEL.TIERED,
-				tiers: tieredPrices.map((tier) => ({
-					from: tier.from,
-					up_to: tier.up_to ?? null,
-					unit_amount: tier.unit_amount || '0',
-					flat_amount: tier.flat_amount || '0',
-				})) as unknown as NonNullable<Price['tiers']>,
-				tier_mode: billingModel === billingModels[2].value ? TIER_MODE.VOLUME : TIER_MODE.SLAB,
+				...(priceUnitType === PRICE_UNIT_TYPE.FIAT
+					? {
+							tiers: tieredPrices.map((tier) => ({
+								from: tier.from,
+								up_to: tier.up_to ?? null,
+								unit_amount: tier.unit_amount || '0',
+								flat_amount: tier.flat_amount || '0',
+							})) as unknown as NonNullable<Price['tiers']>,
+							tier_mode: billingModel === billingModels[2].value ? TIER_MODE.VOLUME : TIER_MODE.SLAB,
+						}
+					: {}),
 			};
 		} else {
 			// Default case - should not happen with current billing models
@@ -354,19 +430,39 @@ const UsagePricingForm: FC<Props> = ({
 		}
 		// If we're editing an existing price, preserve its ID and other important fields
 		if (price.internal_state === PriceInternalState.EDIT) {
+			// Exclude amount, tiers, and tier_mode from price spread when price_unit_type is CUSTOM
+			const { amount: _, tiers: __, tier_mode: ___, ...priceWithoutAmountTiers } = price;
+
 			const finalPriceWithEdit: InternalPrice = {
-				...price,
+				...(priceUnitType === PRICE_UNIT_TYPE.CUSTOM ? priceWithoutAmountTiers : price),
 				...finalPrice,
 				type: PRICE_TYPE.USAGE,
 				meter_id: selectedFeature?.meter_id || price.meter_id || '',
 				meter: selectedFeature?.meter || price.meter,
 				internal_state: PriceInternalState.SAVED,
+				// Sanitize: explicitly set amount, tiers, and tier_mode to undefined when price_unit_type is CUSTOM
+				...(priceUnitType === PRICE_UNIT_TYPE.CUSTOM
+					? {
+							amount: undefined,
+							tiers: undefined,
+							tier_mode: undefined,
+						}
+					: {}),
 			};
+
 			onUpdate(finalPriceWithEdit);
 		} else {
 			onAdd({
 				...finalPrice,
 				internal_state: PriceInternalState.SAVED,
+				// Sanitize: explicitly set amount, tiers, and tier_mode to undefined when price_unit_type is CUSTOM
+				...(priceUnitType === PRICE_UNIT_TYPE.CUSTOM
+					? {
+							amount: undefined,
+							tiers: undefined,
+							tier_mode: undefined,
+						}
+					: {}),
 			} as InternalPrice);
 		}
 	};
@@ -409,13 +505,12 @@ const UsagePricingForm: FC<Props> = ({
 			/>
 			<Spacer height='8px' />
 
-			<Select
-				value={currency}
-				options={currencyOptions}
+			<CurrencyPriceUnitSelector
+				value={currencyPriceUnitValue}
+				onChange={handleCurrencyPriceUnitChange}
 				label='Currency'
-				onChange={setCurrency}
-				placeholder='Currency'
 				error={errors.currency}
+				description='Select a currency (FIAT) or a custom price unit (CUSTOM)'
 			/>
 			<Spacer height='8px' />
 			<Select
@@ -448,7 +543,7 @@ const UsagePricingForm: FC<Props> = ({
 						error={inputErrors.flatModelError}
 						label='Price'
 						value={flatFee}
-						inputPrefix={getCurrencySymbol(currency)}
+						inputPrefix={displayCurrencySymbol}
 						onChange={(e) => {
 							// Validate decimal input
 							const decimalRegex = /^\d*\.?\d*$/;
@@ -469,7 +564,7 @@ const UsagePricingForm: FC<Props> = ({
 							label='Price'
 							placeholder='0.00'
 							value={packagedFee.price}
-							inputPrefix={getCurrencySymbol(currency)}
+							inputPrefix={displayCurrencySymbol}
 							onChange={(e) => {
 								// Validate decimal input
 								const decimalRegex = /^\d*\.?\d*$/;
@@ -508,7 +603,7 @@ const UsagePricingForm: FC<Props> = ({
 					<VolumeTieredPricingForm
 						setTieredPrices={setTieredPrices}
 						tieredPrices={tieredPrices}
-						currency={currency}
+						currency={priceUnitType === PRICE_UNIT_TYPE.CUSTOM ? priceUnitConfig?.price_unit || currency : currency}
 						tierMode={billingModel === billingModels[2].value ? TIER_MODE.VOLUME : TIER_MODE.SLAB}
 					/>
 					{inputErrors.tieredModelError && <p className='text-red-500 text-sm'>{inputErrors.tieredModelError}</p>}

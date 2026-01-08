@@ -52,8 +52,17 @@ export interface TransformQuantity {
 }
 
 export interface PriceUnitConfig {
+	// Amount is the price amount in the custom price unit (optional)
+	// Required when billing_model is FLAT_FEE or PACKAGE with custom price unit
 	readonly amount?: string;
+	/**
+	 * The price unit code (3 characters, e.g., "BTC", "TOK", "CRD")
+	 * This is the unique identifier for the price unit, not the full PriceUnit object
+	 * Required when using custom price unit type
+	 */
 	readonly price_unit: string;
+	// PriceUnitTiers are the pricing tiers for custom price units
+	// Required when billing_model is TIERED with custom price unit
 	readonly price_unit_tiers?: CreatePriceTier[];
 }
 

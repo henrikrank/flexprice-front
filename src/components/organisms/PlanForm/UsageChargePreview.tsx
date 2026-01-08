@@ -3,6 +3,7 @@ import { Pencil, Trash2 } from 'lucide-react';
 import { toSentenceCase } from '@/utils/common/helper_functions';
 import { InternalPrice } from './SetupChargesSection';
 import { ChargeValueCell } from '@/components/molecules';
+import { PRICE_UNIT_TYPE } from '@/models/Price';
 
 interface Props {
 	charge: InternalPrice;
@@ -13,19 +14,22 @@ interface Props {
 }
 
 const UsageChargePreview: FC<Props> = ({ charge: price, index, onDelete, onEdit, disabled }) => {
+	// Get display currency (price unit code for custom, currency for FIAT)
+	const displayCurrency =
+		price.price_unit_type === PRICE_UNIT_TYPE.CUSTOM ? price.price_unit_config?.price_unit || price.currency : price.currency;
+
 	return (
 		<div className='gap-2 w-full flex justify-between group min-h-9 items-center rounded-md border bg-background px-3 py-2 text-base ring-offset-background placeholder:text-muted-foreground hover:bg-gray-50 transition-colors'>
 			<div>
-				<p className='font-normal text-sm'>{price.meter?.name || 'Usage Based Charge'}</p>
+				<p className='font-normal text-sm'>{price.display_name || price.meter?.name || 'Usage Based Charge'}</p>
 				<div className='flex gap-2 items-center text-zinc-500 text-xs'>
-					<span>{price.currency}</span>
+					<span>{displayCurrency}</span>
 					<span>•</span>
 					<span>{toSentenceCase(price.billing_period || '')}</span>
 					{price.billing_model && (
 						<>
 							<span>•</span>
-							{/* <span>{formatBillingModel(price.billing_model)}</span> */}
-							<ChargeValueCell data={{ ...price, currency: price.currency } as any} priceOverride={undefined} />
+							<ChargeValueCell data={{ ...price, currency: price.currency } as any} />
 						</>
 					)}
 				</div>

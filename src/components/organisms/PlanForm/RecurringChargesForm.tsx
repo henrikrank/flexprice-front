@@ -1,6 +1,6 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { formatBillingPeriodForPrice, getCurrencySymbol } from '@/utils/common/helper_functions';
-import { billlingPeriodOptions, currencyOptions } from '@/constants/constants';
+import { billlingPeriodOptions } from '@/constants/constants';
 import { InternalPrice } from './SetupChargesSection';
 import { PriceInternalState } from './UsagePricingForm';
 import { CheckboxRadioGroup, FormHeader, Input, Spacer, Button, Select, DatePicker } from '@/components/atoms';
@@ -8,9 +8,11 @@ import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import RecurringChargePreview from './RecurringChargePreview';
 import { BILLING_CADENCE, INVOICE_CADENCE } from '@/models/Invoice';
-import { BILLING_PERIOD, PRICE_ENTITY_TYPE, PRICE_TYPE } from '@/models/Price';
+import { BILLING_PERIOD, PRICE_ENTITY_TYPE, PRICE_TYPE, PRICE_UNIT_TYPE, BILLING_MODEL } from '@/models/Price';
 import SelectGroup from './SelectGroup';
 import { Group } from '@/models/Group';
+import { CurrencyPriceUnitSelector } from '@/components/molecules';
+import { CurrencyPriceUnitSelection, isPriceUnitOption } from '@/types/common';
 
 interface Props {
 	price: Partial<InternalPrice>;
@@ -72,9 +74,58 @@ const RecurringChargesForm = ({
 				updated.min_quantity = price.min_quantity;
 			}
 
+			// Apply price_unit_type and price_unit_config
+			if (price.price_unit_type !== undefined) {
+				updated.price_unit_type = price.price_unit_type;
+			}
+			if (price.price_unit_config !== undefined) {
+				updated.price_unit_config = price.price_unit_config;
+			}
+
 			return updated;
 		});
 	}, [price, entityName]);
+
+	// Get the current currency/price unit value for the selector
+	const currencyPriceUnitValue = useMemo(() => {
+		if (localPrice.price_unit_type === PRICE_UNIT_TYPE.CUSTOM && localPrice.price_unit_config?.price_unit) {
+			return localPrice.price_unit_config.price_unit;
+		}
+		return localPrice.currency || '';
+	}, [localPrice.currency, localPrice.price_unit_type, localPrice.price_unit_config]);
+
+	// Get currency symbol for display (from currency or price unit's base_currency)
+	const displayCurrencySymbol = useMemo(() => {
+		if (localPrice.price_unit_type === PRICE_UNIT_TYPE.CUSTOM && localPrice.price_unit_config?.price_unit) {
+			// For custom price units, we need to get the base_currency from the price unit
+			// This will be set when the price unit is selected
+			return getCurrencySymbol(localPrice.currency || '');
+		}
+		return getCurrencySymbol(localPrice.currency || '');
+	}, [localPrice.currency, localPrice.price_unit_type, localPrice.price_unit_config]);
+
+	// Handle currency/price unit selection
+	const handleCurrencyPriceUnitChange = (selection: CurrencyPriceUnitSelection) => {
+		if (selection.type === PRICE_UNIT_TYPE.FIAT) {
+			// Currency selected (FIAT)
+			setLocalPrice({
+				...localPrice,
+				currency: selection.data.code,
+				price_unit_type: PRICE_UNIT_TYPE.FIAT,
+				price_unit_config: undefined,
+			});
+		} else if (selection.type === PRICE_UNIT_TYPE.CUSTOM && isPriceUnitOption(selection.data)) {
+			// Price unit selected (CUSTOM)
+			setLocalPrice({
+				...localPrice,
+				currency: selection.data.base_currency,
+				price_unit_type: PRICE_UNIT_TYPE.CUSTOM,
+				price_unit_config: {
+					price_unit: selection.data.code,
+				},
+			});
+		}
+	};
 
 	const validate = () => {
 		const newErrors: Partial<Record<keyof InternalPrice, string>> = {};
@@ -87,6 +138,10 @@ const RecurringChargesForm = ({
 		}
 		if (!localPrice.currency) {
 			newErrors.currency = 'Currency is required';
+		}
+
+		if (localPrice.price_unit_type === PRICE_UNIT_TYPE.CUSTOM && !localPrice.price_unit_config?.price_unit) {
+			newErrors.price_unit_config = 'Price unit is required when using custom price unit';
 		}
 
 		if (!localPrice.invoice_cadence) {
@@ -104,11 +159,35 @@ const RecurringChargesForm = ({
 	const handleSubmit = () => {
 		if (!validate()) return;
 
-		const priceWithEntity = {
-			...localPrice,
+		// Build price_unit_config for custom price units
+		let priceUnitConfig = localPrice.price_unit_config;
+		if (localPrice.price_unit_type === PRICE_UNIT_TYPE.CUSTOM && localPrice.price_unit_config) {
+			// For FLAT_FEE billing model with custom price unit, set amount in price_unit_config
+			if (localPrice.billing_model === BILLING_MODEL.FLAT_FEE && localPrice.amount) {
+				priceUnitConfig = {
+					...localPrice.price_unit_config,
+					amount: localPrice.amount,
+				};
+			}
+		}
+
+		// Build price object, explicitly excluding amount, tiers, and tier_mode when price_unit_type is CUSTOM
+		const { amount: _, tiers: __, tier_mode: ___, ...localPriceWithoutAmountTiers } = localPrice;
+
+		const priceWithEntity: Partial<InternalPrice> = {
+			...(localPrice.price_unit_type === PRICE_UNIT_TYPE.CUSTOM ? localPriceWithoutAmountTiers : localPrice),
+			price_unit_config: priceUnitConfig,
 			entity_type: entityType,
 			entity_id: entityId || '',
 			start_date: startDate ? startDate.toISOString() : undefined,
+			// Sanitize: explicitly set amount, tiers, and tier_mode to undefined when price_unit_type is CUSTOM
+			...(localPrice.price_unit_type === PRICE_UNIT_TYPE.CUSTOM
+				? {
+						amount: undefined,
+						tiers: undefined,
+						tier_mode: undefined,
+					}
+				: {}),
 		};
 
 		if (price.internal_state === PriceInternalState.EDIT) {
@@ -143,12 +222,12 @@ const RecurringChargesForm = ({
 				error={errors.display_name}
 			/>
 			<Spacer height={'8px'} />
-			<Select
-				value={localPrice.currency}
-				options={currencyOptions}
+			<CurrencyPriceUnitSelector
+				value={currencyPriceUnitValue}
+				onChange={handleCurrencyPriceUnitChange}
 				label='Currency'
-				onChange={(value) => setLocalPrice({ ...localPrice, currency: value })}
-				error={errors.currency}
+				error={errors.currency || errors.price_unit_config}
+				description='Select a currency (FIAT) or a custom price unit (CUSTOM)'
 			/>
 			<Spacer height={'8px'} />
 			<Select
@@ -166,7 +245,7 @@ const RecurringChargesForm = ({
 				label='Price'
 				placeholder='0'
 				error={errors.amount}
-				inputPrefix={getCurrencySymbol(localPrice.currency || '')}
+				inputPrefix={displayCurrencySymbol}
 				suffix={<span className='text-[#64748B]'> {`per ${formatBillingPeriodForPrice(localPrice.billing_period || '')}`}</span>}
 			/>
 			<Spacer height={'8px'} />

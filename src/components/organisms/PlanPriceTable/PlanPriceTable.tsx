@@ -10,6 +10,7 @@ import {
 	UpdatePriceDetailsDrawer,
 } from '@/components/molecules';
 import { Price, Plan, PRICE_STATUS } from '@/models';
+import { PriceUnit } from '@/models/PriceUnit';
 import { Plus, Trash2, Pencil, FileText } from 'lucide-react';
 import { useMutation } from '@tanstack/react-query';
 import { PriceApi } from '@/api/PriceApi';
@@ -367,7 +368,10 @@ const PlanPriceTable: FC<PlanChargesTableProps> = ({ plan, onPriceUpdate }) => {
 		{
 			title: 'Value',
 			render(rowData) {
-				return <ChargeValueCell data={rowData} />;
+				// Pass pricing_unit from PriceResponse if available
+				// Type assertion needed since Plan.prices is typed as Price[] but runtime includes pricing_unit
+				const priceWithPricingUnit = rowData as Price & { pricing_unit?: PriceUnit };
+				return <ChargeValueCell data={priceWithPricingUnit} />;
 			},
 		},
 		{

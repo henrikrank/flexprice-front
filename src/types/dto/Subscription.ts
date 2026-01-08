@@ -260,16 +260,24 @@ export interface OverrideLineItemRequest {
 	billing_model?: BILLING_MODEL;
 
 	// Amount is the new price amount that overrides the original price (optional)
+	// For FIAT price unit type, FLAT_FEE/PACKAGE billing models
 	amount?: number;
 
 	// TierMode determines how to calculate the price for a given quantity
 	tier_mode?: TIER_MODE;
 
 	// Tiers determines the pricing tiers for this line item
+	// For FIAT price unit type, TIERED billing model
 	tiers?: CreatePriceTier[];
 
 	// TransformQuantity determines how to transform the quantity for this line item
 	transform_quantity?: TransformQuantity;
+
+	// PriceUnitAmount is the amount of the price unit (for CUSTOM type, FLAT_FEE/PACKAGE billing models)
+	price_unit_amount?: string;
+
+	// PriceUnitTiers are the tiers for the price unit (for CUSTOM type, TIERED billing model)
+	price_unit_tiers?: CreatePriceTier[];
 }
 
 export interface CancelSubscriptionRequest {

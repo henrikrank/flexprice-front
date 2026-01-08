@@ -2,7 +2,7 @@ import { Select, FormHeader, Label, DecimalUsageInput, DatePicker } from '@/comp
 import { Switch } from '@/components/ui';
 import { cn } from '@/lib/utils';
 import { toSentenceCase } from '@/utils/common/helper_functions';
-import { ExpandedPlan } from '@/types';
+import { PlanResponse } from '@/types';
 import { useMemo, useEffect, useRef } from 'react';
 import toast from 'react-hot-toast';
 import SubscriptionCreditGrantTable from '@/components/molecules/CreditGrant/SubscriptionCreditGrantTable';
@@ -77,6 +77,8 @@ const SubscriptionForm = ({
 	plans,
 	plansLoading,
 	plansError,
+	isLoadingPlanDetails,
+	isPlanDetailsError,
 	isDisabled,
 	phases = [],
 	onPhasesChange,
@@ -84,9 +86,11 @@ const SubscriptionForm = ({
 }: {
 	state: SubscriptionFormState;
 	setState: React.Dispatch<React.SetStateAction<SubscriptionFormState>>;
-	plans: ExpandedPlan[] | undefined;
+	plans: PlanResponse[] | undefined;
 	plansLoading: boolean;
 	plansError: boolean;
+	isLoadingPlanDetails?: boolean;
+	isPlanDetailsError?: boolean;
 	isDisabled: boolean;
 	phases?: SubscriptionPhaseCreateRequest[];
 	onPhasesChange?: (phases: SubscriptionPhaseCreateRequest[]) => void;
@@ -149,26 +153,21 @@ const SubscriptionForm = ({
 		);
 	}, [plans]);
 
-	// Get available billing periods and currencies for the selected plan
-	const selectedPlanData = useMemo(() => {
-		if (!state.selectedPlan || !plans) return null;
-		return plans.find((plan) => plan.id === state.selectedPlan);
-	}, [state.selectedPlan, plans]);
-
+	// Get available billing periods and currencies from state.prices (fetched via getPlanById)
 	const availableBillingPeriods = useMemo(() => {
-		if (!selectedPlanData?.prices) return [];
-		const periods = [...new Set(selectedPlanData.prices.map((price) => price.billing_period))];
+		if (!state.prices?.prices) return [];
+		const periods = [...new Set(state.prices.prices.map((price) => price.billing_period))];
 		return periods.map((period) => ({
 			label: toSentenceCase(period.replace('_', ' ')),
 			value: period,
 		}));
-	}, [selectedPlanData]);
+	}, [state.prices]);
 
 	const availableCurrencies = useMemo(() => {
-		if (!selectedPlanData?.prices || !state.billingPeriod) return [];
+		if (!state.prices?.prices || !state.billingPeriod) return [];
 		const currencies = [
 			...new Set(
-				selectedPlanData.prices
+				state.prices.prices
 					.filter((price) => price.billing_period.toLowerCase() === state.billingPeriod.toLowerCase())
 					.map((price) => price.currency),
 			),
@@ -177,41 +176,21 @@ const SubscriptionForm = ({
 			label: currency.toUpperCase(),
 			value: currency,
 		}));
-	}, [selectedPlanData, state.billingPeriod]);
+	}, [state.prices, state.billingPeriod]);
 
 	const handlePlanChange = (value: string) => {
-		const selectedPlan = plans?.find((plan) => plan.id === value);
-
-		if (!selectedPlan?.prices || selectedPlan.prices.length === 0) {
-			toast.error('Invalid plan or no prices available.');
-			return;
-		}
-
-		// Get available billing periods
-		const billingPeriods = [...new Set(selectedPlan.prices.map((price) => price.billing_period))];
-		const defaultBillingPeriod = billingPeriods.includes(state.billingPeriod) ? state.billingPeriod : billingPeriods[0];
-
-		// Get available currencies for the default billing period
-		const currencies = [
-			...new Set(
-				selectedPlan.prices
-					.filter((price) => price.billing_period.toLowerCase() === defaultBillingPeriod.toLowerCase())
-					.map((price) => price.currency),
-			),
-		];
-		const defaultCurrency = currencies.includes(state.currency) ? state.currency : currencies[0];
-
-		setState({
-			...state,
+		// Just set the plan ID - the parent component's usePlanDetails hook will fetch the plan details
+		// and update state.prices automatically via useEffect
+		setState((prev) => ({
+			...prev,
 			selectedPlan: value,
-			prices: selectedPlan,
-			billingPeriod: defaultBillingPeriod as BILLING_PERIOD,
-			currency: defaultCurrency,
-			billingPeriodOptions: billingPeriods.map((period) => ({
-				label: toSentenceCase(period.replace('_', ' ')),
-				value: period,
-			})),
-		});
+			// Clear prices temporarily while loading
+			prices: null,
+			// Clear price overrides and coupons when changing plans
+			priceOverrides: {},
+			linkedCoupon: null,
+			lineItemCoupons: {},
+		}));
 	};
 
 	const handleBillingPeriodChange = (value: string) => {
@@ -388,53 +367,56 @@ const SubscriptionForm = ({
 
 			{/* Plan Selection */}
 			{!plansLoading && (
-				<Select
-					value={state.selectedPlan}
-					options={plansWithCharges}
-					onChange={handlePlanChange}
-					label='Plan*'
-					disabled={isDisabled}
-					placeholder='Select plan'
-					error={plansError ? 'Failed to load plans' : undefined}
-				/>
+				<div className='space-y-2'>
+					<Select
+						value={state.selectedPlan}
+						options={plansWithCharges}
+						onChange={handlePlanChange}
+						label='Plan*'
+						disabled={isDisabled || isLoadingPlanDetails}
+						placeholder='Select plan'
+						error={plansError ? 'Failed to load plans' : isPlanDetailsError ? 'Failed to load plan details' : undefined}
+					/>
+					{isLoadingPlanDetails && state.selectedPlan && <p className='text-sm text-gray-500'>Loading plan details...</p>}
+				</div>
 			)}
 
 			{/* Billing Period Selection */}
-			{state.selectedPlan && availableBillingPeriods.length > 0 && (
+			{state.selectedPlan && !isLoadingPlanDetails && availableBillingPeriods.length > 0 && (
 				<Select
 					key={availableBillingPeriods.map((opt) => opt.value).join(',')}
 					value={state.billingPeriod}
 					options={availableBillingPeriods}
 					onChange={handleBillingPeriodChange}
 					label='Billing Period*'
-					disabled={isDisabled}
+					disabled={isDisabled || isLoadingPlanDetails}
 					placeholder='Select billing period'
 				/>
 			)}
 
 			{/* Currency Selection */}
-			{state.selectedPlan && availableCurrencies.length > 0 && (
+			{state.selectedPlan && !isLoadingPlanDetails && availableCurrencies.length > 0 && (
 				<Select
 					key={availableCurrencies.map((opt) => opt.value).join(',')}
 					value={state.currency}
 					options={availableCurrencies}
 					onChange={(value) => setState((prev) => ({ ...prev, currency: value }))}
 					label='Currency*'
-					disabled={isDisabled}
+					disabled={isDisabled || isLoadingPlanDetails}
 					placeholder='Select currency'
 				/>
 			)}
 
 			{/* Subscription Cycle */}
-			{state.selectedPlan && (
+			{state.selectedPlan && !isLoadingPlanDetails && (
 				<BillingCycleSelector
 					value={state.billingCycle}
 					onChange={(value) => setState((prev) => ({ ...prev, billingCycle: value }))}
-					disabled={isDisabled}
+					disabled={isDisabled || isLoadingPlanDetails}
 				/>
 			)}
 			{/* Conditional: Show Subscription Fields OR Phases */}
-			{state.selectedPlan && phases.length === 0 && (
+			{state.selectedPlan && !isLoadingPlanDetails && phases.length === 0 && (
 				<>
 					{/* Subscription Dates */}
 					<div className='grid grid-cols-1 md:grid-cols-2 gap-4 mt-6'>
@@ -528,7 +510,7 @@ const SubscriptionForm = ({
 			)}
 
 			{/* Subscription Phases Section - Show when phases exist OR as add phase button */}
-			{state.selectedPlan && phases !== undefined && onPhasesChange && (
+			{state.selectedPlan && !isLoadingPlanDetails && phases !== undefined && onPhasesChange && (
 				<div className='mt-6 pt-6 border-t border-gray-200'>
 					<PhaseList
 						phases={phases}
@@ -579,7 +561,7 @@ const SubscriptionForm = ({
 			)}
 
 			{/* Commitment and Overage - Always visible */}
-			{state.selectedPlan && (
+			{state.selectedPlan && !isLoadingPlanDetails && (
 				<>
 					<div className='grid grid-cols-1 md:grid-cols-2 gap-4 mt-6 pt-6 border-t border-gray-200'>
 						<DecimalUsageInput
@@ -614,7 +596,7 @@ const SubscriptionForm = ({
 			)}
 
 			{/* Credit Grants (Subscription Level) */}
-			{state.selectedPlan && (
+			{state.selectedPlan && !isLoadingPlanDetails && (
 				<div className='mt-6 pt-6 border-t border-gray-200'>
 					<SubscriptionCreditGrantTable
 						getEmptyCreditGrant={() => getEmptyCreditGrant()}
@@ -637,7 +619,7 @@ const SubscriptionForm = ({
 			)}
 
 			{/* Tax Rate Overrides */}
-			{state.selectedPlan && (
+			{state.selectedPlan && !isLoadingPlanDetails && (
 				<div className='mt-6 pt-6 border-t border-gray-200'>
 					<SubscriptionTaxAssociationTable
 						data={state.tax_rate_overrides || []}
@@ -648,7 +630,7 @@ const SubscriptionForm = ({
 			)}
 
 			{/* Addons Section */}
-			{state.selectedPlan && (
+			{state.selectedPlan && !isLoadingPlanDetails && (
 				<div className='mt-6 pt-6 border-t border-gray-200'>
 					<SubscriptionAddonTable
 						getEmptyAddon={getEmptyAddon}
@@ -662,7 +644,7 @@ const SubscriptionForm = ({
 			)}
 
 			{/* Entitlements Section */}
-			{state.selectedPlan && allEntitlements.length > 0 && (
+			{state.selectedPlan && !isLoadingPlanDetails && allEntitlements.length > 0 && (
 				<div className='space-y-4 mt-4 pt-3 border-t border-gray-200'>
 					<FormHeader className='mb-0' title='Entitlements' variant='sub-header' />
 					<div className='rounded-xl border border-gray-300 space-y-6 mt-2'>

@@ -271,15 +271,13 @@ const EntityChargesPage: React.FC<EntityChargesPageProps> = ({ entityType, entit
 
 			// Convert internal prices to CreatePriceRequest format, filtering out invalid ones
 			const priceRequests = allPrices.map((price) => {
-				const isTieredBilling = price.billing_model === BILLING_MODEL.TIERED;
-
-				// For tiered/slab-tiered billing models, exclude amount field
-				const baseRequest: CreatePriceRequest = {
+				const priceUnitType = price.price_unit_type || PRICE_UNIT_TYPE.FIAT;
+				const request: CreatePriceRequest = {
 					currency: price.currency!,
 					entity_type: priceEntityType,
 					entity_id: entityId,
 					type: price.type!,
-					price_unit_type: price.price_unit_type || PRICE_UNIT_TYPE.FIAT,
+					price_unit_type: priceUnitType,
 					billing_period: price.billing_period!,
 					billing_period_count: price.billing_period_count || 1,
 					billing_model: price.billing_model!,
@@ -292,26 +290,38 @@ const EntityChargesPage: React.FC<EntityChargesPageProps> = ({ entityType, entit
 					description: price.description,
 					display_name: price.display_name,
 					metadata: price.metadata || undefined,
-					tier_mode: price.tier_mode,
-					tiers:
-						price.tiers?.map((tier) => ({
-							up_to: tier.up_to,
-							unit_amount: tier.unit_amount,
-							flat_amount: tier.flat_amount,
-						})) || undefined,
 					transform_quantity: price.transform_quantity || undefined,
-					price_unit_config: price.price_unit_config,
 					group_id: price.group_id,
 					min_quantity: price.min_quantity,
 					start_date: price.start_date ? new Date(price.start_date).toISOString() : undefined,
 				};
 
-				// Only include amount if billing model is not tiered or slab-tiered
-				if (!isTieredBilling && price.amount) {
-					baseRequest.amount = price.amount;
+				// Sanitize: explicitly set amount, tiers, and tier_mode based on price_unit_type
+				if (priceUnitType === PRICE_UNIT_TYPE.FIAT) {
+					// Only include amount if it's not empty string
+					if (price.amount && price.amount.trim() !== '') {
+						request.amount = price.amount;
+					}
+					request.tier_mode = price.tier_mode;
+					request.tiers =
+						price.tiers?.map((tier) => ({
+							up_to: tier.up_to,
+							unit_amount: tier.unit_amount,
+							flat_amount: tier.flat_amount,
+						})) || undefined;
+				} else if (priceUnitType === PRICE_UNIT_TYPE.CUSTOM) {
+					// Explicitly delete these fields for CUSTOM price units (don't send empty strings or undefined)
+					// This ensures they are completely omitted from the request
+					delete request.amount;
+					delete request.tiers;
+					delete request.tier_mode;
+					// Include price_unit_config when price_unit_type is CUSTOM
+					if (price.price_unit_config) {
+						request.price_unit_config = price.price_unit_config;
+					}
 				}
 
-				return baseRequest;
+				return request;
 			});
 
 			const bulkPriceRequest: CreateBulkPriceRequest = {

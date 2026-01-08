@@ -18,44 +18,50 @@ export const getCommitmentConfig = (priceId: string, commitments: LineItemCommit
 /**
  * Validate commitment configuration
  * Returns error message if invalid, null if valid
+ * Matches backend validation logic: only validates if commitment is configured
  */
 export const validateCommitment = (config: Partial<LineItemCommitmentConfig>): string | null => {
-	if (!config.commitment_type) {
-		return 'Commitment type is required';
+	const hasAmountCommitment = config.commitment_amount !== undefined && config.commitment_amount !== null && config.commitment_amount > 0;
+	const hasQuantityCommitment =
+		config.commitment_quantity !== undefined && config.commitment_quantity !== null && config.commitment_quantity > 0;
+	const hasCommitment = hasAmountCommitment || hasQuantityCommitment;
+
+	// No commitment configured, nothing to validate
+	if (!hasCommitment) {
+		return null;
 	}
 
-	if (config.commitment_type === CommitmentType.AMOUNT) {
-		if (config.commitment_amount === undefined || config.commitment_amount === null) {
-			return 'Commitment amount is required when type is "amount"';
+	// Rule 1: Cannot set both commitment_amount and commitment_quantity
+	if (hasAmountCommitment && hasQuantityCommitment) {
+		return 'Cannot set both commitment_amount and commitment_quantity';
+	}
+
+	// Rule 2: Validate commitment type matches the provided field
+	if (config.commitment_type) {
+		if (hasAmountCommitment && config.commitment_type !== CommitmentType.AMOUNT) {
+			return 'When commitment_amount is set, commitment_type must be "amount"';
 		}
-		if (config.commitment_amount <= 0) {
-			return 'Commitment amount must be greater than 0';
+		if (hasQuantityCommitment && config.commitment_type !== CommitmentType.QUANTITY) {
+			return 'When commitment_quantity is set, commitment_type must be "quantity"';
 		}
 	}
 
-	if (config.commitment_type === CommitmentType.QUANTITY) {
-		if (config.commitment_quantity === undefined || config.commitment_quantity === null) {
-			return 'Commitment quantity is required when type is "quantity"';
-		}
-		if (config.commitment_quantity <= 0) {
-			return 'Commitment quantity must be greater than 0';
-		}
-	}
-
+	// Rule 3: Overage factor is required and must be greater than 1.0 when commitment is set
 	if (config.overage_factor === undefined || config.overage_factor === null) {
-		return 'Overage factor is required';
+		return 'Overage factor is required when commitment is set';
 	}
 
-	if (config.overage_factor < 0) {
-		return 'Overage factor must be non-negative';
+	if (config.overage_factor <= 1) {
+		return 'Overage factor must be greater than 1.0';
 	}
 
-	if (config.enable_true_up === undefined || config.enable_true_up === null) {
-		return 'Enable true up is required';
+	// Rule 4: Validate commitment values are non-negative
+	if (hasAmountCommitment && config.commitment_amount! < 0) {
+		return 'Commitment amount must be non-negative';
 	}
 
-	if (config.is_window_commitment === undefined || config.is_window_commitment === null) {
-		return 'Is window commitment is required';
+	if (hasQuantityCommitment && config.commitment_quantity! < 0) {
+		return 'Commitment quantity must be non-negative';
 	}
 
 	return null;
@@ -67,9 +73,18 @@ export const validateCommitment = (config: Partial<LineItemCommitmentConfig>): s
 export const formatCommitmentSummary = (config: LineItemCommitmentConfig): string => {
 	const parts: string[] = [];
 
-	if (config.commitment_type === CommitmentType.AMOUNT) {
+	// Determine commitment type from the fields if not explicitly set
+	const commitmentType =
+		config.commitment_type ||
+		(config.commitment_amount !== undefined && config.commitment_amount !== null
+			? CommitmentType.AMOUNT
+			: config.commitment_quantity !== undefined && config.commitment_quantity !== null
+				? CommitmentType.QUANTITY
+				: null);
+
+	if (commitmentType === CommitmentType.AMOUNT) {
 		parts.push(`$${config.commitment_amount?.toLocaleString() || '0'} commitment`);
-	} else {
+	} else if (commitmentType === CommitmentType.QUANTITY) {
 		parts.push(`${config.commitment_quantity?.toLocaleString() || '0'} units commitment`);
 	}
 

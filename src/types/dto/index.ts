@@ -60,7 +60,6 @@ export type {
 	CreateBulkPriceRequest,
 	CreateBulkPriceResponse,
 	PriceResponse,
-	PriceUnitResponse,
 	DeletePriceRequest,
 	CostBreakup,
 } from './Price';
@@ -182,7 +181,6 @@ export type {
 	SynchronizationSummary,
 	SynchronizePlanPricesWithSubscriptionResponse,
 	GetPlanCreditGrantsResponse,
-	ExpandedPlan,
 } from './Plan';
 
 export type { CreateCouponRequest, UpdateCouponRequest, GetCouponResponse, ListCouponsResponse, CouponFilter } from './Coupon';
@@ -271,3 +269,12 @@ export type {
 	GroupFilter,
 	AddEntityToGroupRequest,
 } from './Group';
+
+export type {
+	CreatePriceUnitRequest,
+	UpdatePriceUnitRequest,
+	PriceUnitResponse,
+	CreatePriceUnitResponse,
+	ListPriceUnitsResponse,
+	PriceUnitFilter,
+} from './PriceUnit';

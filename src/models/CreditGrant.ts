@@ -19,6 +19,8 @@ export interface CreditGrant extends BaseModel {
 	readonly expiration_type?: CREDIT_GRANT_EXPIRATION_TYPE;
 	readonly expiration_duration_unit?: CREDIT_GRANT_PERIOD_UNIT;
 	readonly subscription_id?: string;
+	readonly conversion_rate?: number;
+	readonly topup_conversion_rate?: number;
 }
 
 export enum CREDIT_GRANT_CADENCE {

@@ -4,8 +4,8 @@ import { FiDatabase } from 'react-icons/fi';
 import { cn } from '@/lib/utils';
 import { Plan } from '@/models/Plan';
 import { useState } from 'react';
-import { BILLING_MODEL, BILLING_PERIOD, Price, PRICE_TYPE } from '@/models/Price';
-import { currencyOptions } from '@/constants/constants';
+import { BILLING_MODEL, Price, PRICE_TYPE, PRICE_UNIT_TYPE, PriceUnitConfig } from '@/models/Price';
+import { BILLING_PERIOD, currencyOptions } from '@/constants/constants';
 import RecurringChargesForm from './RecurringChargesForm';
 import UsagePricingForm, { PriceInternalState } from './UsagePricingForm';
 import { CirclePlus } from 'lucide-react';
@@ -55,6 +55,8 @@ export interface InternalPrice extends Partial<Price> {
 	isTrialPeriod?: boolean;
 	internal_state?: PriceInternalState;
 	group_id?: string;
+	price_unit_type?: PRICE_UNIT_TYPE;
+	price_unit_config?: PriceUnitConfig;
 }
 
 const SetupChargesSection: React.FC<Props> = ({ plan, setPlanField }) => {

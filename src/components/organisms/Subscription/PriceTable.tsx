@@ -223,7 +223,6 @@ const PriceTable: FC<Props> = ({
 			price: (
 				<ChargeValueCell
 					data={{ ...price, currency: price.currency } as any}
-					overriddenAmount={isOverridden ? overriddenPrices[price.id]?.amount : undefined}
 					appliedCoupon={appliedCoupon}
 					priceOverride={isOverridden ? overriddenPrices[price.id] : undefined}
 				/>

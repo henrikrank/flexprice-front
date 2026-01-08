@@ -13,6 +13,7 @@ import {
 	Meter,
 	Metadata,
 	Pagination,
+	PriceUnit,
 } from '@/models';
 import { QueryFilter, TimeRangeFilter } from './base';
 
@@ -21,7 +22,7 @@ export interface CreateBulkPriceRequest {
 }
 
 export interface GetAllPricesResponse extends Pagination {
-	items: Price[];
+	items: PriceResponse[];
 }
 
 export interface PriceFilter extends QueryFilter, TimeRangeFilter {
@@ -57,6 +58,7 @@ export interface CreatePriceRequest {
 	tier_mode?: TIER_MODE;
 	tiers?: CreatePriceTier[];
 	transform_quantity?: TransformQuantity;
+	// PriceUnitConfig is required when price_unit_type is CUSTOM
 	price_unit_config?: PriceUnitConfig;
 	start_date?: string; // ISO date string
 	end_date?: string; // ISO date string
@@ -82,8 +84,17 @@ export interface CreatePriceTier {
 }
 
 export interface PriceUnitConfig {
+	// Amount is the price amount in the custom price unit (optional)
+	// Required when billing_model is FLAT_FEE or PACKAGE with custom price unit
 	amount?: string;
+	/**
+	 * The price unit code (3 characters, e.g., "BTC", "TOK", "CRD")
+	 * This is the unique identifier for the price unit, not the full PriceUnit object
+	 * Required when using custom price unit type
+	 */
 	price_unit: string;
+	// PriceUnitTiers are the pricing tiers for custom price units
+	// Required when billing_model is TIERED with custom price unit
 	price_unit_tiers?: CreatePriceTier[];
 }
 
@@ -94,22 +105,15 @@ export interface TransformQuantity {
 
 // Additional DTOs for bulk operations and responses
 export interface CreateBulkPriceResponse {
-	items: Price[];
+	items: PriceResponse[];
 }
 
 // Response types for individual price operations
 export interface PriceResponse extends Price {
-	pricing_unit?: PriceUnitResponse;
+	pricing_unit?: PriceUnit;
 	meter?: Meter;
 	plan?: Plan;
 	addon?: Addon;
-}
-
-export interface PriceUnitResponse {
-	// Add price unit response fields as needed
-	id: string;
-	name: string;
-	// Add other fields based on backend response
 }
 
 // Delete price request
@@ -143,4 +147,13 @@ export interface UpdatePriceRequest {
 	tier_mode?: TIER_MODE;
 	tiers?: CreatePriceTier[];
 	transform_quantity?: TransformQuantity;
+
+	// PriceUnitAmount is the price unit amount (for CUSTOM price unit type, FLAT_FEE/PACKAGE billing models)
+	price_unit_amount?: string;
+
+	// PriceUnitTiers are the price unit tiers (for CUSTOM price unit type, TIERED billing model)
+	price_unit_tiers?: CreatePriceTier[];
+
+	// GroupID is the id of the group to update the price in
+	group_id?: string;
 }

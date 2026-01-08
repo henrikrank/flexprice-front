@@ -51,6 +51,7 @@ import {
 	Coupons as CouponsPage,
 	CouponDetails,
 	Groups as GroupsPage,
+	PriceUnits as PriceUnitsPage,
 	// Usage pages
 	Events as EventsPage,
 	Query as QueryPage,
@@ -140,6 +141,9 @@ export const RouteNames = {
 
 	// group routes
 	groups: '/product-catalog/groups',
+
+	// price unit routes
+	priceUnits: '/product-catalog/price-units',
 
 	// developers routes
 	developers: '/developers',
@@ -278,6 +282,10 @@ export const MainRouter = createBrowserRouter([
 					{
 						path: RouteNames.groups,
 						element: <GroupsPage />,
+					},
+					{
+						path: RouteNames.priceUnits,
+						element: <PriceUnitsPage />,
 					},
 				],
 			},

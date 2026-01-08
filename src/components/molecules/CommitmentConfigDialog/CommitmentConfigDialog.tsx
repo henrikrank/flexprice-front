@@ -44,12 +44,20 @@ const CommitmentConfigDialog: FC<CommitmentConfigDialogProps> = ({ isOpen, onOpe
 	// Initialize form with current config or defaults
 	useEffect(() => {
 		if (currentConfig) {
-			setCommitmentType(currentConfig.commitment_type);
+			// Determine commitment type from fields if not explicitly set
+			const type =
+				currentConfig.commitment_type ||
+				(currentConfig.commitment_amount !== undefined && currentConfig.commitment_amount !== null
+					? CommitmentType.AMOUNT
+					: currentConfig.commitment_quantity !== undefined && currentConfig.commitment_quantity !== null
+						? CommitmentType.QUANTITY
+						: CommitmentType.AMOUNT);
+			setCommitmentType(type);
 			setCommitmentAmount(currentConfig.commitment_amount?.toString() || '');
 			setCommitmentQuantity(currentConfig.commitment_quantity?.toString() || '');
-			setOverageFactor(currentConfig.overage_factor.toString());
-			setEnableTrueUp(currentConfig.enable_true_up);
-			setIsWindowCommitment(currentConfig.is_window_commitment);
+			setOverageFactor(currentConfig.overage_factor?.toString() || '1.0');
+			setEnableTrueUp(currentConfig.enable_true_up ?? false);
+			setIsWindowCommitment(currentConfig.is_window_commitment ?? showWindowCommitment);
 		} else {
 			// Reset to defaults when opening without existing config
 			setCommitmentType(CommitmentType.AMOUNT);

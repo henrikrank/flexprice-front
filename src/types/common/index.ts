@@ -9,3 +9,7 @@ export { NodeEnv, NODE_ENV } from './Environment';
 
 // Common interface types
 export type { Filters } from './Filters';
+
+// Currency and Price Unit Selector types
+export type { CurrencyOption, PriceUnitOption, CurrencyPriceUnitOption, CurrencyPriceUnitSelection } from './PriceUnitSelector';
+export { currencyToOption, priceUnitToOption, isCurrencyOption, isPriceUnitOption } from './PriceUnitSelector';
