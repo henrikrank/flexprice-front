@@ -10,6 +10,7 @@ interface ExportDrawerProps {
 	isOpen: boolean;
 	onOpenChange: (open: boolean) => void;
 	connectionId: string;
+	connection?: any; // Connection object to check if Flexprice Managed
 	exportTask?: ScheduledTask | null; // for editing
 	onSave: (exportTask: any) => void;
 }
@@ -35,7 +36,10 @@ interface ValidationErrors {
 	key_prefix?: string;
 }
 
-const ExportDrawer: FC<ExportDrawerProps> = ({ isOpen, onOpenChange, connectionId, exportTask, onSave }) => {
+const ExportDrawer: FC<ExportDrawerProps> = ({ isOpen, onOpenChange, connectionId, connection, exportTask, onSave }) => {
+	// Check if this is a Flexprice-managed connection
+	const isFlexpriceManaged = connection?.sync_config?.s3?.is_flexprice_managed || false;
+
 	const [formData, setFormData] = useState<ExportFormData>({
 		entity_type: SCHEDULED_ENTITY_TYPE.EVENTS,
 		interval: SCHEDULED_TASK_INTERVAL.HOURLY,
@@ -103,16 +107,19 @@ const ExportDrawer: FC<ExportDrawerProps> = ({ isOpen, onOpenChange, connectionI
 	const validateForm = (): boolean => {
 		const newErrors: ValidationErrors = {};
 
-		if (!formData.bucket.trim()) {
-			newErrors.bucket = 'S3 bucket name is required';
-		}
+		// For Flexprice Managed, we don't need to validate bucket, region, key_prefix
+		if (!isFlexpriceManaged) {
+			if (!formData.bucket.trim()) {
+				newErrors.bucket = 'S3 bucket name is required';
+			}
 
-		if (!formData.region.trim()) {
-			newErrors.region = 'AWS region is required';
-		}
+			if (!formData.region.trim()) {
+				newErrors.region = 'AWS region is required';
+			}
 
-		if (!formData.key_prefix.trim()) {
-			newErrors.key_prefix = 'Key prefix is required';
+			if (!formData.key_prefix.trim()) {
+				newErrors.key_prefix = 'Key prefix is required';
+			}
 		}
 
 		setErrors(newErrors);
@@ -122,17 +129,21 @@ const ExportDrawer: FC<ExportDrawerProps> = ({ isOpen, onOpenChange, connectionI
 	const { mutate: createExport, isPending: isCreating } = useMutation({
 		mutationFn: async () => {
 			const jobConfig: any = {
-				bucket: formData.bucket,
-				region: formData.region,
-				key_prefix: formData.key_prefix,
 				compression: formData.compression,
 				encryption: formData.encryption,
 			};
 
-			// Only include endpoint_url and use_path_style if endpoint_url is filled
-			if (formData.endpoint_url.trim()) {
-				jobConfig.endpoint_url = formData.endpoint_url;
-				jobConfig.use_path_style = formData.use_path_style;
+			// Only include bucket/region/key_prefix for customer-owned S3
+			if (!isFlexpriceManaged) {
+				jobConfig.bucket = formData.bucket;
+				jobConfig.region = formData.region;
+				jobConfig.key_prefix = formData.key_prefix;
+
+				// Only include endpoint_url and use_path_style if endpoint_url is filled
+				if (formData.endpoint_url.trim()) {
+					jobConfig.endpoint_url = formData.endpoint_url;
+					jobConfig.use_path_style = formData.use_path_style;
+				}
 			}
 
 			const payload: CreateScheduledTaskPayload = {
@@ -158,17 +169,21 @@ const ExportDrawer: FC<ExportDrawerProps> = ({ isOpen, onOpenChange, connectionI
 	const { mutate: updateExport, isPending: isUpdating } = useMutation({
 		mutationFn: async () => {
 			const jobConfig: any = {
-				bucket: formData.bucket,
-				region: formData.region,
-				key_prefix: formData.key_prefix,
 				compression: formData.compression,
 				encryption: formData.encryption,
 			};
 
-			// Only include endpoint_url and use_path_style if endpoint_url is filled
-			if (formData.endpoint_url.trim()) {
-				jobConfig.endpoint_url = formData.endpoint_url;
-				jobConfig.use_path_style = formData.use_path_style;
+			// Only include bucket/region/key_prefix for customer-owned S3
+			if (!isFlexpriceManaged) {
+				jobConfig.bucket = formData.bucket;
+				jobConfig.region = formData.region;
+				jobConfig.key_prefix = formData.key_prefix;
+
+				// Only include endpoint_url and use_path_style if endpoint_url is filled
+				if (formData.endpoint_url.trim()) {
+					jobConfig.endpoint_url = formData.endpoint_url;
+					jobConfig.use_path_style = formData.use_path_style;
+				}
 			}
 
 			const payload: CreateScheduledTaskPayload = {
@@ -243,35 +258,49 @@ const ExportDrawer: FC<ExportDrawerProps> = ({ isOpen, onOpenChange, connectionI
 					<p className='text-xs text-gray-500 mt-1'>How often to run the export</p>
 				</div>
 
-				{/* S3 Bucket */}
-				<Input
-					label='S3 Bucket Name'
-					placeholder='Enter S3 bucket name'
-					value={formData.bucket}
-					onChange={(value) => handleChange('bucket', value)}
-					error={errors.bucket}
-					description='The name of your S3 bucket'
-				/>
+				{/* S3 Configuration - Only show for customer-owned S3 */}
+				{!isFlexpriceManaged && (
+					<>
+						{/* S3 Bucket */}
+						<Input
+							label='S3 Bucket Name'
+							placeholder='Enter S3 bucket name'
+							value={formData.bucket}
+							onChange={(value) => handleChange('bucket', value)}
+							error={errors.bucket}
+							description='The name of your S3 bucket'
+						/>
 
-				{/* AWS Region */}
-				<Input
-					label='AWS Region'
-					placeholder='Enter AWS region'
-					value={formData.region}
-					onChange={(value) => handleChange('region', value)}
-					error={errors.region}
-					description='The AWS region where your S3 bucket is located'
-				/>
+						{/* AWS Region */}
+						<Input
+							label='AWS Region'
+							placeholder='Enter AWS region'
+							value={formData.region}
+							onChange={(value) => handleChange('region', value)}
+							error={errors.region}
+							description='The AWS region where your S3 bucket is located'
+						/>
 
-				{/* Key Prefix */}
-				<Input
-					label='Key Prefix'
-					placeholder='Enter key prefix'
-					value={formData.key_prefix}
-					onChange={(value) => handleChange('key_prefix', value)}
-					error={errors.key_prefix}
-					description='The prefix for files in your S3 bucket'
-				/>
+						{/* Key Prefix */}
+						<Input
+							label='Key Prefix'
+							placeholder='Enter key prefix'
+							value={formData.key_prefix}
+							onChange={(value) => handleChange('key_prefix', value)}
+							error={errors.key_prefix}
+							description='The prefix for files in your S3 bucket'
+						/>
+
+						{/* Endpoint URL */}
+						<Input
+							label='Endpoint URL (Optional)'
+							placeholder='Enter custom S3 endpoint URL'
+							value={formData.endpoint_url}
+							onChange={(value) => handleChange('endpoint_url', value)}
+							description='Custom endpoint URL for S3-compatible storage (e.g., MinIO, DigitalOcean Spaces)'
+						/>
+					</>
+				)}
 
 				{/* Compression */}
 				<div>
@@ -298,14 +327,16 @@ const ExportDrawer: FC<ExportDrawerProps> = ({ isOpen, onOpenChange, connectionI
 					<p className='text-xs text-gray-500 mt-1'>Encryption method for exported files</p>
 				</div>
 
-				{/* Endpoint URL */}
-				<Input
-					label='Endpoint URL (Optional)'
-					placeholder='Enter custom S3 endpoint URL'
-					value={formData.endpoint_url}
-					onChange={(value) => handleChange('endpoint_url', value)}
-					description='Custom endpoint URL for S3-compatible storage (e.g., MinIO, DigitalOcean Spaces)'
-				/>
+				{/* Flexprice Managed Info */}
+				{isFlexpriceManaged && (
+					<div className='bg-blue-50 border border-blue-200 rounded-lg p-4'>
+						<h4 className='font-medium text-blue-900 mb-2'>Flexprice Managed Storage</h4>
+						<p className='text-sm text-blue-800'>
+							Your exports will be automatically stored in Flexprice-managed S3 buckets. No additional export configuration required.
+							Download the exported files from the respective task runs table.
+						</p>
+					</div>
+				)}
 
 				{/* Enabled */}
 				<div className='flex items-center space-x-2'>
