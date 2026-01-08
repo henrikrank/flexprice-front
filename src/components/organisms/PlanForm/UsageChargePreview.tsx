@@ -21,7 +21,7 @@ const UsageChargePreview: FC<Props> = ({ charge: price, index, onDelete, onEdit,
 	return (
 		<div className='gap-2 w-full flex justify-between group min-h-9 items-center rounded-md border bg-background px-3 py-2 text-base ring-offset-background placeholder:text-muted-foreground hover:bg-gray-50 transition-colors'>
 			<div>
-				<p className='font-normal text-sm'>{price.meter?.name || 'Usage Based Charge'}</p>
+				<p className='font-normal text-sm'>{price.display_name || price.meter?.name || 'Usage Based Charge'}</p>
 				<div className='flex gap-2 items-center text-zinc-500 text-xs'>
 					<span>{displayCurrency}</span>
 					<span>•</span>
