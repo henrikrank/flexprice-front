@@ -42,18 +42,43 @@ export interface LineItem extends BaseModel {
 	readonly id: string;
 	readonly invoice_id: string;
 	readonly customer_id: string;
-	readonly subscription_id: string;
-	readonly price_id: string;
-	readonly plan_id: string;
-	readonly plan_display_name: string;
-	readonly price_type: string;
-	readonly display_name: string;
+	readonly subscription_id?: string;
+	readonly entity_id?: string;
+	readonly entity_type?: string;
+	readonly plan_display_name?: string;
+	readonly price_id?: string;
+	readonly price_type?: string;
+	readonly meter_id?: string;
+	readonly meter_display_name?: string;
+	readonly price_unit_id?: string;
+	readonly price_unit?: string;
+	readonly price_unit_amount?: number;
+	readonly display_name?: string;
 	readonly amount: number;
 	readonly quantity: string;
 	readonly currency: string;
-	readonly period_start: string;
-	readonly period_end: string;
+	readonly period_start?: string;
+	readonly period_end?: string;
 	readonly metadata: Metadata;
+	readonly environment_id: string;
+	readonly commitment_info?: {
+		commitment_amount?: number;
+		commitment_quantity?: number;
+		commitment_type?: string;
+		overage_factor?: number;
+		enable_true_up?: boolean;
+		is_window_commitment?: boolean;
+	};
+	// credits_applied is the amount in invoice currency reduced from this line item due to credit application.
+	// This represents credits (from credit grants, credit notes, etc.) that are specifically applied to reduce this line item's amount.
+	readonly credits_applied: number;
+	// line_item_discount is the discount amount in invoice currency applied directly to this line item.
+	// This represents discounts that are applied specifically to this line item (e.g., via line-item level coupons or discounts).
+	readonly line_item_discount: number;
+	// invoice_level_discount is the proportional share of an invoice-level discount attributed to this line item.
+	// When a discount is applied at the invoice level (e.g., invoice-level coupons), it is distributed proportionally
+	// across all line items based on their relative amounts. This field stores this line item's share of that invoice-level discount.
+	readonly invoice_level_discount: number;
 }
 
 export enum INVOICE_TYPE {

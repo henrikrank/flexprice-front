@@ -2,6 +2,7 @@ import { Button, Input, Select, Textarea, PaymentUrlSuccessDialog, DatePicker, D
 import { FC, useState, useEffect, useMemo } from 'react';
 import { getCurrencySymbol } from '@/utils/common/helper_functions';
 import { PAYMENT_METHOD_TYPE, PAYMENT_DESTINATION_TYPE, Payment } from '@/models/Payment';
+import { WALLET_TYPE } from '@/models/Wallet';
 import PaymentApi from '@/api/PaymentApi';
 import WalletApi from '@/api/WalletApi';
 import ConnectionApi from '@/api/ConnectionApi';
@@ -78,7 +79,10 @@ const RecordPaymentTopup: FC<Props> = ({
 
 	const availableConnections = connectionsResponse?.connections || [];
 
-	const filteredWallets = useMemo(() => wallets?.filter((wallet) => wallet.currency === currency) || [], [wallets, currency]);
+	const filteredWallets = useMemo(
+		() => wallets?.filter((wallet) => wallet.currency === currency && wallet.wallet_type === WALLET_TYPE.POST_PAID) || [],
+		[wallets, currency],
+	);
 	const walletOptions = filteredWallets.map((wallet) => ({
 		label: `${wallet.name || 'Unnamed Wallet'} (${getCurrencySymbol(wallet.currency)}${wallet.balance || 0})`,
 		value: wallet.id,
@@ -94,7 +98,7 @@ const RecordPaymentTopup: FC<Props> = ({
 
 	const paymentMethodOptions = [
 		{ label: 'Offline', value: PAYMENT_METHOD_TYPE.OFFLINE, description: 'Record payment that was processed outside the system' },
-		{ label: 'Credits', value: PAYMENT_METHOD_TYPE.CREDITS, description: 'Pay using customer wallet balance' },
+		{ label: 'Credits', value: PAYMENT_METHOD_TYPE.CREDITS, description: 'Pay using customer post-paid wallet balance.' },
 		...(availableConnections.length > 0
 			? [{ label: 'Payment Link', value: PAYMENT_METHOD_TYPE.PAYMENT_LINK, description: 'Generate a payment link for online payment' }]
 			: []),
@@ -162,7 +166,7 @@ const RecordPaymentTopup: FC<Props> = ({
 				break;
 			case PAYMENT_METHOD_TYPE.CREDITS:
 				if (filteredWallets.length === 0) {
-					newErrors.wallet_id = `No ${currency} wallets available. Please create a wallet first.`;
+					newErrors.wallet_id = `No ${currency} post-paid wallets available for payment. Post-paid wallets are used to pay invoices during payment processing. Please create a post-paid wallet first.`;
 				}
 				break;
 		}
@@ -310,16 +314,16 @@ const RecordPaymentTopup: FC<Props> = ({
 							label='Wallet'
 							placeholder={
 								filteredWallets.length === 0
-									? 'No wallets available with matching currency'
+									? 'No post-paid wallets available with matching currency'
 									: filteredWallets.length === 1
-										? 'Wallet auto-selected'
-										: 'Choose a wallet or auto-select'
+										? 'Post-paid wallet auto-selected'
+										: 'Choose a post-paid wallet or auto-select'
 							}
 							options={selectOptions}
 							value={formData.wallet_id || (filteredWallets.length > 1 ? '__auto_select__' : '')}
 							onChange={(value) => setFormData({ ...formData, wallet_id: value === '__auto_select__' ? '' : value })}
 							error={errors.wallet_id}
-							description='Select a specific wallet or let the system choose from all wallets.'
+							description='Post-paid wallets are used to pay invoices during payment processing. Select a specific post-paid wallet or let the system choose from all available post-paid wallets.'
 							disabled={filteredWallets.length === 0}
 						/>
 						{descriptionField}

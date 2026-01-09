@@ -1,7 +1,7 @@
-import { Button, DatePicker, Input } from '@/components/atoms';
+import { Button, DatePicker, Input, Select } from '@/components/atoms';
 import { refetchQueries } from '@/core/services/tanstack/ReactQueryProvider';
 import { cn } from '@/lib/utils';
-import { Wallet } from '@/models';
+import { Wallet, WALLET_CONFIG_PRICE_TYPE, WALLET_TYPE } from '@/models';
 import WalletApi from '@/api/WalletApi';
 import { getCurrencySymbol } from '@/utils';
 import { useMutation } from '@tanstack/react-query';
@@ -36,6 +36,7 @@ interface Props {
 const CreateCustomerWalletModal: FC<Props> = ({ customerId, onSuccess = () => {}, open, onOpenChange }) => {
 	const [errors, setErrors] = useState({
 		currency: '',
+		name: '',
 		conversion_rate: '',
 		topup_conversion_rate: '',
 	});
@@ -44,12 +45,17 @@ const CreateCustomerWalletModal: FC<Props> = ({ customerId, onSuccess = () => {}
 	const [showTopupConversionRate, setShowTopupConversionRate] = useState(false);
 	const [showFreeCredits, setShowFreeCredits] = useState(false);
 
-	const [walletPayload, setwalletPayload] = useState<CreateWalletPayload>({
+	const [walletPayload, setwalletPayload] = useState<CreateWalletPayload & { name?: string; config?: { allowed_price_types: string[] } }>({
 		currency: '',
 		initial_credits_to_load: 0,
 		conversion_rate: 1,
 		topup_conversion_rate: undefined,
 		price_unit: undefined,
+		name: 'Prepaid Wallet',
+		wallet_type: WALLET_TYPE.PRE_PAID,
+		config: {
+			allowed_price_types: [WALLET_CONFIG_PRICE_TYPE.ALL],
+		},
 		customer_id: customerId,
 	});
 
@@ -64,6 +70,11 @@ const CreateCustomerWalletModal: FC<Props> = ({ customerId, onSuccess = () => {}
 			conversion_rate: 1,
 			topup_conversion_rate: undefined,
 			price_unit: undefined,
+			name: 'Prepaid Wallet',
+			wallet_type: WALLET_TYPE.PRE_PAID,
+			config: {
+				allowed_price_types: [WALLET_CONFIG_PRICE_TYPE.ALL],
+			},
 			customer_id: customerId,
 		});
 		setSelectedPriceUnitOrCurrency(null);
@@ -71,6 +82,7 @@ const CreateCustomerWalletModal: FC<Props> = ({ customerId, onSuccess = () => {}
 		setShowFreeCredits(false);
 		setErrors({
 			currency: '',
+			name: '',
 			conversion_rate: '',
 			topup_conversion_rate: '',
 		});
@@ -112,7 +124,7 @@ const CreateCustomerWalletModal: FC<Props> = ({ customerId, onSuccess = () => {}
 	const { mutateAsync: createWallet, isPending } = useMutation({
 		mutationKey: ['createWallet', customerId],
 		mutationFn: async () => {
-			const payload: CreateWalletPayload = {
+			const payload: CreateWalletPayload & { name?: string; config?: { allowed_price_types: string[] } } = {
 				customer_id: customerId,
 				currency: walletPayload.currency,
 				initial_credits_to_load: walletPayload.initial_credits_to_load,
@@ -120,6 +132,9 @@ const CreateCustomerWalletModal: FC<Props> = ({ customerId, onSuccess = () => {}
 				topup_conversion_rate: walletPayload.topup_conversion_rate || walletPayload.conversion_rate || 1,
 				initial_credits_expiry_date_utc: walletPayload.initial_credits_expiry_date_utc,
 				...(walletPayload.price_unit && { price_unit: walletPayload.price_unit }),
+				wallet_type: walletPayload.wallet_type,
+				...(walletPayload.name && { name: walletPayload.name }),
+				...(walletPayload.config && { config: walletPayload.config }),
 			};
 
 			return await WalletApi.createWallet(payload);
@@ -139,6 +154,7 @@ const CreateCustomerWalletModal: FC<Props> = ({ customerId, onSuccess = () => {}
 	const handleCreateWallet = async () => {
 		const newErrors = {
 			currency: !walletPayload.currency ? 'Currency is required' : '',
+			name: !walletPayload.name?.trim() ? 'Wallet name is required' : '',
 			conversion_rate: (walletPayload.conversion_rate ?? 0) <= 0 ? 'Conversion rate must be greater than 0' : '',
 			topup_conversion_rate:
 				walletPayload.topup_conversion_rate !== undefined && walletPayload.topup_conversion_rate <= 0
@@ -162,7 +178,41 @@ const CreateCustomerWalletModal: FC<Props> = ({ customerId, onSuccess = () => {}
 					<DialogTitle>Create Wallet</DialogTitle>
 					<DialogDescription>Define the wallet details and the currency it will operate in.</DialogDescription>
 				</DialogHeader>
-				<div className='grid gap-5 py-4'>
+				<div className='grid gap-4 py-4'>
+					<Input
+						error={errors.name}
+						value={walletPayload.name}
+						onChange={(value) => setwalletPayload({ ...walletPayload, name: value })}
+						label='Wallet Name'
+						placeholder='Enter wallet name'
+					/>
+
+					<Select
+						value={walletPayload.wallet_type || WALLET_TYPE.PRE_PAID}
+						options={[
+							{
+								label: 'Pre-Paid',
+								value: WALLET_TYPE.PRE_PAID,
+								description:
+									'Stores funds already available (customer-added funds, credit grants, overpayments, refunds). These credits reduce invoice amounts during invoice creation/finalization. Used for credit adjustments, credit note refunds, and purchased credits that adjust invoices.',
+							},
+							{
+								label: 'Post-Paid',
+								value: WALLET_TYPE.POST_PAID,
+								description:
+									'Stores credits used to pay invoices during payment processing. Used for invoice payments via payment method type "credits" and customer-initiated payments. Post-paid represents charges that accumulate and are billed after services are rendered.',
+							},
+						]}
+						label='Wallet Type'
+						onChange={(value) =>
+							setwalletPayload({
+								...walletPayload,
+								wallet_type: value as WALLET_TYPE,
+							})
+						}
+						placeholder='Select Wallet Type'
+					/>
+
 					<CurrencyPriceUnitSelector
 						value={selectedPriceUnitOrCurrency?.data.value || walletPayload.currency || walletPayload.price_unit}
 						onChange={handlePriceUnitOrCurrencyChange}
