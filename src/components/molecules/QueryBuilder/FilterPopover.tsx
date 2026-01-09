@@ -13,6 +13,8 @@ import { FilterField, FilterCondition, FilterOperator, FilterFieldType } from '@
 import { sanitizeFilterConditions } from '@/types/formatters/QueryBuilder';
 
 import FilterMultiSelect from './FilterMultiSelect';
+import FilterAsyncSelect from './FilterAsyncSelect';
+import FilterAsyncMultiSelect from './FilterAsyncMultiSelect';
 
 interface Props {
 	fields: FilterField[];
@@ -43,7 +45,10 @@ const getDefaultValueByFieldType = (field: FilterField) => {
 		case FilterFieldType.SELECT:
 			return { valueString: field.options?.[0]?.value || '' };
 		case FilterFieldType.MULTI_SELECT:
+		case FilterFieldType.ASYNC_MULTI_SELECT:
 			return { valueArray: [] };
+		case FilterFieldType.ASYNC_SELECT:
+			return { valueString: field.asyncConfig?.initialOptions?.[0]?.value || '' };
 		default:
 			return { valueString: '' };
 	}
@@ -189,7 +194,42 @@ const FilterPopover: React.FC<Props> = ({ fields, value = [], onChange, classNam
 				),
 			};
 
-			return valueComponents[field.fieldType] || valueComponents[FilterFieldType.INPUT];
+			// Handle async field types first
+			if (field.fieldType === FilterFieldType.ASYNC_SELECT && field.asyncConfig) {
+				return (
+					<FilterAsyncSelect
+						value={filter.valueString || ''}
+						searchFn={field.asyncConfig.searchFn}
+						onChange={(value) => handleFilterUpdate(filter.id, { valueString: value })}
+						placeholder='Search...'
+						initialOptions={field.asyncConfig.initialOptions}
+						debounceTime={field.asyncConfig.debounceTime}
+						className={cn(inputProps.className, 'h-9 text-sm')}
+					/>
+				);
+			}
+
+			if (field.fieldType === FilterFieldType.ASYNC_MULTI_SELECT && field.asyncConfig) {
+				return (
+					<FilterAsyncMultiSelect
+						value={filter.valueArray || []}
+						searchFn={field.asyncConfig.searchFn}
+						onChange={(value) => handleFilterUpdate(filter.id, { valueArray: value })}
+						placeholder='Search...'
+						initialOptions={field.asyncConfig.initialOptions}
+						debounceTime={field.asyncConfig.debounceTime}
+						className={cn(inputProps.className, 'h-9 text-sm overflow-hidden')}
+					/>
+				);
+			}
+
+			// Handle non-async field types - TypeScript now knows fieldType is not async
+			const nonAsyncFieldType = field.fieldType as Exclude<
+				FilterFieldType,
+				FilterFieldType.ASYNC_SELECT | FilterFieldType.ASYNC_MULTI_SELECT
+			>;
+			const component = valueComponents[nonAsyncFieldType];
+			return component || valueComponents[FilterFieldType.INPUT];
 		},
 		[fields, handleFilterUpdate],
 	);

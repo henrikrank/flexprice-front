@@ -1,6 +1,7 @@
 import { Loader, Page, Select, AddButton } from '@/components/atoms';
 import usePagination from '@/hooks/usePagination';
 import { PlanApi } from '@/api/PlanApi';
+import { FilterOperator, DataType } from '@/types/common/QueryBuilder';
 import { useQuery } from '@tanstack/react-query';
 import toast from 'react-hot-toast';
 import { billlingPeriodOptions } from '@/constants/constants';
@@ -147,9 +148,19 @@ const PricingPage = () => {
 	const [planDrawerOpen, setPlanDrawerOpen] = useState<boolean>(false);
 
 	const fetchPlans = async () => {
-		return await PlanApi.getAllActivePlans({
+		return await PlanApi.getPlansByFilter({
 			limit,
 			offset,
+			filters: [
+				{
+					field: 'status',
+					operator: FilterOperator.EQUAL,
+					data_type: DataType.STRING,
+					value: { string: 'published' },
+				},
+			],
+			sort: [],
+			expand: 'entitlements,prices,meters,features,credit_grants',
 		});
 	};
 

@@ -1,12 +1,11 @@
-import { AddButton, Loader, Page, ShortPagination, Spacer } from '@/components/atoms';
-import { AddonTable, ApiDocsContent, AddonDrawer, QueryBuilder } from '@/components/molecules';
-import { EmptyPage } from '@/components/organisms';
-import Addon from '@/models/Addon';
-import usePagination from '@/hooks/usePagination';
+import { AddButton, Page, ActionButton, Chip } from '@/components/atoms';
+import { ApiDocsContent, AddonDrawer } from '@/components/molecules';
+import { ColumnData } from '@/components/molecules/Table';
+import { QueryableDataArea } from '@/components/organisms';
+import Addon, { ADDON_TYPE } from '@/models/Addon';
 import GUIDES from '@/constants/guides';
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useMemo } from 'react';
 import AddonApi from '@/api/AddonApi';
-import toast from 'react-hot-toast';
 import {
 	FilterField,
 	FilterFieldType,
@@ -15,11 +14,14 @@ import {
 	FilterOperator,
 	SortOption,
 	SortDirection,
+	FilterCondition,
 } from '@/types/common/QueryBuilder';
 import { ENTITY_STATUS } from '@/models';
-import { ADDON_TYPE } from '@/models/Addon';
-import useFilterSorting from '@/hooks/useFilterSorting';
-import { useQueryWithEmptyState } from '@/hooks/useQueryWithEmptyState';
+import { useNavigate } from 'react-router';
+import { RouteNames } from '@/core/routes/Routes';
+import { toSentenceCase } from '@/utils/common/helper_functions';
+import formatChips from '@/utils/common/format_chips';
+import formatDate from '@/utils/common/format_date';
 
 const sortingOptions: SortOption[] = [
 	{
@@ -65,7 +67,7 @@ const filterOptions: FilterField[] = [
 		field: 'status',
 		label: 'Status',
 		fieldType: FilterFieldType.MULTI_SELECT,
-		operators: [FilterOperator.IS_ANY_OF, FilterOperator.IS_NOT_ANY_OF],
+		operators: [FilterOperator.IN, FilterOperator.NOT_IN],
 		dataType: DataType.ARRAY,
 		options: [
 			{ value: ENTITY_STATUS.PUBLISHED, label: 'Active' },
@@ -85,148 +87,157 @@ const filterOptions: FilterField[] = [
 	},
 ];
 
+const initialFilters: FilterCondition[] = [
+	{
+		field: 'name',
+		operator: FilterOperator.CONTAINS,
+		valueString: '',
+		dataType: DataType.STRING,
+		id: 'initial-name',
+	},
+	{
+		field: 'status',
+		operator: FilterOperator.IN,
+		valueArray: [ENTITY_STATUS.PUBLISHED],
+		dataType: DataType.ARRAY,
+		id: 'initial-status',
+	},
+];
+
+const initialSorts: SortOption[] = [
+	{
+		field: 'updated_at',
+		label: 'Updated At',
+		direction: SortDirection.DESC,
+	},
+];
+
+const getAddonTypeChips = (type: string) => {
+	switch (type.toLocaleLowerCase()) {
+		case ADDON_TYPE.ONETIME: {
+			return <Chip textColor='#4B5563' bgColor='#F3F4F6' label={toSentenceCase(type)} className='text-xs' />;
+		}
+		case ADDON_TYPE.MULTIPLE:
+			return <Chip textColor='#1E40AF' bgColor='#DBEAFE' label={toSentenceCase(type)} className='text-xs' />;
+		default:
+			return <Chip textColor='#6B7280' bgColor='#F9FAFB' label={toSentenceCase(type)} className='text-xs' />;
+	}
+};
+
 const AddonsPage = () => {
-	const { limit, offset, page, reset } = usePagination();
 	const [activeAddon, setActiveAddon] = useState<Addon | null>(null);
 	const [addonDrawerOpen, setAddonDrawerOpen] = useState(false);
-
-	const { filters, sorts, setFilters, setSorts, sanitizedFilters, sanitizedSorts } = useFilterSorting({
-		initialFilters: [
-			{
-				field: 'name',
-				operator: FilterOperator.CONTAINS,
-				valueString: '',
-				dataType: DataType.STRING,
-				id: 'initial-name',
-			},
-			{
-				field: 'status',
-				operator: FilterOperator.IS_ANY_OF,
-				valueArray: [ENTITY_STATUS.PUBLISHED],
-				dataType: DataType.ARRAY,
-				id: 'initial-status',
-			},
-		],
-		initialSorts: [
-			{
-				field: 'updated_at',
-				label: 'Updated At',
-				direction: SortDirection.DESC,
-			},
-		],
-		debounceTime: 500,
-	});
-
-	const fetchAddons = async () => {
-		return await AddonApi.ListByFilter({
-			limit: limit,
-			offset: offset,
-			filters: sanitizedFilters,
-			sort: sanitizedSorts,
-		});
-	};
-
-	useEffect(() => {
-		reset();
-	}, [sanitizedFilters, sanitizedSorts]);
-
-	const {
-		data: addonsData,
-		isLoading,
-		probeData,
-		isError,
-		error,
-	} = useQueryWithEmptyState({
-		main: {
-			queryKey: ['fetchAddons', page, JSON.stringify(sanitizedFilters), JSON.stringify(sanitizedSorts)],
-			queryFn: fetchAddons,
-		},
-		probe: {
-			queryKey: ['fetchAddons', 'probe', page, JSON.stringify(sanitizedFilters), JSON.stringify(sanitizedSorts)],
-			queryFn: async () => {
-				return await AddonApi.ListByFilter({
-					limit: 1,
-					offset: 0,
-					filters: [],
-					sort: [],
-				});
-			},
-		},
-		shouldProbe: (mainData) => {
-			return mainData?.items.length === 0;
-		},
-	});
-
-	const showEmptyPage = useMemo(() => {
-		return !isLoading && probeData?.items.length === 0 && addonsData?.items.length === 0;
-	}, [isLoading, probeData, addonsData]);
+	const navigate = useNavigate();
 
 	const handleOnAdd = () => {
 		setActiveAddon(null);
 		setAddonDrawerOpen(true);
 	};
 
-	if (isError) {
-		const err = error as any;
-		toast.error(err?.error?.message || 'Error fetching addons');
-		return null;
-	}
+	const handleEdit = (addon: Addon) => {
+		setActiveAddon(addon);
+		setAddonDrawerOpen(true);
+	};
 
-	if (isLoading) {
-		return <Loader />;
-	}
-
-	if (showEmptyPage) {
-		return (
-			<div className='space-y-6'>
-				<AddonDrawer data={activeAddon} open={addonDrawerOpen} onOpenChange={setAddonDrawerOpen} refetchQueryKeys={['fetchAddons']} />
-				<EmptyPage
-					onAddClick={handleOnAdd}
-					emptyStateCard={{
-						heading: 'Add Your First Addon',
-						description: 'Create your first addon to define additional services customers can purchase.',
-						buttonLabel: 'Create Addon',
-						buttonAction: handleOnAdd,
-					}}
-					tutorials={GUIDES.addons.tutorials}
-					heading='Addons'
-					tags={['Addons']}
-				/>
-			</div>
-		);
-	}
+	const columns: ColumnData<Addon>[] = useMemo(
+		() => [
+			{
+				fieldName: 'name',
+				title: 'Addon Name',
+			},
+			{
+				fieldName: 'lookup_key',
+				title: 'Lookup Key',
+			},
+			{
+				title: 'Type',
+				render(row) {
+					return getAddonTypeChips(row?.type || '');
+				},
+			},
+			{
+				title: 'Status',
+				render: (row) => {
+					const label = formatChips(row?.status);
+					return <Chip variant={label === 'Active' ? 'success' : 'default'} label={label} />;
+				},
+			},
+			{
+				title: 'Updated At',
+				render: (row) => {
+					return formatDate(row?.updated_at);
+				},
+			},
+			{
+				fieldVariant: 'interactive',
+				render(row) {
+					return (
+						<ActionButton
+							id={row?.id}
+							deleteMutationFn={async () => {
+								return await AddonApi.Delete(row?.id);
+							}}
+							refetchQueryKey='fetchAddons'
+							entityName={row?.name}
+							edit={{
+								enabled: false,
+								onClick: () => handleEdit(row),
+							}}
+							archive={{
+								enabled: row?.status !== ENTITY_STATUS.ARCHIVED,
+							}}
+						/>
+					);
+				},
+			},
+		],
+		[],
+	);
 
 	return (
 		<Page heading='Addons' headingCTA={<AddButton onClick={handleOnAdd} />}>
 			<AddonDrawer data={activeAddon} open={addonDrawerOpen} onOpenChange={setAddonDrawerOpen} refetchQueryKeys={['fetchAddons']} />
 			<ApiDocsContent tags={['Addons']} />
 			<div className='space-y-6'>
-				<QueryBuilder
-					filterOptions={filterOptions}
-					filters={filters}
-					onFilterChange={setFilters}
-					sortOptions={sortingOptions}
-					onSortChange={setSorts}
-					selectedSorts={sorts}
+				<QueryableDataArea<Addon>
+					queryConfig={{
+						filterOptions,
+						sortOptions: sortingOptions,
+						initialFilters,
+						initialSorts,
+						debounceTime: 500,
+					}}
+					dataConfig={{
+						queryKey: 'fetchAddons',
+						fetchFn: async (params) => AddonApi.ListByFilter(params),
+						probeFetchFn: async (params) =>
+							AddonApi.ListByFilter({
+								...params,
+								limit: 1,
+								offset: 0,
+								filters: [],
+								sort: [],
+							}),
+					}}
+					tableConfig={{
+						columns,
+						onRowClick: (row) => {
+							navigate(RouteNames.addonDetails + `/${row?.id}`);
+						},
+						showEmptyRow: true,
+					}}
+					paginationConfig={{
+						unit: 'Addons',
+					}}
+					emptyStateConfig={{
+						heading: 'Addons',
+						description: 'Create your first addon to define additional services customers can purchase.',
+						buttonLabel: 'Create Addon',
+						buttonAction: handleOnAdd,
+						tags: ['Addons'],
+						tutorials: GUIDES.addons.tutorials,
+					}}
 				/>
-
-				{isLoading ? (
-					<div className='flex justify-center items-center min-h-[200px]'>
-						<Loader />
-					</div>
-				) : (
-					<>
-						<AddonTable
-							data={(addonsData?.items || []) as Addon[]}
-							onEdit={(addon: Addon) => {
-								setActiveAddon(addon);
-								setAddonDrawerOpen(true);
-							}}
-						/>
-						<Spacer className='!h-4' />
-						<ShortPagination unit='Addons' totalItems={addonsData?.pagination.total ?? 0} />
-					</>
-				)}
 			</div>
 		</Page>
 	);

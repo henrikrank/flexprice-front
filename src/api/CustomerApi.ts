@@ -22,6 +22,14 @@ class CustomerApi {
 	public static async getCustomerById(id: string): Promise<Customer> {
 		return await AxiosClient.get(`${this.baseUrl}/${id}`);
 	}
+
+	public static async getCustomerByLookupKey(lookupKey: string): Promise<Customer> {
+		return await AxiosClient.get<Customer>(`${this.baseUrl}/lookup/${lookupKey}`);
+	}
+
+	public static async getCustomerByExternalId(externalId: string): Promise<Customer> {
+		return await AxiosClient.get<Customer>(`${this.baseUrl}/external/${externalId}`);
+	}
 	public static async getAllCustomers({ limit = 10, offset = 0 }: Pagination): Promise<GetCustomerResponse> {
 		const url = generateQueryParams(this.baseUrl, { limit, offset });
 		return await AxiosClient.get(url);
@@ -57,6 +65,26 @@ class CustomerApi {
 
 	public static async getUsageSummary(payload: GetCustomerEntitlementPayload): Promise<GetUsageSummaryResponse> {
 		return await AxiosClient.get(`${this.baseUrl}/${payload.customer_id}/usage`);
+	}
+
+	/**
+	 * Get customer usage summary using query parameters
+	 * GET /customers/usage?external_customer_id=xxx
+	 */
+	public static async getCustomerUsageSummary(queryParams: {
+		external_customer_id?: string;
+		customer_id?: string;
+	}): Promise<GetUsageSummaryResponse> {
+		const url = generateQueryParams(`${this.baseUrl}/usage`, queryParams);
+		return await AxiosClient.get<GetUsageSummaryResponse>(url);
+	}
+
+	/**
+	 * Get customer invoice summary
+	 * GET /customers/:id/invoices/summary
+	 */
+	public static async getCustomerInvoiceSummary(customerId: string): Promise<any> {
+		return await AxiosClient.get(`${this.baseUrl}/${customerId}/invoices/summary`);
 	}
 
 	/**

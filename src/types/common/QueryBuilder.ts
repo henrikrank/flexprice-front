@@ -1,33 +1,45 @@
+import { SelectOption } from '@/components/atoms/Select/SearchableSelect';
+
+/**
+ * DataType - Matches backend DataType exactly
+ * Backend: DataTypeString = "string", DataTypeNumber = "number", DataTypeDate = "date", DataTypeArray = "array"
+ */
 export enum DataType {
-	STRING = 'STRING',
-	NUMBER = 'NUMBER',
-	// BOOLEAN = 'BOOLEAN',
-	DATE = 'DATE',
-	ARRAY = 'ARRAY',
+	STRING = 'string',
+	NUMBER = 'number',
+	DATE = 'date',
+	ARRAY = 'array',
 }
 
+/**
+ * FilterOperator enum - Matches backend FilterOperatorType exactly
+ * Backend values: "eq", "contains", "gt", "lt", "in", "not_in", "before", "after"
+ *
+ * NOTE: Only operators that exist in backend are included.
+ * Backend TODO operators (not yet implemented): NOT_CONTAINS, STARTS_WITH, ENDS_WITH
+ */
 export enum FilterOperator {
 	// equal
-	EQUAL = 'EQUAL',
-	NOT_EQUAL = 'NOT_EQUAL',
-
-	// is
+	EQUAL = 'eq',
 
 	// string
-	CONTAINS = 'CONTAINS',
-	NOT_CONTAINS = 'NOT_CONTAINS',
-	STARTS_WITH = 'STARTS_WITH',
-	ENDS_WITH = 'ENDS_WITH',
+	CONTAINS = 'contains',
+	// TODO: Backend has these commented as TODO
+	// NOT_CONTAINS = 'not_contains',
+	// STARTS_WITH = 'starts_with',
+	// ENDS_WITH = 'ends_with',
 
 	// number
-	GREATER_THAN = 'GREATER_THAN',
-	LESS_THAN = 'LESS_THAN',
+	GREATER_THAN = 'gt',
+	LESS_THAN = 'lt',
 
 	// array
-	IS_ANY_OF = 'IS_ANY_OF',
-	IS_NOT_ANY_OF = 'IS_NOT_ANY_OF',
-	BEFORE = 'BEFORE',
-	AFTER = 'AFTER',
+	IN = 'in',
+	NOT_IN = 'not_in',
+
+	// date
+	BEFORE = 'before',
+	AFTER = 'after',
 }
 
 export enum FilterFieldType {
@@ -40,6 +52,18 @@ export enum FilterFieldType {
 	COMBOBOX = 'COMBOBOX',
 	SWITCH = 'SWITCH',
 	MULTI_SELECT = 'MULTI_SELECT',
+	ASYNC_SELECT = 'ASYNC_SELECT',
+	ASYNC_MULTI_SELECT = 'ASYNC_MULTI_SELECT',
+}
+
+// Ultra-simple config - just provide searchFn
+export interface AsyncSearchConfig<T = any> {
+	// Required: Your search function (handles empty query automatically)
+	searchFn: (query: string) => Promise<Array<SelectOption & { data: T }>>;
+
+	// Optional: Override defaults
+	debounceTime?: number; // Default: 300ms
+	initialOptions?: SelectOption[]; // Default: fetch with empty query
 }
 
 export interface FilterField {
@@ -50,15 +74,22 @@ export interface FilterField {
 	options?: { value: string; label: string }[];
 	enumValues?: string[];
 	dataType: DataType;
+
+	// NEW: For async fields - just add this!
+	asyncConfig?: AsyncSearchConfig;
 }
 
+/**
+ * FilterCondition - Frontend representation (for UI)
+ * This is converted to BackendFilterCondition when sending to API
+ */
 export interface FilterCondition {
 	id: string;
 	field: string;
 	operator: FilterOperator;
 	dataType?: DataType;
 
-	// values option
+	// values option (frontend uses separate fields for convenience)
 	valueString?: string;
 	valueNumber?: number;
 	valueArray?: Array<string>;
@@ -76,37 +107,32 @@ export interface FilterGroup {
 	operator: FilterOperator;
 }
 
-// !ALERT: Add more operators for each data type
-// !ALERT: Add more data types
-// !ALERT: currently only keep operators which we have implemented on backend
+// Allowed operators per field type - only includes backend-supported operators
 export const ALLOWED_OPERATORS_PER_TYPE: Record<FilterFieldType, FilterOperator[]> = {
-	[FilterFieldType.INPUT]: [
-		FilterOperator.EQUAL,
-		FilterOperator.NOT_EQUAL,
-		FilterOperator.CONTAINS,
-		FilterOperator.NOT_CONTAINS,
-		FilterOperator.STARTS_WITH,
-		FilterOperator.ENDS_WITH,
-	],
-	[FilterFieldType.SELECT]: [FilterOperator.EQUAL, FilterOperator.NOT_EQUAL],
+	[FilterFieldType.INPUT]: [FilterOperator.EQUAL, FilterOperator.CONTAINS],
+	[FilterFieldType.SELECT]: [FilterOperator.EQUAL],
 	[FilterFieldType.CHECKBOX]: [FilterOperator.EQUAL],
-	[FilterFieldType.DATEPICKER]: [FilterOperator.EQUAL, FilterOperator.NOT_EQUAL, FilterOperator.BEFORE, FilterOperator.AFTER],
-	[FilterFieldType.RADIO]: [FilterOperator.EQUAL, FilterOperator.NOT_EQUAL],
-	[FilterFieldType.COMBOBOX]: [FilterOperator.EQUAL, FilterOperator.NOT_EQUAL, FilterOperator.CONTAINS],
+	[FilterFieldType.DATEPICKER]: [FilterOperator.BEFORE, FilterOperator.AFTER],
+	[FilterFieldType.RADIO]: [FilterOperator.EQUAL],
+	[FilterFieldType.COMBOBOX]: [FilterOperator.EQUAL, FilterOperator.CONTAINS],
 	[FilterFieldType.SWITCH]: [FilterOperator.EQUAL],
-	[FilterFieldType.MULTI_SELECT]: [FilterOperator.IS_ANY_OF, FilterOperator.IS_NOT_ANY_OF],
+	[FilterFieldType.MULTI_SELECT]: [FilterOperator.IN, FilterOperator.NOT_IN],
+	[FilterFieldType.ASYNC_SELECT]: [FilterOperator.EQUAL],
+	[FilterFieldType.ASYNC_MULTI_SELECT]: [FilterOperator.IN, FilterOperator.NOT_IN],
 };
 
-// !ALERT: Add more operators for each data type
-// !ALERT: currently only keep operators which we have implemented on backend
+// Default operators per data type - matches backend supported operators
 export const DEFAULT_OPERATORS_PER_DATA_TYPE: Record<DataType, FilterOperator[]> = {
 	[DataType.STRING]: [FilterOperator.CONTAINS, FilterOperator.EQUAL],
-	[DataType.NUMBER]: [FilterOperator.EQUAL, FilterOperator.NOT_EQUAL, FilterOperator.GREATER_THAN, FilterOperator.LESS_THAN],
-	[DataType.DATE]: [FilterOperator.EQUAL, FilterOperator.BEFORE, FilterOperator.AFTER],
-	[DataType.ARRAY]: [FilterOperator.IS_ANY_OF, FilterOperator.IS_NOT_ANY_OF],
+	[DataType.NUMBER]: [FilterOperator.EQUAL, FilterOperator.GREATER_THAN, FilterOperator.LESS_THAN],
+	[DataType.DATE]: [FilterOperator.BEFORE, FilterOperator.AFTER],
+	[DataType.ARRAY]: [FilterOperator.IN, FilterOperator.NOT_IN],
 };
 
-// sorting
+/**
+ * SortDirection - Matches backend SortDirection exactly
+ * Backend: SortDirectionAsc = "asc", SortDirectionDesc = "desc"
+ */
 export enum SortDirection {
 	ASC = 'asc',
 	DESC = 'desc',

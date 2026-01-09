@@ -8,7 +8,7 @@ class IntegrationsApi {
 	}
 
 	public static async getIntegration(provider: string) {
-		return await AxiosClient.get<IntegrationResponse>(`${this.baseUrl}/${provider}`);
+		return await AxiosClient.get<IntegrationResponse>(`${this.baseUrl}/by-provider/${provider}`);
 	}
 
 	public static async getLinkedInIntegration() {

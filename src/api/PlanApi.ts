@@ -6,20 +6,20 @@ import {
 	UpdatePlanRequest,
 	PlanResponse,
 	CreatePlanResponse,
-	ListPlansResponse,
 	GetPlanCreditGrantsResponse,
 	SynchronizePlanPricesWithSubscriptionResponse,
 } from '@/types/dto';
 import { TypedBackendFilter, TypedBackendSort } from '@/types/formatters/QueryBuilder';
+import { QueryFilter, TimeRangeFilter } from '@/types/dto/base';
 
 export interface GetAllPlansResponse {
 	items: PlanResponse[];
 	pagination: Pagination;
 }
 
-export interface GetPlansByFilterPayload extends Pagination {
-	filters: TypedBackendFilter[];
-	sort: TypedBackendSort[];
+export interface GetPlansByFilterPayload extends QueryFilter, TimeRangeFilter, Pagination {
+	filters?: TypedBackendFilter[];
+	sort?: TypedBackendSort[];
 }
 
 export class PlanApi {
@@ -29,60 +29,22 @@ export class PlanApi {
 		return await AxiosClient.post<CreatePlanResponse, CreatePlanRequest>(this.baseUrl, data);
 	}
 
-	public static async getAllPlans({ limit, offset }: Pagination) {
-		const payload = {
+	/**
+	 * Get plans using typed filters - this is the consolidated method for all plan queries
+	 * Replaces: getAllPlans, getAllActivePlans, listPlans, searchPlans, getExpandedPlan, getActiveExpandedPlan
+	 */
+	public static async getPlansByFilter(payload: GetPlansByFilterPayload = {}) {
+		const { limit = 10, offset = 0, filters = [], sort = [], expand = 'entitlements,prices,meters,features,credit_grants' } = payload;
+
+		const requestPayload = {
 			limit,
 			offset,
-			expand: 'entitlements,prices,meters,features,credit_grants',
+			filters,
+			sort,
+			expand,
 		};
-		const url = generateQueryParams(this.baseUrl, payload);
-		return await AxiosClient.get<GetAllPlansResponse>(url);
-	}
 
-	public static async getAllActivePlans({ limit, offset }: Pagination) {
-		const payload = {
-			status: 'published',
-			limit,
-			offset,
-			expand: 'entitlements,prices,meters,features,credit_grants',
-		};
-		const url = generateQueryParams(this.baseUrl, payload);
-		return await AxiosClient.get<GetAllPlansResponse>(url);
-	}
-
-	public static async getPlansByFilter(payload: GetPlansByFilterPayload) {
-		return await AxiosClient.post<GetAllPlansResponse>(`${this.baseUrl}/search`, payload);
-	}
-
-	public static async searchPlans(query: string, { limit, offset }: Pagination) {
-		const payload = {
-			limit,
-			offset,
-			query,
-			expand: 'entitlements,prices,meters,features,credit_grants',
-		};
-		return await AxiosClient.post<GetAllPlansResponse>(`${this.baseUrl}/search`, payload);
-	}
-
-	public static async getExpandedPlan() {
-		const payload = {
-			expand: 'prices,meters,entitlements,credit_grants',
-		};
-		const url = generateQueryParams(this.baseUrl, payload);
-		const response = await AxiosClient.get<GetAllPlansResponse>(url);
-		return response.items;
-	}
-
-	public static async getActiveExpandedPlan(query?: Pagination) {
-		const payload = {
-			expand: generateExpandQueryParams([EXPAND.PRICES, EXPAND.METERS, EXPAND.CREDIT_GRANT, EXPAND.PRICEUNIT]),
-			status: 'published',
-			limit: query?.limit,
-			offset: query?.offset,
-		};
-		const url = generateQueryParams(this.baseUrl, payload);
-		const response = await AxiosClient.get<GetAllPlansResponse>(url);
-		return response.items;
+		return await AxiosClient.post<GetAllPlansResponse>(`${this.baseUrl}/search`, requestPayload);
 	}
 
 	public static async getPlanById(id: string) {
@@ -109,14 +71,18 @@ export class PlanApi {
 		return await AxiosClient.get<GetPlanCreditGrantsResponse>(`${this.baseUrl}/${id}/creditgrants`);
 	}
 
+	/**
+	 * @deprecated Use getPlansByFilter instead
+	 * Kept for backward compatibility - will be removed in future
+	 */
 	public static async listPlans({ limit, offset }: Pagination) {
-		const payload = {
+		return this.getPlansByFilter({
 			limit,
 			offset,
+			filters: [],
+			sort: [],
 			expand: 'prices,entitlements,credit_grants',
-		};
-		const url = generateQueryParams(this.baseUrl, payload);
-		return await AxiosClient.get<ListPlansResponse>(url);
+		});
 	}
 
 	public static async getPlanEntitlements(planId: string) {

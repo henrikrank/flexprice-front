@@ -48,6 +48,14 @@ class PaymentApi {
 			expires_at: number;
 		}>(`${this.baseUrl}/customers/${customerId}/setup/intent`, data);
 	}
+
+	public static async processPayment(id: string): Promise<Payment> {
+		return await AxiosClient.post<Payment>(`${this.baseUrl}/${id}/process`);
+	}
+
+	public static async getCustomerPaymentMethods(customerId: string) {
+		return await AxiosClient.get(`${this.baseUrl}/customers/${customerId}/methods`);
+	}
 }
 
 export default PaymentApi;

@@ -12,11 +12,30 @@ export interface GetEventsPayload {
 	source?: string;
 }
 
+// Request for POST /events/query
+export interface GetEventsRequest {
+	external_customer_id?: string;
+	event_name?: string;
+	event_id?: string;
+	start_time?: string; // ISO 8601 format
+	end_time?: string; // ISO 8601 format
+	iter_first_key?: string;
+	iter_last_key?: string;
+	property_filters?: Record<string, string[]>;
+	page_size?: number;
+	offset?: number;
+	source?: string;
+	sort?: string; // "timestamp" | "event_name"
+	order?: string; // "asc" | "desc"
+}
+
 export interface GetEventsResponse {
 	events: Event[];
 	has_more: boolean;
-	iter_first_key: string;
-	iter_last_key: string;
+	iter_first_key?: string;
+	iter_last_key?: string;
+	total_count?: number;
+	offset?: number;
 }
 
 export interface GetUsageByMeterPayload {
@@ -81,4 +100,46 @@ export interface GetMonitoringDataResponse {
 	consumption_lag: number;
 	post_processing_lag: number;
 	points?: EventCountPoint[];
+}
+
+// Usage DTOs for POST /events/usage
+export interface GetUsageRequest {
+	external_customer_id?: string;
+	customer_id?: string;
+	event_name: string;
+	property_name?: string; // will be empty/ignored in case of COUNT
+	aggregation_type: 'COUNT' | 'SUM' | 'AVG' | 'MIN' | 'MAX';
+	start_time?: string; // ISO 8601 format
+	end_time?: string; // ISO 8601 format
+	window_size?: WindowSize;
+	bucket_size?: WindowSize; // Optional, only used for MAX aggregation with windowing
+	filters?: Record<string, string[]>;
+	multiplier?: string; // Decimal as string
+	billing_anchor?: string; // ISO 8601 format - for custom monthly billing periods
+}
+
+export interface UsageResult {
+	window_size: string; // ISO 8601 format
+	value: number;
+}
+
+export interface GetUsageResponse {
+	results?: UsageResult[];
+	value?: number;
+	event_name: string;
+	type: 'COUNT' | 'SUM' | 'AVG' | 'MIN' | 'MAX';
+}
+
+// HuggingFace Billing DTOs
+export interface GetHuggingFaceBillingDataRequest {
+	requestIds: string[]; // Array of event IDs
+}
+
+export interface EventCostInfo {
+	requestId: string;
+	costNanoUsd: string; // Decimal as string
+}
+
+export interface GetHuggingFaceBillingDataResponse {
+	requests: EventCostInfo[];
 }

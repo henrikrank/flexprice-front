@@ -5,7 +5,7 @@ import InvoiceApi from '@/api/InvoiceApi';
 import CostSheetApi from '@/api/CostSheetApi';
 import EnvironmentApi from '@/api/EnvironmentApi';
 import { PAYMENT_STATUS } from '@/constants/payment';
-import { SortDirection } from '@/types/common/QueryBuilder';
+import { SortDirection, FilterOperator, DataType } from '@/types/common/QueryBuilder';
 
 export const useRecentSubscriptions = () => {
 	const last24Hours = useMemo(() => {
@@ -30,16 +30,16 @@ export const useRecentSubscriptions = () => {
 				filters: [
 					{
 						field: 'created_at',
-						operator: 'gt',
-						data_type: 'date',
+						operator: FilterOperator.GREATER_THAN,
+						data_type: DataType.DATE,
 						value: {
 							date: last24Hours.start,
 						},
 					},
 					{
 						field: 'created_at',
-						operator: 'lt',
-						data_type: 'date',
+						operator: FilterOperator.LESS_THAN,
+						data_type: DataType.DATE,
 						value: {
 							date: last24Hours.end,
 						},

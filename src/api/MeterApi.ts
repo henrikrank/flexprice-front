@@ -29,6 +29,10 @@ export class MeterApi {
 		return await AxiosClient.delete<void>(`${this.baseUrl}/${id}`);
 	}
 
+	public static async disableMeter(id: string) {
+		return await AxiosClient.post<void>(`${this.baseUrl}/${id}/disable`);
+	}
+
 	public static async listMeters({ limit, offset }: Pagination) {
 		return await AxiosClient.get<ListMetersResponse>(`${this.baseUrl}?limit=${limit}&offset=${offset}`);
 	}
