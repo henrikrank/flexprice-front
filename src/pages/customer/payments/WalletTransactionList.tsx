@@ -1,9 +1,9 @@
 import WalletApi from '@/api/WalletApi';
-import useAllUsers from '@/hooks/useAllUsers';
 import usePagination, { PAGINATION_PREFIX } from '@/hooks/usePagination';
+import { usePaginationReset } from '@/hooks/usePaginationReset';
 import { Loader, ShortPagination, Spacer } from '@/components/atoms';
 import { AllWalletTransactionsTable, QueryBuilder } from '@/components/molecules';
-import { useEffect, useMemo } from 'react';
+import { useMemo } from 'react';
 import {
 	FilterField,
 	FilterFieldType,
@@ -15,9 +15,9 @@ import {
 } from '@/types/common/QueryBuilder';
 import useFilterSorting from '@/hooks/useFilterSorting';
 import { useQueryWithEmptyState } from '@/hooks/useQueryWithEmptyState';
-import { User } from '@/models/User';
 import { EXPAND } from '@/models/expand';
 import { generateExpandQueryParams } from '@/utils/common/api_helper';
+import { searchUsersForFilter } from '@/utils/filterSearchHelpers';
 import toast from 'react-hot-toast';
 
 const sortingOptions: SortOption[] = [
@@ -33,49 +33,25 @@ const WalletTransactionList = () => {
 		prefix: PAGINATION_PREFIX.WALLET_TRANSACTIONS,
 	});
 
-	// Fetch users for the Created By filter
-	const { users, isLoading: isUsersLoading, isError: isUsersError } = useAllUsers();
-
-	const userOptions = useMemo(() => {
-		return (
-			users?.items.map((user: User) => ({
-				value: user.id,
-				label: user.email || user.name || user.id,
-			})) || []
-		);
-	}, [users]);
-
-	const filterOptions: FilterField[] = useMemo(() => {
-		// Only show Created By filter if users were successfully fetched
-		if (isUsersError || !users?.items || users.items.length === 0) {
-			return [
-				{
-					field: 'created_at',
-					label: 'Created At',
-					fieldType: FilterFieldType.DATEPICKER,
-					operators: DEFAULT_OPERATORS_PER_DATA_TYPE[DataType.DATE],
-					dataType: DataType.DATE,
-				},
-			];
-		}
-		return [
-			{
-				field: 'created_by',
-				label: 'Created By',
-				fieldType: FilterFieldType.MULTI_SELECT,
-				operators: [FilterOperator.IN, FilterOperator.NOT_IN],
-				dataType: DataType.ARRAY,
-				options: userOptions,
+	const filterOptions: FilterField[] = [
+		{
+			field: 'created_by',
+			label: 'Created By',
+			fieldType: FilterFieldType.ASYNC_MULTI_SELECT,
+			operators: [FilterOperator.IN, FilterOperator.NOT_IN],
+			dataType: DataType.ARRAY,
+			asyncConfig: {
+				searchFn: searchUsersForFilter,
 			},
-			{
-				field: 'created_at',
-				label: 'Created At',
-				fieldType: FilterFieldType.DATEPICKER,
-				operators: DEFAULT_OPERATORS_PER_DATA_TYPE[DataType.DATE],
-				dataType: DataType.DATE,
-			},
-		];
-	}, [userOptions, isUsersError, users]);
+		},
+		{
+			field: 'created_at',
+			label: 'Created At',
+			fieldType: FilterFieldType.DATEPICKER,
+			operators: DEFAULT_OPERATORS_PER_DATA_TYPE[DataType.DATE],
+			dataType: DataType.DATE,
+		},
+	];
 
 	const { filters, sorts, setFilters, setSorts, sanitizedFilters, sanitizedSorts } = useFilterSorting({
 		initialFilters: [],
@@ -99,9 +75,8 @@ const WalletTransactionList = () => {
 		});
 	};
 
-	useEffect(() => {
-		reset();
-	}, [sanitizedFilters, sanitizedSorts]);
+	// Reset pagination only when filters or sorts actually change
+	usePaginationReset(reset, sanitizedFilters, sanitizedSorts);
 
 	const {
 		isLoading,
@@ -137,7 +112,7 @@ const WalletTransactionList = () => {
 		toast.error('Error fetching wallet transactions');
 	}
 
-	if (isLoading || isUsersLoading) {
+	if (isLoading) {
 		return <Loader />;
 	}
 

@@ -6,7 +6,6 @@ import GUIDES from '@/constants/guides';
 import usePagination from '@/hooks/usePagination';
 import { usePaginationReset } from '@/hooks/usePaginationReset';
 import SubscriptionApi from '@/api/SubscriptionApi';
-import CustomerApi from '@/api/CustomerApi';
 import toast from 'react-hot-toast';
 import { useMemo } from 'react';
 import { FilterField, FilterFieldType, DataType, FilterOperator, SortOption, SortDirection } from '@/types/common/QueryBuilder';
@@ -18,46 +17,7 @@ import { SUBSCRIPTION_STATUS } from '@/models/Subscription';
 import { toSentenceCase } from '@/utils/common/helper_functions';
 import { EXPAND } from '@/models/expand';
 import { generateExpandQueryParams } from '@/utils/common/api_helper';
-import { SelectOption } from '@/components/atoms/Select/SearchableSelect';
-import { PlanApi } from '@/api/PlanApi';
-
-// UI adapter: Transform API response to SelectOption format for filter components
-const searchCustomersForFilter = async (query: string): Promise<Array<SelectOption & { data: any }>> => {
-	const result = await CustomerApi.searchCustomers(query, 20);
-	return result.items.map((customer) => ({
-		value: customer.id,
-		label: customer.name,
-		description: customer.email,
-		data: customer,
-	}));
-};
-
-const searchPlansForFilter = async (query: string): Promise<Array<SelectOption & { data: any }>> => {
-	// If query is empty, get all plans without filters
-	if (!query || query.trim() === '') {
-		const result = await PlanApi.getPlansByFilter({
-			limit: 20,
-			offset: 0,
-			filters: [],
-			sort: [],
-		});
-		return result.items.map((plan) => ({
-			value: plan.id,
-			label: plan.name,
-			description: plan.description,
-			data: plan,
-		}));
-	}
-
-	// For non-empty queries, use searchPlans
-	const result = await PlanApi.searchPlans(query, { limit: 20, offset: 0 });
-	return result.items.map((plan) => ({
-		value: plan.id,
-		label: plan.name,
-		description: plan.description,
-		data: plan,
-	}));
-};
+import { searchCustomersForFilter, searchPlansForFilter } from '@/utils/filterSearchHelpers';
 
 const sortingOptions: SortOption[] = [
 	{

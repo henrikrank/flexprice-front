@@ -17,6 +17,7 @@ import {
 	SortOption,
 	SortDirection,
 } from '@/types/common/QueryBuilder';
+import { searchCustomersForFilter } from '@/utils/filterSearchHelpers';
 import { ENTITY_STATUS } from '@/models';
 import { useQueryWithEmptyState } from '@/hooks/useQueryWithEmptyState';
 import { INVOICE_STATUS, INVOICE_TYPE } from '@/models/Invoice';
@@ -55,10 +56,13 @@ const filterOptions: FilterField[] = [
 	},
 	{
 		field: 'customer_id',
-		label: 'Customer ID',
-		fieldType: FilterFieldType.INPUT,
-		operators: DEFAULT_OPERATORS_PER_DATA_TYPE[DataType.STRING],
-		dataType: DataType.STRING,
+		label: 'Customer',
+		fieldType: FilterFieldType.ASYNC_MULTI_SELECT,
+		operators: [FilterOperator.IN, FilterOperator.NOT_IN],
+		dataType: DataType.ARRAY,
+		asyncConfig: {
+			searchFn: searchCustomersForFilter,
+		},
 	},
 	{
 		field: 'invoice_status',
