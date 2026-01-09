@@ -5,7 +5,7 @@ import { QueryableDataArea } from '@/components/organisms';
 import GUIDES from '@/constants/guides';
 import Customer from '@/models/Customer';
 import CustomerApi from '@/api/CustomerApi';
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useCallback, FC } from 'react';
 import {
 	FilterField,
 	FilterFieldType,
@@ -24,6 +24,34 @@ import formatDate from '@/utils/common/format_date';
 import formatChips from '@/utils/common/format_chips';
 import { ExternalLink } from 'lucide-react';
 import { useCustomerPortalUrl } from '@/hooks/useCustomerPortalUrl';
+
+// Extracted component to avoid redefinition on every render
+const ActionButtonWithPortal: FC<{ customer: Customer; onEdit: (customer: Customer) => void }> = ({ customer, onEdit }) => {
+	const { openInNewTab } = useCustomerPortalUrl(customer.external_id);
+	return (
+		<ActionButton
+			id={customer.id}
+			deleteMutationFn={(id) => CustomerApi.deleteCustomerById(id)}
+			refetchQueryKey='fetchCustomers'
+			entityName='Customer'
+			edit={{
+				enabled: customer.status === ENTITY_STATUS.PUBLISHED,
+				path: `/billing/customers/edit-customer?id=${customer.id}`,
+				onClick: () => onEdit(customer),
+			}}
+			archive={{
+				enabled: customer.status === ENTITY_STATUS.PUBLISHED,
+			}}
+			customActions={[
+				{
+					text: 'Open Customer Portal',
+					icon: <ExternalLink className='h-4 w-4' />,
+					onClick: openInNewTab,
+				},
+			]}
+		/>
+	);
+};
 
 const sortingOptions: SortOption[] = [
 	{
@@ -127,15 +155,15 @@ const CustomerListPage = () => {
 	const [customerDrawerOpen, setcustomerDrawerOpen] = useState(false);
 	const navigate = useNavigate();
 
-	const handleCreateCustomer = () => {
+	const handleCreateCustomer = useCallback(() => {
 		setactiveCustomer(undefined);
 		setcustomerDrawerOpen(true);
-	};
+	}, []);
 
-	const handleEdit = (customer: Customer) => {
+	const handleEdit = useCallback((customer: Customer) => {
 		setactiveCustomer(customer);
 		setcustomerDrawerOpen(true);
-	};
+	}, []);
 
 	// Define columns with proper type safety
 	const columns: ColumnData<Customer>[] = useMemo(
@@ -158,39 +186,10 @@ const CustomerListPage = () => {
 			{
 				title: '',
 				fieldVariant: 'interactive',
-				render: (row) => {
-					// Create a component that uses the hook properly
-					const ActionButtonWithPortal = ({ customer }: { customer: Customer }) => {
-						const { openInNewTab } = useCustomerPortalUrl(customer.external_id);
-						return (
-							<ActionButton
-								id={customer.id}
-								deleteMutationFn={(id) => CustomerApi.deleteCustomerById(id)}
-								refetchQueryKey='fetchCustomers'
-								entityName='Customer'
-								edit={{
-									enabled: customer.status === ENTITY_STATUS.PUBLISHED,
-									path: `/billing/customers/edit-customer?id=${customer.id}`,
-									onClick: () => handleEdit(customer),
-								}}
-								archive={{
-									enabled: customer.status === ENTITY_STATUS.PUBLISHED,
-								}}
-								customActions={[
-									{
-										text: 'Open Customer Portal',
-										icon: <ExternalLink className='h-4 w-4' />,
-										onClick: openInNewTab,
-									},
-								]}
-							/>
-						);
-					};
-					return <ActionButtonWithPortal customer={row} />;
-				},
+				render: (row) => <ActionButtonWithPortal customer={row} onEdit={handleEdit} />,
 			},
 		],
-		[],
+		[handleEdit],
 	);
 
 	return (
