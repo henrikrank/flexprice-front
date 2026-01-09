@@ -150,6 +150,7 @@ const SortDropdown: React.FC<Props> = ({ options, value = [], onChange, classNam
 													width='100%'
 													triggerClassName='h-9 text-sm'
 													searchPlaceholder='Search fields...'
+													contentClassName='!z-[110]'
 												/>
 
 												<Select
