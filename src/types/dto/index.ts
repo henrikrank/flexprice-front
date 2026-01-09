@@ -14,6 +14,7 @@ export type { GetConnectionsPayload, GetConnectionsResponse, CreateConnectionPay
 
 export type {
 	GetEventsPayload,
+	GetEventsRequest,
 	GetEventsResponse,
 	GetUsageByMeterPayload,
 	GetUsageByMeterResponse,
@@ -23,6 +24,12 @@ export type {
 	GetMonitoringDataRequest,
 	GetMonitoringDataResponse,
 	EventCountPoint,
+	GetUsageRequest,
+	GetUsageResponse,
+	UsageResult,
+	GetHuggingFaceBillingDataRequest,
+	GetHuggingFaceBillingDataResponse,
+	EventCostInfo,
 } from './Events';
 
 export type {
@@ -42,6 +49,7 @@ export type {
 	CreateScheduledTaskPayload,
 	UpdateScheduledTaskPayload,
 	ForceRunPayload,
+	DownloadTaskFileResponse,
 } from './Task';
 
 export type { SignupData, LoginData, LocalUser } from './Auth';

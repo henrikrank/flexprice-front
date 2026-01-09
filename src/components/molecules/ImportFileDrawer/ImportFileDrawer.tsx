@@ -58,10 +58,12 @@ const getLicenseKey = (tab: string): string => {
 		case 'customers':
 			return 'W5t0iJSKSM3AH8Etzq9Jf3X3lvsKuw';
 
-		case 'feature':
+		case 'features':
 			return '2tzeM0vIEIITBYCuSStqjhJnhJIhfi';
 		case 'feature_mapping':
 			return 'HwXBfGhJ7Qq4qikGTTeMcUqkBocl5V';
+		case 'prices':
+			return '3DzHoox4HqnuXcpdmjmgxNRGRR0RWP';
 		default:
 			return 'Nd50fKMwC54Ri7AoD4ifG1dxL7koqW';
 	}
@@ -74,9 +76,11 @@ const getSampleFileUrl = (tab: string): string => {
 		case 'customer':
 			return '/assets/csv/sample_customer.csv';
 		case 'feature':
-			return '/assets/csv/sample.csv';
+			return '/assets/csv/sample_feature.csv';
 		case 'feature_mapping':
 			return '/assets/csv/sample_feature_mapping.csv';
+		case 'prices':
+			return '/assets/csv/sample_prices.csv';
 		default:
 			return '/assets/csv/sample_event.csv';
 	}
@@ -103,6 +107,14 @@ const ImportFileDrawer: FC<Props> = ({ isOpen, onOpenChange, taskId }) => {
 		{
 			label: 'Customers',
 			value: 'CUSTOMERS',
+		},
+		{
+			label: 'Features',
+			value: 'FEATURES',
+		},
+		{
+			label: 'Prices',
+			value: 'PRICES',
 		},
 	];
 	const fileTypeOptions: SelectOption[] = [

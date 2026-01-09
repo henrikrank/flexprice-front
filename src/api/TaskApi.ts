@@ -10,6 +10,7 @@ import {
 	CreateScheduledTaskPayload,
 	UpdateScheduledTaskPayload,
 	ForceRunPayload,
+	DownloadTaskFileResponse,
 } from '@/types/dto';
 
 class TaskApi {
@@ -23,6 +24,10 @@ class TaskApi {
 
 	public static async getTaskById(id: string): Promise<ImportTask> {
 		return await AxiosClient.get(`${this.baseUrl}/${id}`);
+	}
+
+	public static async updateTaskStatus(id: string, status: string): Promise<ImportTask> {
+		return await AxiosClient.put<ImportTask>(`${this.baseUrl}/${id}/status`, { status });
 	}
 
 	public static async getAllTasks(payload: GetTasksPayload = {}): Promise<GetTasksResponse> {
@@ -54,6 +59,11 @@ class TaskApi {
 
 	public static async forceRunScheduledTask(id: string, payload?: ForceRunPayload): Promise<void> {
 		return await AxiosClient.post(`${this.scheduledBaseUrl}/${id}/run`, payload || {});
+	}
+
+	// Download Task File
+	public static async downloadTaskFile(id: string): Promise<DownloadTaskFileResponse> {
+		return await AxiosClient.get<DownloadTaskFileResponse>(`${this.baseUrl}/${id}/download`);
 	}
 }
 

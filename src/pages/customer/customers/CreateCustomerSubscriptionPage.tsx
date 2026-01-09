@@ -33,6 +33,7 @@ import {
 	TaxRateOverride,
 	EntitlementOverrideRequest,
 } from '@/types/dto';
+import { FilterOperator, DataType } from '@/types/common/QueryBuilder';
 import { OverrideLineItemRequest, SubscriptionPhaseCreateRequest } from '@/types/dto/Subscription';
 
 import { cn } from '@/lib/utils';
@@ -86,10 +87,23 @@ const usePlans = () => {
 	return useQuery({
 		queryKey: ['plans'],
 		queryFn: async () => {
-			const plansResponse = await PlanApi.getActiveExpandedPlan({ limit: 1000, offset: 0 });
+			const plansResponse = await PlanApi.getPlansByFilter({
+				limit: 1000,
+				offset: 0,
+				filters: [
+					{
+						field: 'status',
+						operator: FilterOperator.EQUAL,
+						data_type: DataType.STRING,
+						value: { string: 'published' },
+					},
+				],
+				sort: [],
+				expand: 'prices,meters,credit_grants,priceunits',
+			});
 
 			try {
-				const filteredPlans = plansResponse.filter((plan) => {
+				const filteredPlans = plansResponse.items.filter((plan: PlanResponse) => {
 					const hasPrices = plan.prices && plan.prices.length > 0;
 					return hasPrices;
 				});

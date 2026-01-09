@@ -21,6 +21,11 @@ class RbacApi {
 		const response = await AxiosClient.get<GetRolesResponse>(`${this.baseUrl}/roles`);
 		return response.roles;
 	}
+
+	// Fetch a role by ID
+	public static async getRoleById(id: string): Promise<RbacRole> {
+		return await AxiosClient.get<RbacRole>(`${this.baseUrl}/roles/${id}`);
+	}
 }
 
 export default RbacApi;

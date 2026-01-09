@@ -1,12 +1,10 @@
-import { Loader, Page, ShortPagination, Spacer } from '@/components/atoms';
-import { InvoiceTable, ApiDocsContent, QueryBuilder } from '@/components/molecules';
-import EmptyPage from '@/components/organisms/EmptyPage/EmptyPage';
+import { Page, Chip } from '@/components/atoms';
+import { ApiDocsContent, RedirectCell } from '@/components/molecules';
+import { ColumnData } from '@/components/molecules/Table';
+import InvoiceTableMenu from '@/components/molecules/InvoiceTable/InvoiceTableMenu';
+import { QueryableDataArea } from '@/components/organisms';
 import GUIDES from '@/constants/guides';
-import usePagination from '@/hooks/usePagination';
 import InvoiceApi from '@/api/InvoiceApi';
-import { useEffect, useMemo } from 'react';
-import toast from 'react-hot-toast';
-import useFilterSorting from '@/hooks/useFilterSorting';
 import {
 	FilterField,
 	FilterFieldType,
@@ -15,11 +13,16 @@ import {
 	FilterOperator,
 	SortOption,
 	SortDirection,
+	FilterCondition,
 } from '@/types/common/QueryBuilder';
+import { searchCustomersForFilter } from '@/utils/filterSearchHelpers';
 import { ENTITY_STATUS } from '@/models';
-import { useQueryWithEmptyState } from '@/hooks/useQueryWithEmptyState';
-import { INVOICE_STATUS, INVOICE_TYPE } from '@/models/Invoice';
+import { Invoice, INVOICE_STATUS, INVOICE_TYPE } from '@/models/Invoice';
 import { PAYMENT_STATUS } from '@/constants';
+import { useNavigate } from 'react-router';
+import { RouteNames } from '@/core/routes/Routes';
+import { formatDateShort, getCurrencySymbol } from '@/utils/common/helper_functions';
+import { useMemo } from 'react';
 
 const sortingOptions: SortOption[] = [
 	{
@@ -54,16 +57,19 @@ const filterOptions: FilterField[] = [
 	},
 	{
 		field: 'customer_id',
-		label: 'Customer ID',
-		fieldType: FilterFieldType.INPUT,
-		operators: DEFAULT_OPERATORS_PER_DATA_TYPE[DataType.STRING],
-		dataType: DataType.STRING,
+		label: 'Customer',
+		fieldType: FilterFieldType.ASYNC_MULTI_SELECT,
+		operators: [FilterOperator.IN, FilterOperator.NOT_IN],
+		dataType: DataType.ARRAY,
+		asyncConfig: {
+			searchFn: searchCustomersForFilter,
+		},
 	},
 	{
 		field: 'invoice_status',
 		label: 'Invoice Status',
 		fieldType: FilterFieldType.MULTI_SELECT,
-		operators: [FilterOperator.IS_ANY_OF, FilterOperator.IS_NOT_ANY_OF],
+		operators: [FilterOperator.IN, FilterOperator.NOT_IN],
 		dataType: DataType.ARRAY,
 		options: [
 			{ value: INVOICE_STATUS.DRAFT, label: 'Draft' },
@@ -75,7 +81,7 @@ const filterOptions: FilterField[] = [
 		field: 'payment_status',
 		label: 'Payment Status',
 		fieldType: FilterFieldType.MULTI_SELECT,
-		operators: [FilterOperator.IS_ANY_OF, FilterOperator.IS_NOT_ANY_OF],
+		operators: [FilterOperator.IN, FilterOperator.NOT_IN],
 		dataType: DataType.ARRAY,
 		options: [
 			{ value: PAYMENT_STATUS.PENDING, label: 'Pending' },
@@ -91,7 +97,7 @@ const filterOptions: FilterField[] = [
 		field: 'invoice_type',
 		label: 'Invoice Type',
 		fieldType: FilterFieldType.MULTI_SELECT,
-		operators: [FilterOperator.IS_ANY_OF, FilterOperator.IS_NOT_ANY_OF],
+		operators: [FilterOperator.IN, FilterOperator.NOT_IN],
 		dataType: DataType.ARRAY,
 		options: [
 			{ value: INVOICE_TYPE.SUBSCRIPTION, label: 'Subscription' },
@@ -117,7 +123,7 @@ const filterOptions: FilterField[] = [
 		field: 'status',
 		label: 'Status',
 		fieldType: FilterFieldType.MULTI_SELECT,
-		operators: [FilterOperator.IS_ANY_OF, FilterOperator.IS_NOT_ANY_OF],
+		operators: [FilterOperator.IN, FilterOperator.NOT_IN],
 		dataType: DataType.ARRAY,
 		options: [
 			{ value: ENTITY_STATUS.PUBLISHED, label: 'Active' },
@@ -126,127 +132,148 @@ const filterOptions: FilterField[] = [
 	},
 ];
 
+const initialFilters: FilterCondition[] = [
+	{
+		field: 'invoice_number',
+		operator: FilterOperator.CONTAINS,
+		valueString: '',
+		dataType: DataType.STRING,
+		id: 'initial-invoice-number',
+	},
+	{
+		field: 'status',
+		operator: FilterOperator.IN,
+		valueArray: [ENTITY_STATUS.PUBLISHED],
+		dataType: DataType.ARRAY,
+		id: 'initial-status',
+	},
+];
+
+const initialSorts: SortOption[] = [
+	{
+		field: 'created_at',
+		label: 'Created At',
+		direction: SortDirection.DESC,
+	},
+];
+
+const getStatusChip = (status: string) => {
+	switch (status.toUpperCase()) {
+		case INVOICE_STATUS.VOIDED:
+			return <Chip variant='default' label='Void' />;
+		case INVOICE_STATUS.FINALIZED:
+			return <Chip variant='success' label='Finalized' />;
+		case INVOICE_STATUS.DRAFT:
+			return <Chip variant='default' label='Draft' />;
+		default:
+			return <Chip variant='default' label='Draft' />;
+	}
+};
+
+const getPaymentStatusChip = (status: string) => {
+	switch (status.toUpperCase()) {
+		case PAYMENT_STATUS.PENDING:
+			return <Chip variant='warning' label='Pending' />;
+		case PAYMENT_STATUS.INITIATED:
+			return <Chip variant='warning' label='Initiated' />;
+		case PAYMENT_STATUS.SUCCEEDED:
+			return <Chip variant='success' label='Succeeded' />;
+		case PAYMENT_STATUS.FAILED:
+			return <Chip variant='failed' label='Failed' />;
+		case PAYMENT_STATUS.REFUNDED:
+			return <Chip variant='default' label='Refunded' />;
+		case PAYMENT_STATUS.PARTIALLY_REFUNDED:
+			return <Chip variant='default' label='Partially Refunded' />;
+		default:
+			return <Chip variant='default' label='Unknown' />;
+	}
+};
+
 const InvoicesPage = () => {
-	const { limit, offset, page, reset } = usePagination();
+	const navigate = useNavigate();
 
-	const { filters, sorts, setFilters, setSorts, sanitizedFilters, sanitizedSorts } = useFilterSorting({
-		initialFilters: [
+	const columns: ColumnData<Invoice>[] = useMemo(
+		() => [
 			{
-				field: 'invoice_number',
-				operator: FilterOperator.CONTAINS,
-				valueString: '',
-				dataType: DataType.STRING,
-				id: 'initial-invoice-number',
+				fieldName: 'invoice_number',
+				title: 'Invoice ID',
 			},
 			{
-				field: 'status',
-				operator: FilterOperator.IS_ANY_OF,
-				valueArray: [ENTITY_STATUS.PUBLISHED],
-				dataType: DataType.ARRAY,
-				id: 'initial-status',
+				title: 'Amount',
+				render: (row) => <span>{`${getCurrencySymbol(row.currency)}${row.amount_due}`}</span>,
+			},
+			{
+				title: 'Invoice Status',
+				render: (row: Invoice) => getStatusChip(row.invoice_status),
+			},
+			{
+				title: 'Customer Slug',
+				render: (row: Invoice) => {
+					if (!row.customer?.external_id) {
+						return '--';
+					}
+					return <RedirectCell redirectUrl={`${RouteNames.customers}/${row.customer?.id}`}>{row.customer?.external_id}</RedirectCell>;
+				},
+			},
+			{
+				title: 'Payment Status',
+				render: (row: Invoice) => getPaymentStatusChip(row.payment_status),
+			},
+			{
+				title: 'Due Date',
+				render: (row: Invoice) => <span>{row.due_date ? formatDateShort(row.due_date) : '--'}</span>,
+			},
+			{
+				fieldVariant: 'interactive',
+				hideOnEmpty: true,
+				render: (row: Invoice) => {
+					return <InvoiceTableMenu data={row} />;
+				},
 			},
 		],
-		initialSorts: [
-			{
-				field: 'created_at',
-				label: 'Created At',
-				direction: SortDirection.DESC,
-			},
-		],
-		debounceTime: 300,
-	});
-	useEffect(() => {
-		reset();
-	}, [sanitizedFilters, sanitizedSorts]);
-
-	const fetchInvoices = async () => {
-		return await InvoiceApi.getInvoicesByFilters({
-			limit,
-			offset,
-			filters: sanitizedFilters,
-			sort: sanitizedSorts,
-		});
-	};
-
-	const {
-		data: invoiceData,
-		isLoading,
-		probeData,
-		isError,
-		error,
-	} = useQueryWithEmptyState({
-		main: {
-			queryKey: ['fetchInvoices', page, JSON.stringify(sanitizedFilters), JSON.stringify(sanitizedSorts)],
-			queryFn: fetchInvoices,
-		},
-		probe: {
-			queryKey: ['fetchInvoices', 'probe', page, JSON.stringify(sanitizedFilters), JSON.stringify(sanitizedSorts)],
-			queryFn: async () => {
-				return await InvoiceApi.getInvoicesByFilters({
-					limit: 1,
-					offset: 0,
-					filters: [],
-					sort: [],
-				});
-			},
-		},
-		shouldProbe: (mainData) => {
-			return mainData?.items.length === 0;
-		},
-	});
-
-	const showEmptyPage = useMemo(() => {
-		return !isLoading && probeData?.items.length === 0 && invoiceData?.items.length === 0;
-	}, [isLoading, probeData, invoiceData]);
-
-	if (isError) {
-		const err = error as any;
-		toast.error(err?.error?.message || 'Error fetching invoices');
-		return <div>Error fetching invoices</div>;
-	}
-
-	if (isLoading) {
-		return <Loader />;
-	}
-
-	if (showEmptyPage) {
-		return (
-			<EmptyPage
-				heading='Invoices'
-				tags={['Invoices']}
-				emptyStateCard={{
-					heading: 'Create your first invoice',
-					description: 'Generate an invoice to initiate billing and manage customer payments.',
-				}}
-				tutorials={GUIDES.invoices.tutorials}
-			/>
-		);
-	}
+		[],
+	);
 
 	return (
 		<Page heading='Invoices'>
 			<ApiDocsContent tags={['Invoices']} />
-			<div>
-				<QueryBuilder
-					filterOptions={filterOptions}
-					filters={filters}
-					onFilterChange={setFilters}
-					sortOptions={sortingOptions}
-					onSortChange={setSorts}
-					selectedSorts={sorts}
-				/>
-				{isLoading ? (
-					<div className='flex justify-center items-center min-h-[200px]'>
-						<Loader />
-					</div>
-				) : (
-					<>
-						<InvoiceTable data={invoiceData?.items || []} />
-						<Spacer className='!h-4' />
-						<ShortPagination unit='Invoices' totalItems={invoiceData?.pagination.total ?? 0} />
-					</>
-				)}
-			</div>
+			<QueryableDataArea<Invoice>
+				queryConfig={{
+					filterOptions,
+					sortOptions: sortingOptions,
+					initialFilters,
+					initialSorts,
+					debounceTime: 300,
+				}}
+				dataConfig={{
+					queryKey: 'fetchInvoices',
+					fetchFn: async (params) => InvoiceApi.getInvoicesByFilters(params),
+					probeFetchFn: async (params) =>
+						InvoiceApi.getInvoicesByFilters({
+							...params,
+							limit: 1,
+							offset: 0,
+							filters: [],
+							sort: [],
+						}),
+				}}
+				tableConfig={{
+					columns,
+					onRowClick: (row) => {
+						navigate(`/billing/invoices/${row.id}`);
+					},
+					showEmptyRow: true,
+				}}
+				paginationConfig={{
+					unit: 'Invoices',
+				}}
+				emptyStateConfig={{
+					heading: 'Invoices',
+					description: 'Generate an invoice to initiate billing and manage customer payments.',
+					tags: ['Invoices'],
+					tutorials: GUIDES.invoices.tutorials,
+				}}
+			/>
 		</Page>
 	);
 };
