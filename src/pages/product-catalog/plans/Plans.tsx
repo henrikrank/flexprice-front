@@ -2,9 +2,10 @@ import { AddButton, Loader, Page, ShortPagination, Spacer } from '@/components/a
 import { PlansTable, ApiDocsContent, PlanDrawer, QueryBuilder } from '@/components/molecules';
 import { Plan } from '@/models/Plan';
 import usePagination from '@/hooks/usePagination';
+import { usePaginationReset } from '@/hooks/usePaginationReset';
 import { EmptyPage } from '@/components/organisms';
 import GUIDES from '@/constants/guides';
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useMemo } from 'react';
 import { PlanApi } from '@/api/PlanApi';
 import { useQueryWithEmptyState } from '@/hooks/useQueryWithEmptyState';
 import useFilterSorting from '@/hooks/useFilterSorting';
@@ -57,7 +58,7 @@ const filterOptions: FilterField[] = [
 		field: 'status',
 		label: 'Status',
 		fieldType: FilterFieldType.MULTI_SELECT,
-		operators: [FilterOperator.IS_ANY_OF, FilterOperator.IS_NOT_ANY_OF],
+		operators: [FilterOperator.IN, FilterOperator.NOT_IN],
 		dataType: DataType.ARRAY,
 		options: [
 			{ value: ENTITY_STATUS.PUBLISHED, label: 'Active' },
@@ -96,7 +97,7 @@ const PlansPage = () => {
 			},
 			{
 				field: 'status',
-				operator: FilterOperator.IS_ANY_OF,
+				operator: FilterOperator.IN,
 				valueArray: [ENTITY_STATUS.PUBLISHED],
 				dataType: DataType.ARRAY,
 				id: 'initial-status',
@@ -112,9 +113,8 @@ const PlansPage = () => {
 		debounceTime: 300,
 	});
 
-	useEffect(() => {
-		reset();
-	}, [sanitizedFilters, sanitizedSorts]);
+	// Reset pagination only when filters or sorts actually change
+	usePaginationReset(reset, sanitizedFilters, sanitizedSorts);
 
 	const fetchPlans = async () => {
 		return await PlanApi.getPlansByFilter({

@@ -3,7 +3,8 @@ import { ApiDocsContent, PriceUnitDrawer, PriceUnitTable, QueryBuilder } from '@
 import { PriceUnit } from '@/models/PriceUnit';
 import { EmptyPage } from '@/components/organisms';
 import usePagination from '@/hooks/usePagination';
-import { useState, useEffect, useMemo } from 'react';
+import { usePaginationReset } from '@/hooks/usePaginationReset';
+import { useState, useMemo } from 'react';
 import { PriceUnitApi } from '@/api/PriceUnitApi';
 import toast from 'react-hot-toast';
 import useFilterSorting from '@/hooks/useFilterSorting';
@@ -68,7 +69,7 @@ const filterOptions: FilterField[] = [
 		field: 'status',
 		label: 'Status',
 		fieldType: FilterFieldType.MULTI_SELECT,
-		operators: [FilterOperator.IS_ANY_OF, FilterOperator.IS_NOT_ANY_OF],
+		operators: [FilterOperator.IN, FilterOperator.NOT_IN],
 		dataType: DataType.ARRAY,
 		options: [
 			{ value: ENTITY_STATUS.PUBLISHED, label: 'Active' },
@@ -107,7 +108,7 @@ const PriceUnitsPage = () => {
 			},
 			{
 				field: 'status',
-				operator: FilterOperator.IS_ANY_OF,
+				operator: FilterOperator.IN,
 				valueArray: [ENTITY_STATUS.PUBLISHED],
 				dataType: DataType.ARRAY,
 				id: 'initial-status',
@@ -123,9 +124,8 @@ const PriceUnitsPage = () => {
 		debounceTime: 300,
 	});
 
-	useEffect(() => {
-		reset();
-	}, [sanitizedFilters, sanitizedSorts]);
+	// Reset pagination only when filters or sorts actually change
+	usePaginationReset(reset, sanitizedFilters, sanitizedSorts);
 
 	const fetchPriceUnits = async () => {
 		return await PriceUnitApi.ListPriceUnitsByFilter({

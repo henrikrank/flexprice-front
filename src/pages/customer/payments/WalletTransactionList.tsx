@@ -63,7 +63,7 @@ const WalletTransactionList = () => {
 				field: 'created_by',
 				label: 'Created By',
 				fieldType: FilterFieldType.MULTI_SELECT,
-				operators: [FilterOperator.IS_ANY_OF, FilterOperator.IS_NOT_ANY_OF],
+				operators: [FilterOperator.IN, FilterOperator.NOT_IN],
 				dataType: DataType.ARRAY,
 				options: userOptions,
 			},

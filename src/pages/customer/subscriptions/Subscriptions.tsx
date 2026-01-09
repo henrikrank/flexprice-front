@@ -4,18 +4,12 @@ import { SubscriptionTable } from '@/components/molecules/SubscriptionTable';
 import EmptyPage from '@/components/organisms/EmptyPage/EmptyPage';
 import GUIDES from '@/constants/guides';
 import usePagination from '@/hooks/usePagination';
+import { usePaginationReset } from '@/hooks/usePaginationReset';
 import SubscriptionApi from '@/api/SubscriptionApi';
+import CustomerApi from '@/api/CustomerApi';
 import toast from 'react-hot-toast';
-import { useEffect, useMemo } from 'react';
-import {
-	FilterField,
-	FilterFieldType,
-	DEFAULT_OPERATORS_PER_DATA_TYPE,
-	DataType,
-	FilterOperator,
-	SortOption,
-	SortDirection,
-} from '@/types/common/QueryBuilder';
+import { useMemo } from 'react';
+import { FilterField, FilterFieldType, DataType, FilterOperator, SortOption, SortDirection } from '@/types/common/QueryBuilder';
 import useFilterSorting from '@/hooks/useFilterSorting';
 import { useQueryWithEmptyState } from '@/hooks/useQueryWithEmptyState';
 import { BILLING_CADENCE } from '@/models/Invoice';
@@ -24,6 +18,46 @@ import { SUBSCRIPTION_STATUS } from '@/models/Subscription';
 import { toSentenceCase } from '@/utils/common/helper_functions';
 import { EXPAND } from '@/models/expand';
 import { generateExpandQueryParams } from '@/utils/common/api_helper';
+import { SelectOption } from '@/components/atoms/Select/SearchableSelect';
+import { PlanApi } from '@/api/PlanApi';
+
+// UI adapter: Transform API response to SelectOption format for filter components
+const searchCustomersForFilter = async (query: string): Promise<Array<SelectOption & { data: any }>> => {
+	const result = await CustomerApi.searchCustomers(query, 20);
+	return result.items.map((customer) => ({
+		value: customer.id,
+		label: customer.name,
+		description: customer.email,
+		data: customer,
+	}));
+};
+
+const searchPlansForFilter = async (query: string): Promise<Array<SelectOption & { data: any }>> => {
+	// If query is empty, get all plans without filters
+	if (!query || query.trim() === '') {
+		const result = await PlanApi.getPlansByFilter({
+			limit: 20,
+			offset: 0,
+			filters: [],
+			sort: [],
+		});
+		return result.items.map((plan) => ({
+			value: plan.id,
+			label: plan.name,
+			description: plan.description,
+			data: plan,
+		}));
+	}
+
+	// For non-empty queries, use searchPlans
+	const result = await PlanApi.searchPlans(query, { limit: 20, offset: 0 });
+	return result.items.map((plan) => ({
+		value: plan.id,
+		label: plan.name,
+		description: plan.description,
+		data: plan,
+	}));
+};
 
 const sortingOptions: SortOption[] = [
 	{
@@ -51,23 +85,29 @@ const sortingOptions: SortOption[] = [
 const filterOptions: FilterField[] = [
 	{
 		field: 'customer_id',
-		label: 'Customer ID',
-		fieldType: FilterFieldType.INPUT,
-		operators: DEFAULT_OPERATORS_PER_DATA_TYPE[DataType.STRING],
-		dataType: DataType.STRING,
+		label: 'Customer',
+		fieldType: FilterFieldType.ASYNC_MULTI_SELECT,
+		operators: [FilterOperator.IN, FilterOperator.NOT_IN],
+		dataType: DataType.ARRAY,
+		asyncConfig: {
+			searchFn: searchCustomersForFilter,
+		},
 	},
 	{
 		field: 'plan_id',
-		label: 'Plan ID',
-		fieldType: FilterFieldType.INPUT,
-		operators: DEFAULT_OPERATORS_PER_DATA_TYPE[DataType.STRING],
-		dataType: DataType.STRING,
+		label: 'Plan',
+		fieldType: FilterFieldType.ASYNC_MULTI_SELECT,
+		operators: [FilterOperator.IN, FilterOperator.NOT_IN],
+		dataType: DataType.ARRAY,
+		asyncConfig: {
+			searchFn: searchPlansForFilter,
+		},
 	},
 	{
 		field: 'subscription_status',
 		label: 'Status',
 		fieldType: FilterFieldType.MULTI_SELECT,
-		operators: [FilterOperator.IS_ANY_OF, FilterOperator.IS_NOT_ANY_OF],
+		operators: [FilterOperator.IN, FilterOperator.NOT_IN],
 		dataType: DataType.ARRAY,
 		options: [
 			{ value: SUBSCRIPTION_STATUS.ACTIVE, label: 'Active' },
@@ -80,7 +120,7 @@ const filterOptions: FilterField[] = [
 		field: 'billing_cadence',
 		label: 'Billing Cadence',
 		fieldType: FilterFieldType.MULTI_SELECT,
-		operators: [FilterOperator.IS_ANY_OF],
+		operators: [FilterOperator.IN],
 		dataType: DataType.ARRAY,
 		options: Object.values(BILLING_CADENCE).map((cadence) => ({
 			value: cadence,
@@ -91,7 +131,7 @@ const filterOptions: FilterField[] = [
 		field: 'billing_period',
 		label: 'Billing Period',
 		fieldType: FilterFieldType.MULTI_SELECT,
-		operators: [FilterOperator.IS_ANY_OF],
+		operators: [FilterOperator.IN],
 		dataType: DataType.ARRAY,
 		options: Object.values(BILLING_PERIOD).map((period) => ({
 			value: period,
@@ -107,7 +147,7 @@ const SubscriptionsPage = () => {
 		initialFilters: [
 			{
 				field: 'subscription_status',
-				operator: FilterOperator.IS_ANY_OF,
+				operator: FilterOperator.IN,
 				valueArray: [SUBSCRIPTION_STATUS.ACTIVE],
 				dataType: DataType.ARRAY,
 				id: 'initial-status',
@@ -133,9 +173,8 @@ const SubscriptionsPage = () => {
 		});
 	};
 
-	useEffect(() => {
-		reset();
-	}, [sanitizedFilters, sanitizedSorts]);
+	// Reset pagination only when filters or sorts actually change
+	usePaginationReset(reset, sanitizedFilters, sanitizedSorts);
 
 	const {
 		isLoading,

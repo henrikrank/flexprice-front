@@ -4,10 +4,11 @@ import EmptyPage from '@/components/organisms/EmptyPage/EmptyPage';
 import { RouteNames } from '@/core/routes/Routes';
 import GUIDES from '@/constants/guides';
 import usePagination from '@/hooks/usePagination';
+import { usePaginationReset } from '@/hooks/usePaginationReset';
 import FeatureApi from '@/api/FeatureApi';
 import toast from 'react-hot-toast';
 import { Link, useNavigate } from 'react-router';
-import { useEffect, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 import Feature from '@/models/Feature';
 import {
 	FilterField,
@@ -61,7 +62,7 @@ const filterOptions: FilterField[] = [
 		field: 'status',
 		label: 'Status',
 		fieldType: FilterFieldType.MULTI_SELECT,
-		operators: [FilterOperator.IS_ANY_OF, FilterOperator.IS_NOT_ANY_OF],
+		operators: [FilterOperator.IN, FilterOperator.NOT_IN],
 		dataType: DataType.ARRAY,
 		options: [
 			{ value: ENTITY_STATUS.PUBLISHED, label: 'Active' },
@@ -100,7 +101,7 @@ const FeaturesPage = () => {
 			},
 			{
 				field: 'status',
-				operator: FilterOperator.IS_ANY_OF,
+				operator: FilterOperator.IN,
 				valueArray: [ENTITY_STATUS.PUBLISHED],
 				dataType: DataType.ARRAY,
 				id: 'initial-status',
@@ -126,9 +127,8 @@ const FeaturesPage = () => {
 	};
 	const navigate = useNavigate();
 
-	useEffect(() => {
-		reset();
-	}, [sanitizedFilters, sanitizedSorts]);
+	// Reset pagination only when filters or sorts actually change
+	usePaginationReset(reset, sanitizedFilters, sanitizedSorts);
 
 	const {
 		isLoading,

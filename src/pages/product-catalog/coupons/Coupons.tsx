@@ -3,9 +3,10 @@ import { ApiDocsContent, CouponTable, CouponDrawer } from '@/components/molecule
 import EmptyPage from '@/components/organisms/EmptyPage/EmptyPage';
 import GUIDES from '@/constants/guides';
 import usePagination from '@/hooks/usePagination';
+import { usePaginationReset } from '@/hooks/usePaginationReset';
 import CouponApi from '@/api/CouponApi';
 import toast from 'react-hot-toast';
-import { useEffect, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 import {
 	FilterField,
 	FilterFieldType,
@@ -59,7 +60,7 @@ const filterOptions: FilterField[] = [
 		field: 'status',
 		label: 'Status',
 		fieldType: FilterFieldType.MULTI_SELECT,
-		operators: [FilterOperator.IS_ANY_OF, FilterOperator.IS_NOT_ANY_OF],
+		operators: [FilterOperator.IN, FilterOperator.NOT_IN],
 		dataType: DataType.ARRAY,
 		options: [
 			{ value: ENTITY_STATUS.PUBLISHED, label: 'Active' },
@@ -95,7 +96,7 @@ const CouponsPage = () => {
 			},
 			{
 				field: 'status',
-				operator: FilterOperator.IS_ANY_OF,
+				operator: FilterOperator.IN,
 				valueArray: [ENTITY_STATUS.PUBLISHED],
 				dataType: DataType.ARRAY,
 				id: 'initial-status',
@@ -120,9 +121,8 @@ const CouponsPage = () => {
 		});
 	};
 
-	useEffect(() => {
-		reset();
-	}, [sanitizedFilters, sanitizedSorts]);
+	// Reset pagination only when filters or sorts actually change
+	usePaginationReset(reset, sanitizedFilters, sanitizedSorts);
 
 	const {
 		isLoading,

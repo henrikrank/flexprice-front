@@ -3,8 +3,9 @@ import { CostSheetTable, ApiDocsContent, CostSheetDrawer, QueryBuilder } from '@
 import { EmptyPage } from '@/components/organisms';
 import CostSheet from '@/models/CostSheet';
 import usePagination from '@/hooks/usePagination';
+import { usePaginationReset } from '@/hooks/usePaginationReset';
 import GUIDES from '@/constants/guides';
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useMemo } from 'react';
 import CostSheetApi from '@/api/CostSheetApi';
 import toast from 'react-hot-toast';
 import {
@@ -64,7 +65,7 @@ const filterOptions: FilterField[] = [
 		field: 'status',
 		label: 'Status',
 		fieldType: FilterFieldType.MULTI_SELECT,
-		operators: [FilterOperator.IS_ANY_OF, FilterOperator.IS_NOT_ANY_OF],
+		operators: [FilterOperator.IN, FilterOperator.NOT_IN],
 		dataType: DataType.ARRAY,
 		options: [
 			{ value: ENTITY_STATUS.PUBLISHED, label: 'Active' },
@@ -89,7 +90,7 @@ const CostSheetsPage = () => {
 			},
 			{
 				field: 'status',
-				operator: FilterOperator.IS_ANY_OF,
+				operator: FilterOperator.IN,
 				valueArray: [ENTITY_STATUS.PUBLISHED],
 				dataType: DataType.ARRAY,
 				id: 'initial-status',
@@ -114,9 +115,8 @@ const CostSheetsPage = () => {
 		});
 	};
 
-	useEffect(() => {
-		reset();
-	}, [sanitizedFilters, sanitizedSorts]);
+	// Reset pagination only when filters or sorts actually change
+	usePaginationReset(reset, sanitizedFilters, sanitizedSorts);
 
 	const {
 		data: costSheetsData,

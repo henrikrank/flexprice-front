@@ -3,8 +3,9 @@ import { InvoiceTable, ApiDocsContent, QueryBuilder } from '@/components/molecul
 import EmptyPage from '@/components/organisms/EmptyPage/EmptyPage';
 import GUIDES from '@/constants/guides';
 import usePagination from '@/hooks/usePagination';
+import { usePaginationReset } from '@/hooks/usePaginationReset';
 import InvoiceApi from '@/api/InvoiceApi';
-import { useEffect, useMemo } from 'react';
+import { useMemo } from 'react';
 import toast from 'react-hot-toast';
 import useFilterSorting from '@/hooks/useFilterSorting';
 import {
@@ -63,7 +64,7 @@ const filterOptions: FilterField[] = [
 		field: 'invoice_status',
 		label: 'Invoice Status',
 		fieldType: FilterFieldType.MULTI_SELECT,
-		operators: [FilterOperator.IS_ANY_OF, FilterOperator.IS_NOT_ANY_OF],
+		operators: [FilterOperator.IN, FilterOperator.NOT_IN],
 		dataType: DataType.ARRAY,
 		options: [
 			{ value: INVOICE_STATUS.DRAFT, label: 'Draft' },
@@ -75,7 +76,7 @@ const filterOptions: FilterField[] = [
 		field: 'payment_status',
 		label: 'Payment Status',
 		fieldType: FilterFieldType.MULTI_SELECT,
-		operators: [FilterOperator.IS_ANY_OF, FilterOperator.IS_NOT_ANY_OF],
+		operators: [FilterOperator.IN, FilterOperator.NOT_IN],
 		dataType: DataType.ARRAY,
 		options: [
 			{ value: PAYMENT_STATUS.PENDING, label: 'Pending' },
@@ -91,7 +92,7 @@ const filterOptions: FilterField[] = [
 		field: 'invoice_type',
 		label: 'Invoice Type',
 		fieldType: FilterFieldType.MULTI_SELECT,
-		operators: [FilterOperator.IS_ANY_OF, FilterOperator.IS_NOT_ANY_OF],
+		operators: [FilterOperator.IN, FilterOperator.NOT_IN],
 		dataType: DataType.ARRAY,
 		options: [
 			{ value: INVOICE_TYPE.SUBSCRIPTION, label: 'Subscription' },
@@ -117,7 +118,7 @@ const filterOptions: FilterField[] = [
 		field: 'status',
 		label: 'Status',
 		fieldType: FilterFieldType.MULTI_SELECT,
-		operators: [FilterOperator.IS_ANY_OF, FilterOperator.IS_NOT_ANY_OF],
+		operators: [FilterOperator.IN, FilterOperator.NOT_IN],
 		dataType: DataType.ARRAY,
 		options: [
 			{ value: ENTITY_STATUS.PUBLISHED, label: 'Active' },
@@ -140,7 +141,7 @@ const InvoicesPage = () => {
 			},
 			{
 				field: 'status',
-				operator: FilterOperator.IS_ANY_OF,
+				operator: FilterOperator.IN,
 				valueArray: [ENTITY_STATUS.PUBLISHED],
 				dataType: DataType.ARRAY,
 				id: 'initial-status',
@@ -155,9 +156,8 @@ const InvoicesPage = () => {
 		],
 		debounceTime: 300,
 	});
-	useEffect(() => {
-		reset();
-	}, [sanitizedFilters, sanitizedSorts]);
+	// Reset pagination only when filters or sorts actually change
+	usePaginationReset(reset, sanitizedFilters, sanitizedSorts);
 
 	const fetchInvoices = async () => {
 		return await InvoiceApi.getInvoicesByFilters({

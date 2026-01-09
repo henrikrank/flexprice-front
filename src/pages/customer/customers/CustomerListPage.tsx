@@ -4,9 +4,10 @@ import CustomerTable from '@/components/molecules/Customer/CustomerTable';
 import EmptyPage from '@/components/organisms/EmptyPage/EmptyPage';
 import GUIDES from '@/constants/guides';
 import usePagination from '@/hooks/usePagination';
+import { usePaginationReset } from '@/hooks/usePaginationReset';
 import Customer from '@/models/Customer';
 import CustomerApi from '@/api/CustomerApi';
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useMemo } from 'react';
 import toast from 'react-hot-toast';
 import useFilterSorting from '@/hooks/useFilterSorting';
 import {
@@ -78,7 +79,7 @@ const filterOptions: FilterField[] = [
 		field: 'status',
 		label: 'Status',
 		fieldType: FilterFieldType.MULTI_SELECT,
-		operators: [FilterOperator.IS_ANY_OF, FilterOperator.IS_NOT_ANY_OF],
+		operators: [FilterOperator.IN, FilterOperator.NOT_IN],
 		dataType: DataType.ARRAY,
 		options: [
 			{ value: ENTITY_STATUS.PUBLISHED, label: 'Active' },
@@ -111,7 +112,7 @@ const CustomerListPage = () => {
 			},
 			{
 				field: 'status',
-				operator: FilterOperator.IS_ANY_OF,
+				operator: FilterOperator.IN,
 				valueArray: [ENTITY_STATUS.PUBLISHED],
 				dataType: DataType.ARRAY,
 				id: 'initial-status',
@@ -127,9 +128,8 @@ const CustomerListPage = () => {
 		debounceTime: 300,
 	});
 
-	useEffect(() => {
-		reset();
-	}, [sanitizedFilters, sanitizedSorts]);
+	// Reset pagination only when filters or sorts actually change
+	usePaginationReset(reset, sanitizedFilters, sanitizedSorts);
 
 	const fetchCustomers = async () => {
 		return await CustomerApi.getCustomersByFilters({
