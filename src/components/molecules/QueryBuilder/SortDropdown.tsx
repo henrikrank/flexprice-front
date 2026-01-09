@@ -150,6 +150,7 @@ const SortDropdown: React.FC<Props> = ({ options, value = [], onChange, classNam
 													width='100%'
 													triggerClassName='h-9 text-sm'
 													searchPlaceholder='Search fields...'
+													contentClassName='!z-[110]'
 												/>
 
 												<Select
@@ -167,6 +168,7 @@ const SortDropdown: React.FC<Props> = ({ options, value = [], onChange, classNam
 													onChange={(value) => handleSortUpdate(index, { direction: value as SortDirection })}
 													className='h-9 text-sm'
 													placeholder='Select direction'
+													contentClassName='z-[110]'
 												/>
 
 												<div className='flex items-center gap-1 justify-end'>

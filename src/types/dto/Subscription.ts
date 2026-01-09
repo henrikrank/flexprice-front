@@ -136,6 +136,71 @@ export interface SubscriptionPauseResponse {
 // Since both responses have the same structure, we can reuse the interface
 export type SubscriptionResumeResponse = SubscriptionPauseResponse;
 
+export interface SubscriptionPause {
+	id: string;
+	subscription_id: string;
+	pause_start: string;
+	pause_end: string;
+	pause_status: string;
+	pause_mode: string;
+	created_at: string;
+	updated_at: string;
+}
+
+export interface ListSubscriptionPausesResponse {
+	pauses: SubscriptionPause[];
+	total: number;
+}
+
+// Subscription Change Types
+export interface PreviewSubscriptionChangeRequest {
+	plan_id?: string;
+	effective_date?: string;
+	proration_behavior?: SUBSCRIPTION_PRORATION_BEHAVIOR;
+	override_line_items?: OverrideLineItemRequest[];
+	entitlement_overrides?: EntitlementOverrideRequest[];
+	line_item_commitments?: LineItemCommitmentsMap;
+	enable_true_up?: boolean;
+	metadata?: Metadata;
+}
+
+export interface PreviewSubscriptionChangeResponse {
+	subscription_id: string;
+	preview: {
+		amount_due: number;
+		proration_amount: number;
+		proration_details: ProrationDetail[];
+		new_line_items: SubscriptionLineItemResponse[];
+		updated_line_items: SubscriptionLineItemResponse[];
+		removed_line_items: SubscriptionLineItemResponse[];
+		effective_date: string;
+	};
+}
+
+export interface ExecuteSubscriptionChangeRequest {
+	plan_id?: string;
+	effective_date?: string;
+	proration_behavior?: SUBSCRIPTION_PRORATION_BEHAVIOR;
+	override_line_items?: OverrideLineItemRequest[];
+	entitlement_overrides?: EntitlementOverrideRequest[];
+	line_item_commitments?: LineItemCommitmentsMap;
+	enable_true_up?: boolean;
+	metadata?: Metadata;
+	suppress_webhook?: boolean;
+}
+
+export interface ExecuteSubscriptionChangeResponse {
+	subscription: SubscriptionResponse;
+	proration_invoice?: Invoice;
+	proration_details: ProrationDetail[];
+	message: string;
+}
+
+export interface ScheduleUpdateBillingPeriodRequest {
+	billing_period_start: string;
+	billing_period_end: string;
+}
+
 export interface ListSubscriptionsResponse extends QueryFilter, TimeRangeFilter {
 	items: SubscriptionResponse[];
 	pagination: Pagination;

@@ -65,6 +65,14 @@ class InvoiceApi {
 		return await AxiosClient.post<Invoice>(`${this.baseurl}`, payload);
 	}
 
+	public static async updateInvoice(invoiceId: string, payload: Partial<Invoice>): Promise<Invoice> {
+		return await AxiosClient.put<Invoice>(`${this.baseurl}/${invoiceId}`, payload);
+	}
+
+	public static async recalculateInvoice(invoiceId: string): Promise<Invoice> {
+		return await AxiosClient.post<Invoice>(`${this.baseurl}/${invoiceId}/recalculate`);
+	}
+
 	public static async getInvoicePdf(invoiceId: string, invoiceNo?: string) {
 		const downloadFileName = invoiceNo ? `invoice-${invoiceNo}.pdf` : `invoice-${invoiceId}.pdf`;
 

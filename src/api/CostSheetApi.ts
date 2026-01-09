@@ -60,6 +60,14 @@ class CostSheetApi {
 	public static async GetCostAnalytics(payload: GetCostAnalyticsRequest): Promise<GetDetailedCostAnalyticsResponse> {
 		return await AxiosClient.post<GetDetailedCostAnalyticsResponse>(`${this.baseUrl}/analytics`, payload);
 	}
+
+	/**
+	 * Get detailed cost analytics v2
+	 * POST /costs/analytics-v2
+	 */
+	public static async GetCostAnalyticsV2(payload: GetCostAnalyticsRequest): Promise<GetDetailedCostAnalyticsResponse> {
+		return await AxiosClient.post<GetDetailedCostAnalyticsResponse>(`${this.baseUrl}/analytics-v2`, payload);
+	}
 }
 
 export default CostSheetApi;

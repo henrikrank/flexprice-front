@@ -31,6 +31,10 @@ class WalletApi {
 	static async getWalletBalance(walletId: string): Promise<RealtimeWalletBalance> {
 		return await AxiosClient.get<RealtimeWalletBalance>(`${this.baseUrl}/${walletId}/balance/real-time`);
 	}
+
+	static async getWalletBalanceV2(walletId: string): Promise<RealtimeWalletBalance> {
+		return await AxiosClient.get<RealtimeWalletBalance>(`${this.baseUrl}/${walletId}/balance/real-time-v2`);
+	}
 	static async createWallet(data: CreateWalletPayload): Promise<Wallet> {
 		return await AxiosClient.post<Wallet>(`${this.baseUrl}`, data);
 	}

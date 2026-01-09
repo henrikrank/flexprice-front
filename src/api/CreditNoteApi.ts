@@ -38,11 +38,19 @@ class CreditNoteApi {
 	}
 
 	/**
-	 * Process a draft credit note (finalize it)
-	 * POST /creditnotes/:id/process
+	 * Finalize a draft credit note
+	 * POST /creditnotes/:id/finalize
+	 */
+	static async finalizeCreditNote(params: ProcessDraftCreditNoteParams): Promise<CreditNote> {
+		return await AxiosClient.post<CreditNote>(`${this.baseUrl}/${params.credit_note_id}/finalize`);
+	}
+
+	/**
+	 * @deprecated Use finalizeCreditNote instead
+	 * This method is kept for backward compatibility
 	 */
 	static async processDraftCreditNote(params: ProcessDraftCreditNoteParams): Promise<CreditNote> {
-		return await AxiosClient.post<CreditNote>(`${this.baseUrl}/${params.credit_note_id}/process`);
+		return this.finalizeCreditNote(params);
 	}
 
 	/**
