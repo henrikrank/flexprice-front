@@ -10,6 +10,7 @@ import {
 	CreateScheduledTaskPayload,
 	UpdateScheduledTaskPayload,
 	ForceRunPayload,
+	DownloadTaskFileResponse,
 } from '@/types/dto';
 
 class TaskApi {
@@ -57,8 +58,8 @@ class TaskApi {
 	}
 
 	// Download Task File
-	public static async downloadTaskFile(id: string): Promise<{ download_url: string }> {
-		return await AxiosClient.get(`${this.baseUrl}/${id}/download`);
+	public static async downloadTaskFile(id: string): Promise<DownloadTaskFileResponse> {
+		return await AxiosClient.get<DownloadTaskFileResponse>(`${this.baseUrl}/${id}/download`);
 	}
 }
 
