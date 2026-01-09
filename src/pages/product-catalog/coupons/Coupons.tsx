@@ -1,12 +1,10 @@
-import { AddButton, Loader, Page, ShortPagination, Spacer } from '@/components/atoms';
-import { ApiDocsContent, CouponTable, CouponDrawer } from '@/components/molecules';
-import EmptyPage from '@/components/organisms/EmptyPage/EmptyPage';
+import { AddButton, Page, ActionButton, Chip } from '@/components/atoms';
+import { ApiDocsContent, CouponDrawer } from '@/components/molecules';
+import { ColumnData } from '@/components/molecules/Table';
+import { QueryableDataArea } from '@/components/organisms';
 import GUIDES from '@/constants/guides';
-import usePagination from '@/hooks/usePagination';
-import { usePaginationReset } from '@/hooks/usePaginationReset';
 import CouponApi from '@/api/CouponApi';
-import toast from 'react-hot-toast';
-import { useMemo, useState } from 'react';
+import { useState, useMemo } from 'react';
 import {
 	FilterField,
 	FilterFieldType,
@@ -15,13 +13,16 @@ import {
 	FilterOperator,
 	SortOption,
 	SortDirection,
+	FilterCondition,
 } from '@/types/common/QueryBuilder';
-import { QueryBuilder } from '@/components/molecules';
 import { ENTITY_STATUS } from '@/models';
 import { COUPON_TYPE } from '@/types/common/Coupon';
-import useFilterSorting from '@/hooks/useFilterSorting';
-import { useQueryWithEmptyState } from '@/hooks/useQueryWithEmptyState';
 import { Coupon } from '@/models/Coupon';
+import { useNavigate } from 'react-router';
+import { RouteNames } from '@/core/routes/Routes';
+import formatChips from '@/utils/common/format_chips';
+import formatDate from '@/utils/common/format_date';
+import { getCurrencySymbol } from '@/utils/common/helper_functions';
 
 const sortingOptions: SortOption[] = [
 	{
@@ -80,114 +81,111 @@ const filterOptions: FilterField[] = [
 	},
 ];
 
+const initialFilters: FilterCondition[] = [
+	{
+		field: 'name',
+		operator: FilterOperator.CONTAINS,
+		valueString: '',
+		dataType: DataType.STRING,
+		id: 'initial-name',
+	},
+	{
+		field: 'status',
+		operator: FilterOperator.IN,
+		valueArray: [ENTITY_STATUS.PUBLISHED],
+		dataType: DataType.ARRAY,
+		id: 'initial-status',
+	},
+];
+
+const initialSorts: SortOption[] = [
+	{
+		field: 'updated_at',
+		label: 'Updated At',
+		direction: SortDirection.DESC,
+	},
+];
+
 const CouponsPage = () => {
-	const { limit, offset, page, reset } = usePagination();
 	const [isDrawerOpen, setIsDrawerOpen] = useState(false);
 	const [selectedCoupon, setSelectedCoupon] = useState<Coupon | null>(null);
-
-	const { filters, sorts, setFilters, setSorts, sanitizedFilters, sanitizedSorts } = useFilterSorting({
-		initialFilters: [
-			{
-				field: 'name',
-				operator: FilterOperator.CONTAINS,
-				valueString: '',
-				dataType: DataType.STRING,
-				id: 'initial-name',
-			},
-			{
-				field: 'status',
-				operator: FilterOperator.IN,
-				valueArray: [ENTITY_STATUS.PUBLISHED],
-				dataType: DataType.ARRAY,
-				id: 'initial-status',
-			},
-		],
-		initialSorts: [
-			{
-				field: 'updated_at',
-				label: 'Updated At',
-				direction: SortDirection.DESC,
-			},
-		],
-		debounceTime: 500,
-	});
-
-	const fetchCoupons = async () => {
-		return await CouponApi.getCouponsByFilters({
-			limit: limit,
-			offset: offset,
-			filters: sanitizedFilters,
-			sort: sanitizedSorts,
-		});
-	};
-
-	// Reset pagination only when filters or sorts actually change
-	usePaginationReset(reset, sanitizedFilters, sanitizedSorts);
-
-	const {
-		isLoading,
-		isError,
-		data: couponData,
-		probeData,
-	} = useQueryWithEmptyState({
-		main: {
-			queryKey: ['fetchCoupons', page, JSON.stringify(sanitizedFilters), JSON.stringify(sanitizedSorts)],
-			queryFn: fetchCoupons,
-		},
-		probe: {
-			queryKey: ['fetchCoupons', 'probe', page, JSON.stringify(sanitizedFilters), JSON.stringify(sanitizedSorts)],
-			queryFn: async () => {
-				return await CouponApi.getCouponsByFilters({
-					limit: 1,
-					offset: 0,
-					filters: [],
-					sort: [],
-				});
-			},
-		},
-		shouldProbe: (mainData) => {
-			return mainData?.items.length === 0;
-		},
-	});
-
-	// show empty page when no coupons and no search query
-	const showEmptyPage = useMemo(() => {
-		return !isLoading && probeData?.items.length === 0 && couponData?.items.length === 0;
-	}, [isLoading, probeData, couponData]);
+	const navigate = useNavigate();
 
 	const handleCreateCoupon = () => {
 		setSelectedCoupon(null);
 		setIsDrawerOpen(true);
 	};
 
-	// Handle error state
-	if (isError) {
-		toast.error('Error fetching coupons');
-		return null;
-	}
+	const handleEdit = (coupon: Coupon) => {
+		setSelectedCoupon(coupon);
+		setIsDrawerOpen(true);
+	};
 
-	if (isLoading) {
-		return <Loader />;
-	}
-
-	// Render empty state when no coupons and no search query
-	if (showEmptyPage) {
-		return (
-			<EmptyPage
-				heading='Coupons'
-				tags={['Coupons']}
-				tutorials={GUIDES.coupons.tutorials}
-				emptyStateCard={{
-					heading: 'Add Your First Coupon',
-					description: 'Create your first coupon to offer discounts to customers.',
-					buttonLabel: 'Create Coupon',
-					buttonAction: handleCreateCoupon,
-				}}
-				onAddClick={handleCreateCoupon}>
-				<CouponDrawer data={selectedCoupon} open={isDrawerOpen} onOpenChange={setIsDrawerOpen} refetchQueryKeys={['fetchCoupons']} />
-			</EmptyPage>
-		);
-	}
+	const columns: ColumnData<Coupon>[] = useMemo(
+		() => [
+			{
+				fieldName: 'name',
+				title: 'Name',
+			},
+			{
+				title: 'Type',
+				render: (row) => {
+					const label = row.type === COUPON_TYPE.FIXED ? 'Fixed Amount' : 'Percentage';
+					return <Chip variant='default' label={label} />;
+				},
+			},
+			{
+				title: 'Discount',
+				render: (row) => {
+					if (row.type === COUPON_TYPE.FIXED) {
+						return row.amount_off ? `${getCurrencySymbol(row.currency)} ${row.amount_off}` : '-';
+					} else {
+						return row.percentage_off ? `${row.percentage_off}%` : '-';
+					}
+				},
+			},
+			{
+				title: 'Redemptions',
+				render: (row) => {
+					const max = row.max_redemptions || '∞';
+					const current = row.total_redemptions;
+					return `${current}/${max}`;
+				},
+			},
+			{
+				title: 'Status',
+				render: (row) => {
+					const label = formatChips(row.status);
+					return <Chip variant={label === 'Active' ? 'success' : 'default'} label={label} />;
+				},
+			},
+			{
+				title: 'Updated at',
+				render: (row) => {
+					return formatDate(row.updated_at);
+				},
+			},
+			{
+				fieldVariant: 'interactive',
+				render: (row) => (
+					<ActionButton
+						id={row.id}
+						deleteMutationFn={(id) => CouponApi.deleteCoupon(id)}
+						refetchQueryKey='fetchCoupons'
+						entityName='Coupon'
+						edit={{
+							path: `${RouteNames.couponDetails}/${row.id}`,
+							onClick: () => handleEdit(row),
+						}}
+						archive={{
+							enabled: row.status === ENTITY_STATUS.PUBLISHED,
+						}}
+					/>
+				),
+			},
+		],
+		[],
+	);
 
 	return (
 		<>
@@ -199,19 +197,45 @@ const CouponsPage = () => {
 					</div>
 				}>
 				<ApiDocsContent tags={['Coupons']} />
-				<div>
-					<QueryBuilder
-						filterOptions={filterOptions}
-						filters={filters}
-						onFilterChange={setFilters}
-						sortOptions={sortingOptions}
-						onSortChange={setSorts}
-						selectedSorts={sorts}
-					/>
-					<CouponTable data={couponData?.items || []} />
-					<Spacer className='!h-4' />
-					<ShortPagination unit='Coupons' totalItems={couponData?.pagination.total ?? 0} />
-				</div>
+				<QueryableDataArea<Coupon>
+					queryConfig={{
+						filterOptions,
+						sortOptions: sortingOptions,
+						initialFilters,
+						initialSorts,
+						debounceTime: 500,
+					}}
+					dataConfig={{
+						queryKey: 'fetchCoupons',
+						fetchFn: async (params) => CouponApi.getCouponsByFilters(params),
+						probeFetchFn: async (params) =>
+							CouponApi.getCouponsByFilters({
+								...params,
+								limit: 1,
+								offset: 0,
+								filters: [],
+								sort: [],
+							}),
+					}}
+					tableConfig={{
+						columns,
+						onRowClick: (row) => {
+							navigate(`${RouteNames.couponDetails}/${row.id}`);
+						},
+						showEmptyRow: true,
+					}}
+					paginationConfig={{
+						unit: 'Coupons',
+					}}
+					emptyStateConfig={{
+						heading: 'Coupons',
+						description: 'Create your first coupon to offer discounts to customers.',
+						buttonLabel: 'Create Coupon',
+						buttonAction: handleCreateCoupon,
+						tags: ['Coupons'],
+						tutorials: GUIDES.coupons.tutorials,
+					}}
+				/>
 			</Page>
 			<CouponDrawer data={selectedCoupon} open={isDrawerOpen} onOpenChange={setIsDrawerOpen} refetchQueryKeys={['fetchCoupons']} />
 		</>

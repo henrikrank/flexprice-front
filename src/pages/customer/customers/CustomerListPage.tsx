@@ -1,15 +1,11 @@
-import { AddButton, Loader, Page, ShortPagination, Spacer } from '@/components/atoms';
-import { CreateCustomerDrawer, ApiDocsContent, QueryBuilder } from '@/components/molecules';
-import CustomerTable from '@/components/molecules/Customer/CustomerTable';
-import EmptyPage from '@/components/organisms/EmptyPage/EmptyPage';
+import { AddButton, Page, ActionButton, Chip } from '@/components/atoms';
+import { CreateCustomerDrawer, ApiDocsContent } from '@/components/molecules';
+import { ColumnData } from '@/components/molecules/Table';
+import { QueryableDataArea } from '@/components/organisms';
 import GUIDES from '@/constants/guides';
-import usePagination from '@/hooks/usePagination';
-import { usePaginationReset } from '@/hooks/usePaginationReset';
 import Customer from '@/models/Customer';
 import CustomerApi from '@/api/CustomerApi';
 import { useState, useMemo } from 'react';
-import toast from 'react-hot-toast';
-import useFilterSorting from '@/hooks/useFilterSorting';
 import {
 	FilterField,
 	FilterFieldType,
@@ -18,10 +14,16 @@ import {
 	FilterOperator,
 	SortOption,
 	SortDirection,
+	FilterCondition,
 } from '@/types/common/QueryBuilder';
 import { ENTITY_STATUS, EXPAND } from '@/models';
-import { useQueryWithEmptyState } from '@/hooks/useQueryWithEmptyState';
 import { generateExpandQueryParams } from '@/utils/common/api_helper';
+import { useNavigate } from 'react-router';
+import { RouteNames } from '@/core/routes/Routes';
+import formatDate from '@/utils/common/format_date';
+import formatChips from '@/utils/common/format_chips';
+import { ExternalLink } from 'lucide-react';
+import { useCustomerPortalUrl } from '@/hooks/useCustomerPortalUrl';
 
 const sortingOptions: SortOption[] = [
 	{
@@ -88,123 +90,108 @@ const filterOptions: FilterField[] = [
 	},
 ];
 
-const CustomerListPage = () => {
-	const { limit, offset, page, reset } = usePagination();
+const initialFilters: FilterCondition[] = [
+	{
+		field: 'name',
+		operator: FilterOperator.CONTAINS,
+		valueString: '',
+		dataType: DataType.STRING,
+		id: 'initial-name',
+	},
+	{
+		field: 'external_id',
+		operator: FilterOperator.CONTAINS,
+		valueString: '',
+		dataType: DataType.STRING,
+		id: 'initial-external-id',
+	},
+	{
+		field: 'status',
+		operator: FilterOperator.IN,
+		valueArray: [ENTITY_STATUS.PUBLISHED],
+		dataType: DataType.ARRAY,
+		id: 'initial-status',
+	},
+];
 
+const initialSorts: SortOption[] = [
+	{
+		field: 'updated_at',
+		label: 'Updated At',
+		direction: SortDirection.DESC,
+	},
+];
+
+const CustomerListPage = () => {
 	const [activeCustomer, setactiveCustomer] = useState<Customer>();
 	const [customerDrawerOpen, setcustomerDrawerOpen] = useState(false);
+	const navigate = useNavigate();
 
-	const { filters, sorts, setFilters, setSorts, sanitizedFilters, sanitizedSorts } = useFilterSorting({
-		initialFilters: [
-			{
-				field: 'name',
-				operator: FilterOperator.CONTAINS,
-				valueString: '',
-				dataType: DataType.STRING,
-				id: 'initial-name',
-			},
-			{
-				field: 'external_id',
-				operator: FilterOperator.CONTAINS,
-				valueString: '',
-				dataType: DataType.STRING,
-				id: 'initial-external-id',
-			},
-			{
-				field: 'status',
-				operator: FilterOperator.IN,
-				valueArray: [ENTITY_STATUS.PUBLISHED],
-				dataType: DataType.ARRAY,
-				id: 'initial-status',
-			},
-		],
-		initialSorts: [
-			{
-				field: 'updated_at',
-				label: 'Updated At',
-				direction: SortDirection.DESC,
-			},
-		],
-		debounceTime: 300,
-	});
-
-	// Reset pagination only when filters or sorts actually change
-	usePaginationReset(reset, sanitizedFilters, sanitizedSorts);
-
-	const fetchCustomers = async () => {
-		return await CustomerApi.getCustomersByFilters({
-			limit,
-			offset,
-			filters: sanitizedFilters,
-			sort: sanitizedSorts,
-			expand: generateExpandQueryParams([EXPAND.PARENT_CUSTOMER]),
-		});
+	const handleCreateCustomer = () => {
+		setactiveCustomer(undefined);
+		setcustomerDrawerOpen(true);
 	};
 
-	const {
-		data: customerData,
-		isLoading,
-		probeData,
-		isError,
-		error,
-	} = useQueryWithEmptyState({
-		main: {
-			queryKey: ['fetchCustomers', page, JSON.stringify(sanitizedFilters), JSON.stringify(sanitizedSorts)],
-			queryFn: fetchCustomers,
-		},
-		probe: {
-			queryKey: ['fetchCustomers', 'probe', page, JSON.stringify(sanitizedFilters), JSON.stringify(sanitizedSorts)],
-			queryFn: async () => {
-				return await CustomerApi.getCustomersByFilters({
-					limit: 1,
-					offset: 0,
-					filters: [],
-					sort: [],
-				});
+	const handleEdit = (customer: Customer) => {
+		setactiveCustomer(customer);
+		setcustomerDrawerOpen(true);
+	};
+
+	// Define columns with proper type safety
+	const columns: ColumnData<Customer>[] = useMemo(
+		() => [
+			{ fieldName: 'name', title: 'Name', width: '400px' },
+			{ fieldName: 'external_id', title: 'External ID' },
+			{
+				title: 'Status',
+				render: (row) => {
+					const label = formatChips(row.status);
+					return <Chip variant={label === 'Active' ? 'success' : 'default'} label={label} />;
+				},
 			},
-		},
-		shouldProbe: (mainData) => {
-			return mainData?.items.length === 0;
-		},
-	});
-
-	const showEmptyPage = useMemo(() => {
-		return !isLoading && probeData?.items.length === 0 && customerData?.items.length === 0;
-	}, [isLoading, probeData, customerData]);
-
-	if (isError) {
-		const err = error as ServerError;
-		toast.error(err.error.message || 'Error fetching customers');
-		return <div>Error fetching customers</div>;
-	}
-
-	if (isLoading) {
-		return <Loader />;
-	}
-
-	if (showEmptyPage) {
-		return (
-			<EmptyPage
-				heading='Customers'
-				tags={['Customers']}
-				emptyStateCard={{
-					heading: 'Create Your First Customer',
-					description: 'Create a plan to display pricing and start billing customers.',
-					buttonLabel: 'Create Customer',
-					buttonAction: () => {
-						setactiveCustomer(undefined);
-						setcustomerDrawerOpen(true);
-					},
-				}}
-				tutorials={GUIDES.customers.tutorials}
-				onAddClick={() => {
-					setactiveCustomer(undefined);
-					setcustomerDrawerOpen(true);
-				}}>
-				<CreateCustomerDrawer open={customerDrawerOpen} onOpenChange={setcustomerDrawerOpen} data={activeCustomer} />
-			</EmptyPage>
-		);
-	}
+			{
+				title: 'Updated at',
+				render: (row) => {
+					return <>{formatDate(row.updated_at)}</>;
+				},
+			},
+			{
+				title: '',
+				fieldVariant: 'interactive',
+				render: (row) => {
+					// Create a component that uses the hook properly
+					const ActionButtonWithPortal = ({ customer }: { customer: Customer }) => {
+						const { openInNewTab } = useCustomerPortalUrl(customer.external_id);
+						return (
+							<ActionButton
+								id={customer.id}
+								deleteMutationFn={(id) => CustomerApi.deleteCustomerById(id)}
+								refetchQueryKey='fetchCustomers'
+								entityName='Customer'
+								edit={{
+									enabled: customer.status === ENTITY_STATUS.PUBLISHED,
+									path: `/billing/customers/edit-customer?id=${customer.id}`,
+									onClick: () => handleEdit(customer),
+								}}
+								archive={{
+									enabled: customer.status === ENTITY_STATUS.PUBLISHED,
+								}}
+								customActions={[
+									{
+										text: 'Open Customer Portal',
+										icon: <ExternalLink className='h-4 w-4' />,
+										onClick: openInNewTab,
+									},
+								]}
+							/>
+						);
+					};
+					return <ActionButtonWithPortal customer={row} />;
+				},
+			},
+		],
+		[],
+	);
 
 	return (
 		<Page
@@ -226,33 +213,50 @@ const CustomerListPage = () => {
 				</div>
 			}>
 			<ApiDocsContent tags={['Customers']} />
-			<div>
-				<QueryBuilder
-					filterOptions={filterOptions}
-					filters={filters}
-					onFilterChange={setFilters}
-					sortOptions={sortingOptions}
-					onSortChange={setSorts}
-					selectedSorts={sorts}
-				/>
-				{isLoading ? (
-					<div className='flex justify-center items-center min-h-[200px]'>
-						<Loader />
-					</div>
-				) : (
-					<>
-						<CustomerTable
-							onEdit={(data) => {
-								setactiveCustomer(data);
-								setcustomerDrawerOpen(true);
-							}}
-							data={customerData?.items || []}
-						/>
-						<Spacer className='!h-4' />
-						<ShortPagination unit='Customers' totalItems={customerData?.pagination.total ?? 0} />
-					</>
-				)}
-			</div>
+			<QueryableDataArea<Customer>
+				queryConfig={{
+					filterOptions,
+					sortOptions: sortingOptions,
+					initialFilters,
+					initialSorts,
+					debounceTime: 300,
+				}}
+				dataConfig={{
+					queryKey: 'fetchCustomers',
+					fetchFn: async (params) =>
+						CustomerApi.getCustomersByFilters({
+							...params,
+							expand: generateExpandQueryParams([EXPAND.PARENT_CUSTOMER]),
+						}),
+					probeFetchFn: async (params) =>
+						CustomerApi.getCustomersByFilters({
+							...params,
+							limit: 1,
+							offset: 0,
+							filters: [],
+							sort: [],
+						}),
+				}}
+				tableConfig={{
+					columns,
+					onRowClick: (row) => {
+						navigate(RouteNames.customers + `/${row?.id}`);
+					},
+					showEmptyRow: true,
+				}}
+				paginationConfig={{
+					unit: 'Customers',
+				}}
+				emptyStateConfig={{
+					heading: 'Customers',
+					description: 'Create a plan to display pricing and start billing customers.',
+					buttonLabel: 'Create Customer',
+					buttonAction: handleCreateCustomer,
+					tags: ['Customers'],
+					tutorials: GUIDES.customers.tutorials,
+				}}
+			/>
+			<CreateCustomerDrawer open={customerDrawerOpen} onOpenChange={setcustomerDrawerOpen} data={activeCustomer} />
 		</Page>
 	);
 };

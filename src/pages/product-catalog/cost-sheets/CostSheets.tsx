@@ -1,13 +1,11 @@
-import { AddButton, Loader, Page, ShortPagination, Spacer } from '@/components/atoms';
-import { CostSheetTable, ApiDocsContent, CostSheetDrawer, QueryBuilder } from '@/components/molecules';
-import { EmptyPage } from '@/components/organisms';
+import { AddButton, Page, ActionButton, Chip } from '@/components/atoms';
+import { ApiDocsContent, CostSheetDrawer } from '@/components/molecules';
+import { ColumnData } from '@/components/molecules/Table';
+import { QueryableDataArea } from '@/components/organisms';
 import CostSheet from '@/models/CostSheet';
-import usePagination from '@/hooks/usePagination';
-import { usePaginationReset } from '@/hooks/usePaginationReset';
 import GUIDES from '@/constants/guides';
 import { useState, useMemo } from 'react';
 import CostSheetApi from '@/api/CostSheetApi';
-import toast from 'react-hot-toast';
 import {
 	FilterField,
 	FilterFieldType,
@@ -16,10 +14,13 @@ import {
 	FilterOperator,
 	SortOption,
 	SortDirection,
+	FilterCondition,
 } from '@/types/common/QueryBuilder';
 import { ENTITY_STATUS } from '@/models';
-import useFilterSorting from '@/hooks/useFilterSorting';
-import { useQueryWithEmptyState } from '@/hooks/useQueryWithEmptyState';
+import { useNavigate } from 'react-router';
+import { RouteNames } from '@/core/routes/Routes';
+import formatChips from '@/utils/common/format_chips';
+import formatDate from '@/utils/common/format_date';
 
 const sortingOptions: SortOption[] = [
 	{
@@ -74,120 +75,94 @@ const filterOptions: FilterField[] = [
 	},
 ];
 
+const initialFilters: FilterCondition[] = [
+	{
+		field: 'name',
+		operator: FilterOperator.CONTAINS,
+		valueString: '',
+		dataType: DataType.STRING,
+		id: 'initial-name',
+	},
+	{
+		field: 'status',
+		operator: FilterOperator.IN,
+		valueArray: [ENTITY_STATUS.PUBLISHED],
+		dataType: DataType.ARRAY,
+		id: 'initial-status',
+	},
+];
+
+const initialSorts: SortOption[] = [
+	{
+		field: 'updated_at',
+		label: 'Updated At',
+		direction: SortDirection.DESC,
+	},
+];
+
 const CostSheetsPage = () => {
-	const { limit, offset, page, reset } = usePagination();
 	const [activeCostSheet, setActiveCostSheet] = useState<CostSheet | null>(null);
 	const [costSheetDrawerOpen, setCostSheetDrawerOpen] = useState(false);
-
-	const { filters, sorts, setFilters, setSorts, sanitizedFilters, sanitizedSorts } = useFilterSorting({
-		initialFilters: [
-			{
-				field: 'name',
-				operator: FilterOperator.CONTAINS,
-				valueString: '',
-				dataType: DataType.STRING,
-				id: 'initial-name',
-			},
-			{
-				field: 'status',
-				operator: FilterOperator.IN,
-				valueArray: [ENTITY_STATUS.PUBLISHED],
-				dataType: DataType.ARRAY,
-				id: 'initial-status',
-			},
-		],
-		initialSorts: [
-			{
-				field: 'updated_at',
-				label: 'Updated At',
-				direction: SortDirection.DESC,
-			},
-		],
-		debounceTime: 500,
-	});
-
-	const fetchCostSheets = async () => {
-		return await CostSheetApi.GetCostSheetsByFilter({
-			limit: limit,
-			offset: offset,
-			filters: sanitizedFilters,
-			sort: sanitizedSorts,
-		});
-	};
-
-	// Reset pagination only when filters or sorts actually change
-	usePaginationReset(reset, sanitizedFilters, sanitizedSorts);
-
-	const {
-		data: costSheetsData,
-		isLoading,
-		probeData,
-		isError,
-		error,
-	} = useQueryWithEmptyState({
-		main: {
-			queryKey: ['fetchCostSheets', page, JSON.stringify(sanitizedFilters), JSON.stringify(sanitizedSorts)],
-			queryFn: fetchCostSheets,
-		},
-		probe: {
-			queryKey: ['fetchCostSheets', 'probe', page, JSON.stringify(sanitizedFilters), JSON.stringify(sanitizedSorts)],
-			queryFn: async () => {
-				return await CostSheetApi.GetCostSheetsByFilter({
-					limit: 1,
-					offset: 0,
-					filters: [],
-					sort: [],
-				});
-			},
-		},
-		shouldProbe: (mainData) => {
-			return (mainData?.items?.length ?? 0) === 0;
-		},
-	});
-
-	const showEmptyPage = useMemo(() => {
-		return !isLoading && (probeData?.items?.length ?? 0) === 0 && (costSheetsData?.items?.length ?? 0) === 0;
-	}, [isLoading, probeData, costSheetsData]);
+	const navigate = useNavigate();
 
 	const handleOnAdd = () => {
 		setActiveCostSheet(null);
 		setCostSheetDrawerOpen(true);
 	};
 
-	if (isError) {
-		const err = error as any;
-		toast.error(err?.error?.message || 'Error fetching cost sheets');
-		return null;
-	}
+	const handleEdit = (costSheet: CostSheet) => {
+		setActiveCostSheet(costSheet);
+		setCostSheetDrawerOpen(true);
+	};
 
-	if (isLoading) {
-		return <Loader />;
-	}
-
-	if (showEmptyPage) {
-		return (
-			<div className='space-y-6'>
-				<CostSheetDrawer
-					data={activeCostSheet}
-					open={costSheetDrawerOpen}
-					onOpenChange={setCostSheetDrawerOpen}
-					refetchQueryKeys={['fetchCostSheets']}
-				/>
-				<EmptyPage
-					onAddClick={handleOnAdd}
-					emptyStateCard={{
-						heading: 'Add Your First Cost Sheet',
-						description: 'Create your first cost sheet to define pricing structures and charges.',
-						buttonLabel: 'Create Cost Sheet',
-						buttonAction: handleOnAdd,
-					}}
-					tutorials={GUIDES.features.tutorials}
-					heading='Cost Sheets'
-					tags={['Cost Sheets']}
-				/>
-			</div>
-		);
-	}
+	const columns: ColumnData<CostSheet>[] = useMemo(
+		() => [
+			{
+				fieldName: 'name',
+				title: 'Cost Sheet Name',
+			},
+			{
+				fieldName: 'lookup_key',
+				title: 'Lookup Key',
+			},
+			{
+				title: 'Status',
+				render: (row) => {
+					const label = formatChips(row?.status);
+					return <Chip variant={label === 'Active' ? 'success' : 'default'} label={label} />;
+				},
+			},
+			{
+				title: 'Updated At',
+				render: (row) => {
+					return formatDate(row?.updated_at);
+				},
+			},
+			{
+				fieldVariant: 'interactive',
+				render(row) {
+					return (
+						<ActionButton
+							id={row?.id}
+							deleteMutationFn={async () => {
+								return await CostSheetApi.DeleteCostSheet(row?.id);
+							}}
+							refetchQueryKey='fetchCostSheets'
+							entityName={row?.name}
+							edit={{
+								enabled: true,
+								onClick: () => handleEdit(row),
+							}}
+							archive={{
+								enabled: row?.status !== ENTITY_STATUS.ARCHIVED,
+							}}
+						/>
+					);
+				},
+			},
+		],
+		[],
+	);
 
 	return (
 		<Page heading='Cost Sheets' headingCTA={<AddButton onClick={handleOnAdd} />}>
@@ -199,32 +174,45 @@ const CostSheetsPage = () => {
 			/>
 			<ApiDocsContent tags={['Cost Sheets']} />
 			<div className='space-y-6'>
-				<QueryBuilder
-					filterOptions={filterOptions}
-					filters={filters}
-					onFilterChange={setFilters}
-					sortOptions={sortingOptions}
-					onSortChange={setSorts}
-					selectedSorts={sorts}
+				<QueryableDataArea<CostSheet>
+					queryConfig={{
+						filterOptions,
+						sortOptions: sortingOptions,
+						initialFilters,
+						initialSorts,
+						debounceTime: 500,
+					}}
+					dataConfig={{
+						queryKey: 'fetchCostSheets',
+						fetchFn: async (params) => CostSheetApi.GetCostSheetsByFilter(params),
+						probeFetchFn: async (params) =>
+							CostSheetApi.GetCostSheetsByFilter({
+								...params,
+								limit: 1,
+								offset: 0,
+								filters: [],
+								sort: [],
+							}),
+					}}
+					tableConfig={{
+						columns,
+						onRowClick: (row) => {
+							navigate(RouteNames.costSheetDetails + `/${row?.id}`);
+						},
+						showEmptyRow: true,
+					}}
+					paginationConfig={{
+						unit: 'Cost Sheets',
+					}}
+					emptyStateConfig={{
+						heading: 'Cost Sheets',
+						description: 'Create your first cost sheet to define pricing structures and charges.',
+						buttonLabel: 'Create Cost Sheet',
+						buttonAction: handleOnAdd,
+						tags: ['Cost Sheets'],
+						tutorials: GUIDES.features.tutorials,
+					}}
 				/>
-
-				{isLoading ? (
-					<div className='flex justify-center items-center min-h-[200px]'>
-						<Loader />
-					</div>
-				) : (
-					<>
-						<CostSheetTable
-							data={(costSheetsData?.items || []) as CostSheet[]}
-							onEdit={(costSheet: CostSheet) => {
-								setActiveCostSheet(costSheet);
-								setCostSheetDrawerOpen(true);
-							}}
-						/>
-						<Spacer className='!h-4' />
-						<ShortPagination unit='Cost Sheets' totalItems={costSheetsData?.pagination.total ?? 0} />
-					</>
-				)}
 			</div>
 		</Page>
 	);

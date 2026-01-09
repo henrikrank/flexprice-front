@@ -1,15 +1,13 @@
-import { AddButton, Loader, Page, ShortPagination, Spacer } from '@/components/atoms';
-import { ApiDocsContent, FeatureTable, FeatureDrawer } from '@/components/molecules';
-import EmptyPage from '@/components/organisms/EmptyPage/EmptyPage';
+import { AddButton, Page, ActionButton, Chip } from '@/components/atoms';
+import { ApiDocsContent, FeatureDrawer } from '@/components/molecules';
+import { ColumnData } from '@/components/molecules/Table';
+import { QueryableDataArea } from '@/components/organisms';
 import { RouteNames } from '@/core/routes/Routes';
 import GUIDES from '@/constants/guides';
-import usePagination from '@/hooks/usePagination';
-import { usePaginationReset } from '@/hooks/usePaginationReset';
 import FeatureApi from '@/api/FeatureApi';
-import toast from 'react-hot-toast';
 import { Link, useNavigate } from 'react-router';
-import { useMemo, useState } from 'react';
-import Feature from '@/models/Feature';
+import { useState, useMemo } from 'react';
+import Feature, { FEATURE_TYPE } from '@/models/Feature';
 import {
 	FilterField,
 	FilterFieldType,
@@ -18,12 +16,13 @@ import {
 	FilterOperator,
 	SortOption,
 	SortDirection,
+	FilterCondition,
 } from '@/types/common/QueryBuilder';
-import { QueryBuilder } from '@/components/molecules';
 import { ENTITY_STATUS } from '@/models';
-import { FEATURE_TYPE } from '@/models/Feature';
-import useFilterSorting from '@/hooks/useFilterSorting';
-import { useQueryWithEmptyState } from '@/hooks/useQueryWithEmptyState';
+import { toSentenceCase } from '@/utils/common/helper_functions';
+import formatChips from '@/utils/common/format_chips';
+import formatDate from '@/utils/common/format_date';
+import { getFeatureIcon } from '@/components/atoms/SelectFeature/SelectFeature';
 
 const sortingOptions: SortOption[] = [
 	{
@@ -83,111 +82,106 @@ const filterOptions: FilterField[] = [
 	},
 ];
 
+const initialFilters: FilterCondition[] = [
+	{
+		field: 'name',
+		operator: FilterOperator.CONTAINS,
+		valueString: '',
+		dataType: DataType.STRING,
+		id: 'initial-name',
+	},
+	{
+		field: 'status',
+		operator: FilterOperator.IN,
+		valueArray: [ENTITY_STATUS.PUBLISHED],
+		dataType: DataType.ARRAY,
+		id: 'initial-status',
+	},
+];
+
+const initialSorts: SortOption[] = [
+	{
+		field: 'updated_at',
+		label: 'Updated At',
+		direction: SortDirection.DESC,
+	},
+];
+
+const getFeatureTypeChips = (type: string, addIcon: boolean = false) => {
+	const icon = getFeatureIcon(type);
+	switch (type.toLocaleLowerCase()) {
+		case FEATURE_TYPE.STATIC: {
+			return <Chip textColor='#4B5563' bgColor='#F3F4F6' icon={addIcon ? icon : null} label={toSentenceCase(type)} className='text-xs' />;
+		}
+		case FEATURE_TYPE.METERED:
+			return <Chip textColor='#1E40AF' bgColor='#DBEAFE' icon={addIcon ? icon : null} label={toSentenceCase(type)} className='text-xs' />;
+		case FEATURE_TYPE.BOOLEAN:
+			return <Chip textColor='#166534' bgColor='#DCFCE7' icon={addIcon ? icon : null} label={toSentenceCase(type)} className='text-xs' />;
+		default:
+			return <Chip textColor='#6B7280' bgColor='#F9FAFB' icon={addIcon ? icon : null} label={toSentenceCase(type)} className='text-xs' />;
+	}
+};
+
 const FeaturesPage = () => {
-	const { limit, offset, page, reset } = usePagination();
 	const [isDrawerOpen, setIsDrawerOpen] = useState(false);
 	const [selectedFeature, setSelectedFeature] = useState<Feature | null>(null);
-
-	// Add debounce to search query
-
-	const { filters, sorts, setFilters, setSorts, sanitizedFilters, sanitizedSorts } = useFilterSorting({
-		initialFilters: [
-			{
-				field: 'name',
-				operator: FilterOperator.CONTAINS,
-				valueString: '',
-				dataType: DataType.STRING,
-				id: 'initial-name',
-			},
-			{
-				field: 'status',
-				operator: FilterOperator.IN,
-				valueArray: [ENTITY_STATUS.PUBLISHED],
-				dataType: DataType.ARRAY,
-				id: 'initial-status',
-			},
-		],
-		initialSorts: [
-			{
-				field: 'updated_at',
-				label: 'Updated At',
-				direction: SortDirection.DESC,
-			},
-		],
-		debounceTime: 500,
-	});
-
-	const fetchFeatures = async () => {
-		return await FeatureApi.getFeaturesByFilter({
-			limit: limit,
-			offset: offset,
-			filters: sanitizedFilters,
-			sort: sanitizedSorts,
-		});
-	};
 	const navigate = useNavigate();
 
-	// Reset pagination only when filters or sorts actually change
-	usePaginationReset(reset, sanitizedFilters, sanitizedSorts);
+	const handleEdit = (feature: Feature) => {
+		setSelectedFeature(feature);
+		setIsDrawerOpen(true);
+	};
 
-	const {
-		isLoading,
-		isError,
-		data: featureData,
-		probeData,
-	} = useQueryWithEmptyState({
-		main: {
-			queryKey: ['fetchFeatures', page, JSON.stringify(sanitizedFilters), JSON.stringify(sanitizedSorts)],
-			queryFn: fetchFeatures,
-		},
-		probe: {
-			queryKey: ['fetchFeatures', 'probe', page, JSON.stringify(sanitizedFilters), JSON.stringify(sanitizedSorts)],
-			queryFn: async () => {
-				return await FeatureApi.getFeaturesByFilter({
-					limit: 1,
-					offset: 0,
-					filters: [],
-					sort: [],
-				});
+	const columns: ColumnData<Feature>[] = useMemo(
+		() => [
+			{
+				fieldName: 'name',
+				title: 'Feature Name',
 			},
-		},
-		shouldProbe: (mainData) => {
-			return mainData?.items.length === 0;
-		},
-	});
-
-	// show empty page when no features and no search query
-	const showEmptyPage = useMemo(() => {
-		return !isLoading && probeData?.items.length === 0 && featureData?.items.length === 0;
-	}, [isLoading, probeData, featureData]);
-
-	if (isLoading) {
-		return <Loader />;
-	}
-
-	// Handle error state
-	if (isError) {
-		toast.error('Error fetching features');
-		return null;
-	}
-
-	// Render empty state when no features and no search query
-	if (showEmptyPage) {
-		return (
-			<EmptyPage
-				heading='Features'
-				tags={['Features']}
-				tutorials={GUIDES.features.tutorials}
-				emptyStateCard={{
-					heading: 'Add Your First Feature',
-					description: 'Create your first feature to define what customers pay for.',
-					buttonLabel: 'Create Feature',
-					buttonAction: () => navigate(RouteNames.createFeature),
-				}}
-				onAddClick={() => navigate(RouteNames.createFeature)}
-			/>
-		);
-	}
+			{
+				title: 'Type',
+				render(row) {
+					return getFeatureTypeChips(row?.type || '', true);
+				},
+			},
+			{
+				title: 'Status',
+				render: (row) => {
+					const label = formatChips(row?.status);
+					return <Chip variant={label === 'Active' ? 'success' : 'default'} label={label} />;
+				},
+			},
+			{
+				title: 'Updated At',
+				render: (row) => {
+					return formatDate(row?.updated_at);
+				},
+			},
+			{
+				fieldVariant: 'interactive',
+				render(row) {
+					return (
+						<ActionButton
+							id={row?.id}
+							deleteMutationFn={async () => {
+								return await FeatureApi.deleteFeature(row?.id);
+							}}
+							refetchQueryKey='fetchFeatures'
+							entityName={row?.name}
+							archive={{
+								enabled: row?.status !== ENTITY_STATUS.ARCHIVED,
+							}}
+							edit={{
+								enabled: true,
+								onClick: () => handleEdit(row),
+							}}
+						/>
+					);
+				},
+			},
+		],
+		[],
+	);
 
 	return (
 		<Page
@@ -200,25 +194,45 @@ const FeaturesPage = () => {
 				</div>
 			}>
 			<ApiDocsContent tags={['Features']} />
-			<div>
-				<QueryBuilder
-					filterOptions={filterOptions}
-					filters={filters}
-					onFilterChange={setFilters}
-					sortOptions={sortingOptions}
-					onSortChange={setSorts}
-					selectedSorts={sorts}
-				/>
-				<FeatureTable
-					data={featureData?.items || []}
-					onEdit={(feature) => {
-						setSelectedFeature(feature);
-						setIsDrawerOpen(true);
-					}}
-				/>
-				<Spacer className='!h-4' />
-				<ShortPagination unit='Features' totalItems={featureData?.pagination.total ?? 0} />
-			</div>
+			<QueryableDataArea<Feature>
+				queryConfig={{
+					filterOptions,
+					sortOptions: sortingOptions,
+					initialFilters,
+					initialSorts,
+					debounceTime: 500,
+				}}
+				dataConfig={{
+					queryKey: 'fetchFeatures',
+					fetchFn: async (params) => FeatureApi.getFeaturesByFilter(params),
+					probeFetchFn: async (params) =>
+						FeatureApi.getFeaturesByFilter({
+							...params,
+							limit: 1,
+							offset: 0,
+							filters: [],
+							sort: [],
+						}),
+				}}
+				tableConfig={{
+					columns,
+					onRowClick: (row) => {
+						navigate(RouteNames.featureDetails + `/${row?.id}`);
+					},
+					showEmptyRow: true,
+				}}
+				paginationConfig={{
+					unit: 'Features',
+				}}
+				emptyStateConfig={{
+					heading: 'Features',
+					description: 'Create your first feature to define what customers pay for.',
+					buttonLabel: 'Create Feature',
+					buttonAction: () => navigate(RouteNames.createFeature),
+					tags: ['Features'],
+					tutorials: GUIDES.features.tutorials,
+				}}
+			/>
 			{selectedFeature && (
 				<FeatureDrawer data={selectedFeature} open={isDrawerOpen} onOpenChange={setIsDrawerOpen} refetchQueryKeys={['fetchFeatures']} />
 			)}

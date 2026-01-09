@@ -1,23 +1,31 @@
-import { Loader, Page, ShortPagination, Spacer } from '@/components/atoms';
-import { QueryBuilder } from '@/components/molecules';
-import { SubscriptionTable } from '@/components/molecules/SubscriptionTable';
-import EmptyPage from '@/components/organisms/EmptyPage/EmptyPage';
+import { Page, ActionButton, Chip } from '@/components/atoms';
+import { RedirectCell } from '@/components/molecules';
+import { ColumnData } from '@/components/molecules/Table';
+import { QueryableDataArea } from '@/components/organisms';
 import GUIDES from '@/constants/guides';
-import usePagination from '@/hooks/usePagination';
-import { usePaginationReset } from '@/hooks/usePaginationReset';
 import SubscriptionApi from '@/api/SubscriptionApi';
-import toast from 'react-hot-toast';
-import { useMemo } from 'react';
-import { FilterField, FilterFieldType, DataType, FilterOperator, SortOption, SortDirection } from '@/types/common/QueryBuilder';
-import useFilterSorting from '@/hooks/useFilterSorting';
-import { useQueryWithEmptyState } from '@/hooks/useQueryWithEmptyState';
+import {
+	FilterField,
+	FilterFieldType,
+	DataType,
+	FilterOperator,
+	SortOption,
+	SortDirection,
+	FilterCondition,
+} from '@/types/common/QueryBuilder';
 import { BILLING_CADENCE } from '@/models/Invoice';
 import { BILLING_PERIOD } from '@/constants/constants';
-import { SUBSCRIPTION_STATUS } from '@/models/Subscription';
+import { SUBSCRIPTION_CANCELLATION_TYPE, SUBSCRIPTION_STATUS } from '@/models/Subscription';
 import { toSentenceCase } from '@/utils/common/helper_functions';
 import { EXPAND } from '@/models/expand';
 import { generateExpandQueryParams } from '@/utils/common/api_helper';
 import { searchCustomersForFilter, searchPlansForFilter } from '@/utils/filterSearchHelpers';
+import { useNavigate } from 'react-router';
+import { RouteNames } from '@/core/routes/Routes';
+import formatDate from '@/utils/common/format_date';
+import { Trash2 } from 'lucide-react';
+import { SubscriptionResponse } from '@/types/dto/Subscription';
+import { useMemo } from 'react';
 
 const sortingOptions: SortOption[] = [
 	{
@@ -100,121 +108,141 @@ const filterOptions: FilterField[] = [
 	},
 ];
 
+const initialFilters: FilterCondition[] = [
+	{
+		field: 'subscription_status',
+		operator: FilterOperator.IN,
+		valueArray: [SUBSCRIPTION_STATUS.ACTIVE],
+		dataType: DataType.ARRAY,
+		id: 'initial-status',
+	},
+];
+
+const initialSorts: SortOption[] = [
+	{
+		field: 'updated_at',
+		label: 'Updated At',
+		direction: SortDirection.DESC,
+	},
+];
+
+const getSubscriptionStatusChip = (status: SUBSCRIPTION_STATUS) => {
+	switch (status) {
+		case SUBSCRIPTION_STATUS.ACTIVE:
+			return <Chip variant='success' label='Active' />;
+		case SUBSCRIPTION_STATUS.CANCELLED:
+			return <Chip variant='failed' label='Cancelled' />;
+		case SUBSCRIPTION_STATUS.INCOMPLETE:
+			return <Chip variant='warning' label='Incomplete' />;
+		case SUBSCRIPTION_STATUS.TRIALING:
+			return <Chip variant='warning' label='Trialing' />;
+		case SUBSCRIPTION_STATUS.DRAFT:
+			return <Chip variant='warning' label='Draft' />;
+		default:
+			return <Chip variant='default' label='Inactive' />;
+	}
+};
+
 const SubscriptionsPage = () => {
-	const { limit, offset, page, reset } = usePagination();
+	const navigate = useNavigate();
 
-	const { filters, sorts, setFilters, setSorts, sanitizedFilters, sanitizedSorts } = useFilterSorting({
-		initialFilters: [
+	const columns: ColumnData<SubscriptionResponse>[] = useMemo(
+		() => [
 			{
-				field: 'subscription_status',
-				operator: FilterOperator.IN,
-				valueArray: [SUBSCRIPTION_STATUS.ACTIVE],
-				dataType: DataType.ARRAY,
-				id: 'initial-status',
+				title: 'Customer',
+				render: (row) => (
+					<RedirectCell redirectUrl={`${RouteNames.customers}/${row.customer_id}`}>{row.customer?.name || row.customer_id}</RedirectCell>
+				),
+			},
+			{
+				title: 'Plan',
+				render: (row) => <RedirectCell redirectUrl={`${RouteNames.plan}/${row.plan_id}`}>{row.plan?.name || row.plan_id}</RedirectCell>,
+			},
+			{
+				title: 'Status',
+				render: (row) => {
+					return getSubscriptionStatusChip(row.subscription_status);
+				},
+			},
+			{
+				title: 'Start Date',
+				render: (row) => formatDate(row.start_date),
+			},
+			{
+				title: 'Renewal Date',
+				render: (row) => formatDate(row.current_period_end),
+			},
+			{
+				fieldVariant: 'interactive',
+				render: (row) => (
+					<ActionButton
+						id={row.id}
+						deleteMutationFn={async (id) => {
+							await SubscriptionApi.cancelSubscription(id, {
+								cancellation_type: SUBSCRIPTION_CANCELLATION_TYPE.IMMEDIATE,
+							});
+						}}
+						refetchQueryKey='fetchSubscriptions'
+						entityName='Subscription'
+						edit={{
+							path: `${RouteNames.subscriptions}/${row.id}/edit`,
+						}}
+						archive={{
+							enabled: row.subscription_status !== SUBSCRIPTION_STATUS.CANCELLED,
+							text: 'Cancel',
+							icon: <Trash2 />,
+						}}
+					/>
+				),
 			},
 		],
-		initialSorts: [
-			{
-				field: 'updated_at',
-				label: 'Updated At',
-				direction: SortDirection.DESC,
-			},
-		],
-		debounceTime: 300, // Match the debounce time used in other pages
-	});
-
-	const fetchSubscriptions = async () => {
-		return await SubscriptionApi.searchSubscriptions({
-			limit: limit,
-			offset: offset,
-			filters: sanitizedFilters,
-			sort: sanitizedSorts,
-			expand: generateExpandQueryParams([EXPAND.CUSTOMER]),
-		});
-	};
-
-	// Reset pagination only when filters or sorts actually change
-	usePaginationReset(reset, sanitizedFilters, sanitizedSorts);
-
-	const {
-		isLoading,
-		isError,
-		data: subscriptionData,
-		probeData,
-	} = useQueryWithEmptyState({
-		main: {
-			queryKey: ['fetchSubscriptions', page, JSON.stringify(sanitizedFilters), JSON.stringify(sanitizedSorts)],
-			queryFn: fetchSubscriptions,
-		},
-		probe: {
-			queryKey: ['fetchSubscriptionsForProbe', 'probe', page, JSON.stringify(sanitizedFilters), JSON.stringify(sanitizedSorts)],
-			queryFn: async () => {
-				return await SubscriptionApi.searchSubscriptions({
-					limit: 1,
-					offset: 0,
-					filters: [],
-					sort: [],
-				});
-			},
-		},
-		shouldProbe: (mainData) => {
-			return mainData?.items.length === 0;
-		},
-	});
-
-	// show empty page when no subscriptions and no search query
-	const showEmptyPage = useMemo(() => {
-		return !isLoading && probeData?.items.length === 0 && subscriptionData?.items.length === 0;
-	}, [isLoading, probeData, subscriptionData]);
-
-	if (isError) {
-		toast.error('Error fetching subscriptions');
-		return null;
-	}
-
-	if (isLoading) {
-		return <Loader />;
-	}
-
-	// Render empty state when no subscriptions and no search query
-	if (showEmptyPage) {
-		return (
-			<EmptyPage
-				heading='Subscriptions'
-				tags={['Subscriptions']}
-				tutorials={GUIDES.customers.tutorials}
-				emptyStateCard={{
-					heading: 'Add Your First Subscription',
-					description: 'Create your first subscription to start billing your customers.',
-					buttonLabel: 'Create Subscription',
-				}}
-			/>
-		);
-	}
+		[],
+	);
 
 	return (
 		<Page heading='Subscriptions'>
-			<div>
-				<QueryBuilder
-					filterOptions={filterOptions}
-					filters={filters}
-					onFilterChange={setFilters}
-					sortOptions={sortingOptions}
-					onSortChange={setSorts}
-					selectedSorts={sorts}
-				/>
-				{isLoading ? (
-					<div className='flex justify-center items-center min-h-[200px]'>
-						<Loader />
-					</div>
-				) : (
-					<>
-						<SubscriptionTable data={subscriptionData?.items || []} />
-						<Spacer className='!h-4' />
-						<ShortPagination unit='Subscriptions' totalItems={subscriptionData?.pagination.total ?? 0} />
-					</>
-				)}
-			</div>
+			<QueryableDataArea<SubscriptionResponse>
+				queryConfig={{
+					filterOptions,
+					sortOptions: sortingOptions,
+					initialFilters,
+					initialSorts,
+					debounceTime: 300,
+				}}
+				dataConfig={{
+					queryKey: 'fetchSubscriptions',
+					fetchFn: async (params) =>
+						SubscriptionApi.searchSubscriptions({
+							...params,
+							expand: generateExpandQueryParams([EXPAND.CUSTOMER]),
+						}),
+					probeFetchFn: async (params) =>
+						SubscriptionApi.searchSubscriptions({
+							...params,
+							limit: 1,
+							offset: 0,
+							filters: [],
+							sort: [],
+						}),
+				}}
+				tableConfig={{
+					columns,
+					onRowClick: (row) => {
+						navigate(`${RouteNames.customers}/${row?.customer_id}/subscription/${row?.id}`);
+					},
+					showEmptyRow: true,
+				}}
+				paginationConfig={{
+					unit: 'Subscriptions',
+				}}
+				emptyStateConfig={{
+					heading: 'Subscriptions',
+					description: 'Create your first subscription to start billing your customers.',
+					buttonLabel: 'Create Subscription',
+					tags: ['Subscriptions'],
+					tutorials: GUIDES.customers.tutorials,
+				}}
+			/>
 		</Page>
 	);
 };

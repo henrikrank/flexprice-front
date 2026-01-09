@@ -1,14 +1,11 @@
-import { AddButton, Loader, Page, ShortPagination, Spacer } from '@/components/atoms';
-import { PlansTable, ApiDocsContent, PlanDrawer, QueryBuilder } from '@/components/molecules';
+import { AddButton, Page, ActionButton, Chip } from '@/components/atoms';
+import { ApiDocsContent, PlanDrawer } from '@/components/molecules';
+import { ColumnData } from '@/components/molecules/Table';
 import { Plan } from '@/models/Plan';
-import usePagination from '@/hooks/usePagination';
-import { usePaginationReset } from '@/hooks/usePaginationReset';
-import { EmptyPage } from '@/components/organisms';
+import { QueryableDataArea } from '@/components/organisms';
 import GUIDES from '@/constants/guides';
 import { useState, useMemo } from 'react';
 import { PlanApi } from '@/api/PlanApi';
-import { useQueryWithEmptyState } from '@/hooks/useQueryWithEmptyState';
-import useFilterSorting from '@/hooks/useFilterSorting';
 import {
 	FilterField,
 	FilterFieldType,
@@ -17,9 +14,13 @@ import {
 	FilterOperator,
 	SortOption,
 	SortDirection,
+	FilterCondition,
 } from '@/types/common/QueryBuilder';
 import { ENTITY_STATUS } from '@/models';
-import toast from 'react-hot-toast';
+import { useNavigate } from 'react-router';
+import { RouteNames } from '@/core/routes/Routes';
+import formatChips from '@/utils/common/format_chips';
+import formatDate from '@/utils/common/format_date';
 
 const sortingOptions: SortOption[] = [
 	{
@@ -74,153 +75,149 @@ const filterOptions: FilterField[] = [
 	},
 ];
 
+const initialFilters: FilterCondition[] = [
+	{
+		field: 'name',
+		operator: FilterOperator.CONTAINS,
+		valueString: '',
+		dataType: DataType.STRING,
+		id: 'initial-name',
+	},
+	{
+		field: 'lookup_key',
+		operator: FilterOperator.CONTAINS,
+		valueString: '',
+		dataType: DataType.STRING,
+		id: 'initial-lookup_key',
+	},
+	{
+		field: 'status',
+		operator: FilterOperator.IN,
+		valueArray: [ENTITY_STATUS.PUBLISHED],
+		dataType: DataType.ARRAY,
+		id: 'initial-status',
+	},
+];
+
+const initialSorts: SortOption[] = [
+	{
+		field: 'updated_at',
+		label: 'Updated At',
+		direction: SortDirection.DESC,
+	},
+];
+
 const PlansPage = () => {
-	const { limit, offset, page, reset } = usePagination();
 	const [activePlan, setActivePlan] = useState<Plan | null>(null);
 	const [planDrawerOpen, setPlanDrawerOpen] = useState(false);
-
-	const { filters, sorts, setFilters, setSorts, sanitizedFilters, sanitizedSorts } = useFilterSorting({
-		initialFilters: [
-			{
-				field: 'name',
-				operator: FilterOperator.CONTAINS,
-				valueString: '',
-				dataType: DataType.STRING,
-				id: 'initial-name',
-			},
-			{
-				field: 'lookup_key',
-				operator: FilterOperator.CONTAINS,
-				valueString: '',
-				dataType: DataType.STRING,
-				id: 'initial-lookup_key',
-			},
-			{
-				field: 'status',
-				operator: FilterOperator.IN,
-				valueArray: [ENTITY_STATUS.PUBLISHED],
-				dataType: DataType.ARRAY,
-				id: 'initial-status',
-			},
-		],
-		initialSorts: [
-			{
-				field: 'updated_at',
-				label: 'Updated At',
-				direction: SortDirection.DESC,
-			},
-		],
-		debounceTime: 300,
-	});
-
-	// Reset pagination only when filters or sorts actually change
-	usePaginationReset(reset, sanitizedFilters, sanitizedSorts);
-
-	const fetchPlans = async () => {
-		return await PlanApi.getPlansByFilter({
-			limit,
-			offset,
-			filters: sanitizedFilters,
-			sort: sanitizedSorts,
-		});
-	};
-
-	const {
-		data: plansData,
-		isLoading,
-		probeData,
-		isError,
-		error,
-	} = useQueryWithEmptyState({
-		main: {
-			queryKey: ['fetchPlans', page, JSON.stringify(sanitizedFilters), JSON.stringify(sanitizedSorts)],
-			queryFn: fetchPlans,
-		},
-		probe: {
-			queryKey: ['fetchPlans', 'probe', page, JSON.stringify(sanitizedFilters), JSON.stringify(sanitizedSorts)],
-			queryFn: async () => {
-				return await PlanApi.getPlansByFilter({
-					limit: 1,
-					offset: 0,
-					filters: [],
-					sort: [],
-				});
-			},
-		},
-		shouldProbe: (mainData) => {
-			return mainData?.items.length === 0;
-		},
-	});
-
-	const showEmptyPage = useMemo(() => {
-		return !isLoading && probeData?.items.length === 0 && plansData?.items.length === 0;
-	}, [isLoading, probeData, plansData]);
+	const navigate = useNavigate();
 
 	const handleOnAdd = () => {
 		setActivePlan(null);
 		setPlanDrawerOpen(true);
 	};
 
-	if (isError) {
-		const err = error as any;
-		toast.error(err?.error?.message || 'Error fetching plans');
-		return null;
-	}
+	const handleEdit = (plan: Plan) => {
+		setActivePlan(plan);
+		setPlanDrawerOpen(true);
+	};
 
-	if (isLoading) {
-		return <Loader />;
-	}
+	const columns: ColumnData<Plan>[] = useMemo(
+		() => [
+			{
+				fieldName: 'name',
+				title: 'Name',
+			},
+			{
+				title: 'Status',
+				render: (row) => {
+					const label = formatChips(row.status);
+					return <Chip variant={label === 'Active' ? 'success' : 'default'} label={label} />;
+				},
+			},
+			{
+				title: 'Updated at',
+				render: (row) => {
+					return formatDate(row.updated_at);
+				},
+			},
+			{
+				fieldVariant: 'interactive',
+				render: (row) => (
+					<ActionButton
+						id={row.id}
+						deleteMutationFn={(id) => PlanApi.deletePlan(id)}
+						refetchQueryKey='fetchPlans'
+						entityName='Plan'
+						edit={{
+							path: `${RouteNames.plan}/edit-plan?id=${row.id}`,
+							onClick: () => handleEdit(row),
+						}}
+						archive={{
+							enabled: row.status === ENTITY_STATUS.PUBLISHED,
+						}}
+					/>
+				),
+			},
+		],
+		[],
+	);
 
-	if (showEmptyPage) {
-		return (
-			<div className='space-y-6'>
-				<PlanDrawer data={activePlan} open={planDrawerOpen} onOpenChange={setPlanDrawerOpen} refetchQueryKeys={['fetchPlans']} />
-				<EmptyPage
-					heading='Plans'
-					onAddClick={handleOnAdd}
-					emptyStateCard={{
-						heading: 'Set Up Your First Plan',
-						description: 'Create a plan to display pricing and start billing customers.',
-						buttonLabel: 'Create Plan',
-						buttonAction: handleOnAdd,
-					}}
-					tutorials={GUIDES.plans.tutorials}
-					tags={['Plans']}
-				/>
-			</div>
-		);
-	}
 	return (
 		<Page heading='Plans' headingCTA={<AddButton onClick={handleOnAdd} />}>
 			<PlanDrawer data={activePlan} open={planDrawerOpen} onOpenChange={setPlanDrawerOpen} refetchQueryKeys={['fetchPlans']} />
 			<ApiDocsContent tags={['Plans']} />
 			<div className='space-y-6'>
-				<QueryBuilder
-					filterOptions={filterOptions}
-					filters={filters}
-					onFilterChange={setFilters}
-					sortOptions={sortingOptions}
-					onSortChange={setSorts}
-					selectedSorts={sorts}
+				<QueryableDataArea<Plan>
+					queryConfig={{
+						filterOptions,
+						sortOptions: sortingOptions,
+						initialFilters,
+						initialSorts,
+						debounceTime: 300,
+					}}
+					dataConfig={{
+						queryKey: 'fetchPlans',
+						fetchFn: async (params) => {
+							const response = await PlanApi.getPlansByFilter(params);
+							return {
+								items: response.items as Plan[],
+								pagination: response.pagination,
+							};
+						},
+						probeFetchFn: async (params) => {
+							const response = await PlanApi.getPlansByFilter({
+								...params,
+								limit: 1,
+								offset: 0,
+								filters: [],
+								sort: [],
+							});
+							return {
+								items: response.items as Plan[],
+								pagination: response.pagination,
+							};
+						},
+					}}
+					tableConfig={{
+						columns,
+						onRowClick: (row) => {
+							navigate(RouteNames.plan + `/${row.id}`);
+						},
+						showEmptyRow: true,
+					}}
+					paginationConfig={{
+						unit: 'Pricing Plans',
+					}}
+					emptyStateConfig={{
+						heading: 'Plans',
+						description: 'Create a plan to display pricing and start billing customers.',
+						buttonLabel: 'Create Plan',
+						buttonAction: handleOnAdd,
+						tags: ['Plans'],
+						tutorials: GUIDES.plans.tutorials,
+					}}
 				/>
-
-				{isLoading ? (
-					<div className='flex justify-center items-center min-h-[200px]'>
-						<Loader />
-					</div>
-				) : (
-					<>
-						<PlansTable
-							data={(plansData?.items || []) as Plan[]}
-							onEdit={(plan) => {
-								setActivePlan(plan);
-								setPlanDrawerOpen(true);
-							}}
-						/>
-						<Spacer className='!h-4' />
-						<ShortPagination unit='Pricing Plans' totalItems={plansData?.pagination.total ?? 0} />
-					</>
-				)}
 			</div>
 		</Page>
 	);
