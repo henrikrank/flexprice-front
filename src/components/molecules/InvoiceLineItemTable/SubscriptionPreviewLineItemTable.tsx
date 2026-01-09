@@ -106,10 +106,14 @@ const SubscriptionPreviewLineItemTable: FC<Props> = ({
 								<tr key={index} className='border-b border-gray-100'>
 									<td className='py-4 px-0 text-sm text-gray-900'>{item.display_name ?? '--'}</td>
 									{invoiceType === INVOICE_TYPE.SUBSCRIPTION && (
-										<td className='py-4 px-4 text-sm text-gray-600'>{formatPriceType(item.price_type)}</td>
+										<td className='py-4 px-4 text-sm text-gray-600'>{item.price_type ? formatPriceType(item.price_type) : '--'}</td>
 									)}
 									{invoiceType === INVOICE_TYPE.SUBSCRIPTION && (
-										<td className='py-4 px-4 text-sm text-gray-600'>{`${formatToShortDate(item.period_start)} - ${formatToShortDate(item.period_end)}`}</td>
+										<td className='py-4 px-4 text-sm text-gray-600'>
+											{item.period_start && item.period_end
+												? `${formatToShortDate(item.period_start)} - ${formatToShortDate(item.period_end)}`
+												: '--'}
+										</td>
 									)}
 									<td className='py-4 px-4 text-center text-sm text-gray-600'>{item.quantity ? item.quantity : '--'}</td>
 									<td className='py-4 px-0 text-right text-sm text-gray-900 '>{formatAmount(item.amount ?? 0, item.currency)}</td>
