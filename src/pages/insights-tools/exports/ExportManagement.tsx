@@ -141,6 +141,7 @@ const ExportManagement = () => {
 					setIsDrawerOpen(open);
 				}}
 				connectionId={connectionId!}
+				connection={connection}
 				exportTask={null}
 				onSave={handleSaveExport}
 			/>

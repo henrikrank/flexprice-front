@@ -1,0 +1,4 @@
+name,lookup_key,type,unit_singular,unit_plural,meter_name,event_name,reset_usage,aggregation_type,aggregation_field,aggregation_bucket_size,aggregation_multiplier
+Subrat Imported Feature,subrat_imported_feat,metered,call,calls,subrat_meter,event_imp_feat0,,SUM,Value,,
+Feat 3,subrat_imported_feat3,metered,c,cc,subrat_meter_3,event_imp_feat3,,SUM_WITH_MULTIPLIER,Value,,10
+Feat 4,feat4_feat,metered,,,feat4_meter,event_imp-feat4,NEVER,MAX,Value,MINUTE,
