@@ -44,7 +44,7 @@ class TaxApi {
 	}
 
 	public static async getTaxAssociation(id: string): Promise<TaxAssociationResponse> {
-		return await AxiosClient.get<TaxAssociationResponse>(`${this.baseUrl}/${id}`);
+		return await AxiosClient.get<TaxAssociationResponse>(`${this.baseUrl}/associations/${id}`);
 	}
 
 	public static async updateTaxAssociation(id: string, payload: TaxAssociationUpdateRequest): Promise<TaxAssociationResponse> {

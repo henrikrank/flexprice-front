@@ -24,6 +24,11 @@ import {
 	UpdateSubscriptionLineItemRequest,
 	DeleteSubscriptionLineItemRequest,
 	SubscriptionLineItemResponse,
+	ListSubscriptionPausesResponse,
+	PreviewSubscriptionChangeRequest,
+	PreviewSubscriptionChangeResponse,
+	ExecuteSubscriptionChangeRequest,
+	ExecuteSubscriptionChangeResponse,
 } from '@/types/dto/Subscription';
 import { ListCreditGrantApplicationsResponse } from '@/types/dto';
 import { generateQueryParams } from '@/utils/common/api_helper';
@@ -203,6 +208,44 @@ class SubscriptionApi {
 	 */
 	public static async getUpcomingCreditGrantApplications(subscriptionId: string): Promise<ListCreditGrantApplicationsResponse> {
 		return await AxiosClient.get<ListCreditGrantApplicationsResponse>(`${this.baseUrl}/${subscriptionId}/grants/upcoming`);
+	}
+
+	// =============================================================================
+	// SUBSCRIPTION PAUSE METHODS
+	// =============================================================================
+
+	/**
+	 * List all pauses for a subscription
+	 * GET /subscriptions/:id/pauses
+	 */
+	public static async listPauses(subscriptionId: string): Promise<ListSubscriptionPausesResponse> {
+		return await AxiosClient.get<ListSubscriptionPausesResponse>(`${this.baseUrl}/${subscriptionId}/pauses`);
+	}
+
+	// =============================================================================
+	// SUBSCRIPTION CHANGE METHODS
+	// =============================================================================
+
+	/**
+	 * Preview subscription change (upgrade/downgrade)
+	 * POST /subscriptions/:id/change/preview
+	 */
+	public static async previewSubscriptionChange(
+		id: string,
+		payload: PreviewSubscriptionChangeRequest,
+	): Promise<PreviewSubscriptionChangeResponse> {
+		return await AxiosClient.post<PreviewSubscriptionChangeResponse>(`${this.baseUrl}/${id}/change/preview`, payload);
+	}
+
+	/**
+	 * Execute subscription change (upgrade/downgrade)
+	 * POST /subscriptions/:id/change/execute
+	 */
+	public static async executeSubscriptionChange(
+		id: string,
+		payload: ExecuteSubscriptionChangeRequest,
+	): Promise<ExecuteSubscriptionChangeResponse> {
+		return await AxiosClient.post<ExecuteSubscriptionChangeResponse>(`${this.baseUrl}/${id}/change/execute`, payload);
 	}
 }
 

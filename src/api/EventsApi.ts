@@ -2,6 +2,7 @@ import { AxiosClient } from '@/core/axios/verbs';
 import { generateQueryParams } from '@/utils/common/api_helper';
 import {
 	GetEventsPayload,
+	GetEventsRequest,
 	GetEventsResponse,
 	GetUsageByMeterPayload,
 	GetUsageByMeterResponse,
@@ -10,6 +11,10 @@ import {
 	GetUsageAnalyticsResponse,
 	GetMonitoringDataRequest,
 	GetMonitoringDataResponse,
+	GetUsageRequest,
+	GetUsageResponse,
+	GetHuggingFaceBillingDataRequest,
+	GetHuggingFaceBillingDataResponse,
 } from '@/types/dto';
 
 class EventsApi {
@@ -20,12 +25,32 @@ class EventsApi {
 		return await AxiosClient.get<GetEventsResponse>(url);
 	}
 
+	/**
+	 * Query events with POST request (for complex filtering)
+	 * POST /events/query
+	 */
+	public static async queryEvents(payload: GetEventsRequest): Promise<GetEventsResponse> {
+		return await AxiosClient.post<GetEventsResponse>(`${EventsApi.baseUrl}/query`, payload);
+	}
+
 	public static async getUsageByMeter(payload: GetUsageByMeterPayload): Promise<GetUsageByMeterResponse> {
 		return await AxiosClient.post<GetUsageByMeterResponse>(`${EventsApi.baseUrl}/usage/meter`, {
 			...payload,
 		});
 	}
 
+	/**
+	 * Get usage statistics
+	 * POST /events/usage
+	 */
+	public static async getUsage(payload: GetUsageRequest): Promise<GetUsageResponse> {
+		return await AxiosClient.post<GetUsageResponse>(`${EventsApi.baseUrl}/usage`, payload);
+	}
+
+	/**
+	 * @deprecated Use OnboardingApi.generateEvents instead
+	 * This method is kept for backward compatibility
+	 */
 	public static async fireEvents(payload: FireEventsPayload): Promise<void> {
 		return await AxiosClient.post<void>(`/portal/onboarding/events`, {
 			...payload,
@@ -55,6 +80,14 @@ class EventsApi {
 	public static async getMonitoringData(payload: GetMonitoringDataRequest): Promise<GetMonitoringDataResponse> {
 		const url = generateQueryParams(`${EventsApi.baseUrl}/monitoring`, payload);
 		return await AxiosClient.get<GetMonitoringDataResponse>(url);
+	}
+
+	/**
+	 * Get HuggingFace billing data
+	 * POST /events/huggingface-billing
+	 */
+	public static async getHuggingFaceBillingData(payload: GetHuggingFaceBillingDataRequest): Promise<GetHuggingFaceBillingDataResponse> {
+		return await AxiosClient.post<GetHuggingFaceBillingDataResponse>(`${EventsApi.baseUrl}/huggingface-billing`, payload);
 	}
 }
 

@@ -26,6 +26,10 @@ class TaskApi {
 		return await AxiosClient.get(`${this.baseUrl}/${id}`);
 	}
 
+	public static async updateTaskStatus(id: string, status: string): Promise<ImportTask> {
+		return await AxiosClient.put<ImportTask>(`${this.baseUrl}/${id}/status`, { status });
+	}
+
 	public static async getAllTasks(payload: GetTasksPayload = {}): Promise<GetTasksResponse> {
 		const url = generateQueryParams(this.baseUrl, payload);
 		return await AxiosClient.get(url);
