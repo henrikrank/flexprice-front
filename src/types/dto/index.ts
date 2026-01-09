@@ -42,6 +42,7 @@ export type {
 	CreateScheduledTaskPayload,
 	UpdateScheduledTaskPayload,
 	ForceRunPayload,
+	DownloadTaskFileResponse,
 } from './Task';
 
 export type { SignupData, LoginData, LocalUser } from './Auth';

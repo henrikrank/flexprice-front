@@ -65,3 +65,7 @@ export interface ForceRunPayload {
 	start_time?: string;
 	end_time?: string;
 }
+
+export interface DownloadTaskFileResponse {
+	download_url: string;
+}
