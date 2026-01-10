@@ -11,10 +11,6 @@ interface Invoice {
 	currency?: string;
 }
 
-interface Subscription {
-	id: string;
-}
-
 interface InvoicesByStatus {
 	paid: Invoice[];
 	failed: Invoice[];
@@ -25,13 +21,9 @@ interface InvoicesByStatus {
 
 interface InvoiceIssuesCardProps {
 	invoicesByStatus: InvoicesByStatus;
-	pastDueSubscriptions: Subscription[];
 	isLoading: boolean;
 }
-
-export const InvoiceIssuesCard: React.FC<InvoiceIssuesCardProps> = ({ invoicesByStatus, pastDueSubscriptions, isLoading }) => {
-	const issuesCount = (invoicesByStatus?.failed?.length || 0) + (pastDueSubscriptions?.length || 0);
-
+export const InvoiceIssuesCard: React.FC<InvoiceIssuesCardProps> = ({ invoicesByStatus, isLoading }) => {
 	return (
 		<Card className='shadow-sm'>
 			<CardHeader className='pb-8'>
@@ -91,16 +83,6 @@ export const InvoiceIssuesCard: React.FC<InvoiceIssuesCardProps> = ({ invoicesBy
 										<p className={getTypographyClass('body-default', 'font-medium text-zinc-900')}>Processing</p>
 									</div>
 									<span className='text-2xl font-bold text-zinc-900'>{invoicesByStatus?.processing?.length || 0}</span>
-								</div>
-							</div>
-						)}
-
-						{/* Summary */}
-						{issuesCount > 0 && (
-							<div className='pt-4 mt-4 border-t border-zinc-200'>
-								<div className='flex items-center justify-between p-4 bg-white border border-zinc-200 rounded-lg'>
-									<p className={getTypographyClass('body-default', 'font-medium text-zinc-900')}>Issues Requiring Attention</p>
-									<p className='text-2xl font-bold text-blue-600'>{issuesCount}</p>
 								</div>
 							</div>
 						)}
