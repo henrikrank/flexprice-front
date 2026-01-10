@@ -99,7 +99,7 @@ const DashboardPage = () => {
 	// Use custom hooks for data fetching
 	const { subscriptionsCount, subscriptionsByPlan, isLoading: subscriptionsLoading, error: subscriptionsError } = useRecentSubscriptions();
 	const { revenueData, isLoading: revenueLoading, error: revenueError } = useRevenueData();
-	const { invoicesByStatus, pastDueSubscriptions, isLoading: invoiceIssuesLoading, errors: invoiceErrors } = useInvoiceIssues();
+	const { invoicesByStatus, isLoading: invoiceIssuesLoading, errors: invoiceErrors } = useInvoiceIssues();
 
 	// Format "Updated just now" timestamp
 	const getUpdatedTime = () => {
@@ -149,11 +149,7 @@ const DashboardPage = () => {
 							isLoading={subscriptionsLoading}
 						/>
 
-						<InvoiceIssuesCard
-							invoicesByStatus={invoicesByStatus}
-							pastDueSubscriptions={pastDueSubscriptions}
-							isLoading={invoiceIssuesLoading}
-						/>
+						<InvoiceIssuesCard invoicesByStatus={invoicesByStatus} isLoading={invoiceIssuesLoading} />
 					</div>
 				</div>
 			</div>
