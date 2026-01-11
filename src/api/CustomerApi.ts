@@ -110,7 +110,7 @@ class CustomerApi {
 	 * @param limit - Maximum number of results (default: 20)
 	 * @returns Promise with customer search results
 	 */
-	public static async searchCustomers(query: string, limit: number = 20): Promise<GetCustomerResponse> {
+	public static async searchCustomers(query: string, limit: number = 50): Promise<GetCustomerResponse> {
 		// If query is empty, return all customers without filters
 		if (!query || query.trim() === '') {
 			return await this.getCustomersByFilters({
@@ -125,12 +125,6 @@ class CustomerApi {
 		const filters: TypedBackendFilter[] = [
 			{
 				field: 'name',
-				operator: FilterOperator.CONTAINS,
-				data_type: DataType.STRING,
-				value: { string: query },
-			},
-			{
-				field: 'email',
 				operator: FilterOperator.CONTAINS,
 				data_type: DataType.STRING,
 				value: { string: query },
