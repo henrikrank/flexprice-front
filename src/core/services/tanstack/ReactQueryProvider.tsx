@@ -1,5 +1,4 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
 import { PropsWithChildren, createContext, useContext, useState } from 'react';
 
 interface LoadingContextType {
@@ -45,7 +44,7 @@ const ReactQueryProvider = ({ children }: PropsWithChildren) => {
 		<LoadingContext.Provider value={{ isLoading, setLoading }}>
 			<QueryClientProvider client={queryClient}>
 				{children}
-				<ReactQueryDevtools buttonPosition='bottom-right' initialIsOpen={false} />
+				{/* <ReactQueryDevtools buttonPosition='bottom-right' initialIsOpen={false} /> */}
 			</QueryClientProvider>
 		</LoadingContext.Provider>
 	);
