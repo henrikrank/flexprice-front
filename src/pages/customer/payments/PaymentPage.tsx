@@ -6,21 +6,23 @@ import WalletTransactionList from './WalletTransactionList';
 const PaymentPage = () => {
 	return (
 		<Page heading='Payments'>
-			<ApiDocsContent tags={['Payments', 'Auth']} />
-			<FlatTabs
-				tabs={[
-					{
-						value: 'payments',
-						label: 'Payments',
-						content: <PaymentList />,
-					},
-					{
-						value: 'wallet-transactions',
-						label: 'Wallet Transactions',
-						content: <WalletTransactionList />,
-					},
-				]}
-			/>
+			<ApiDocsContent tags={['Payments']} />
+			<div className='space-y-6'>
+				<FlatTabs
+					tabs={[
+						{
+							value: 'payments',
+							label: 'Payments',
+							content: <PaymentList />,
+						},
+						{
+							value: 'wallet-transactions',
+							label: 'Wallet Transactions',
+							content: <WalletTransactionList />,
+						},
+					]}
+				/>
+			</div>
 		</Page>
 	);
 };

@@ -14,9 +14,9 @@ import {
 } from '@/types/common/QueryBuilder';
 import { EXPAND } from '@/models/expand';
 import { generateExpandQueryParams } from '@/utils/common/api_helper';
-import { searchUsersForFilter } from '@/utils/filterSearchHelpers';
+import { searchUsersForFilter, searchCustomersForFilter } from '@/utils/filterSearchHelpers';
 import { WalletTransaction } from '@/models/WalletTransaction';
-import { WALLET_TRANSACTION_REASON } from '@/models/Wallet';
+import { WALLET_TRANSACTION_REASON, WALLET_TRANSACTION_TYPE } from '@/models/Wallet';
 import { User } from '@/models/User';
 import { formatDateShort, getCurrencySymbol } from '@/utils/common/helper_functions';
 import { RouteNames } from '@/core/routes/Routes';
@@ -30,9 +30,35 @@ const sortingOptions: SortOption[] = [
 		label: 'Created At',
 		direction: SortDirection.DESC,
 	},
+	{
+		field: 'amount',
+		label: 'Amount',
+		direction: SortDirection.DESC,
+	},
 ];
 
 const filterOptions: FilterField[] = [
+	{
+		field: 'customer_id',
+		label: 'Customer',
+		fieldType: FilterFieldType.ASYNC_MULTI_SELECT,
+		operators: [FilterOperator.IN, FilterOperator.NOT_IN],
+		dataType: DataType.ARRAY,
+		asyncConfig: {
+			searchFn: searchCustomersForFilter,
+		},
+	},
+	{
+		field: 'type',
+		label: 'Type',
+		fieldType: FilterFieldType.MULTI_SELECT,
+		operators: [FilterOperator.IN, FilterOperator.NOT_IN],
+		dataType: DataType.ARRAY,
+		options: [
+			{ value: WALLET_TRANSACTION_TYPE.CREDIT, label: 'Credit' },
+			{ value: WALLET_TRANSACTION_TYPE.DEBIT, label: 'Debit' },
+		],
+	},
 	{
 		field: 'created_by',
 		label: 'Created By',
@@ -188,45 +214,44 @@ const WalletTransactionList = () => {
 	);
 
 	return (
-		<div>
-			<QueryableDataArea<WalletTransaction>
-				queryConfig={{
-					filterOptions,
-					sortOptions: sortingOptions,
-					initialFilters: [],
-					initialSorts,
-					debounceTime: 300,
-				}}
-				dataConfig={{
-					queryKey: 'fetchAllWalletTransactionsMain',
-					fetchFn: async (params) =>
-						WalletApi.getAllWalletTransactionsByFilter({
-							...params,
-							expand: generateExpandQueryParams([EXPAND.CUSTOMER, EXPAND.CREATED_BY_USER]),
-						}),
-					probeFetchFn: async (params) =>
-						WalletApi.getAllWalletTransactionsByFilter({
-							...params,
-							limit: 1,
-							offset: 0,
-							filters: [],
-							sort: [],
-						}),
-				}}
-				tableConfig={{
-					columns,
-					showEmptyRow: true,
-				}}
-				paginationConfig={{
-					unit: 'Transactions',
-					prefix: PAGINATION_PREFIX.WALLET_TRANSACTIONS,
-				}}
-				emptyStateConfig={{
-					heading: 'No Wallet Transactions',
-					description: 'There are no wallet transactions to display.',
-				}}
-			/>
-		</div>
+		<QueryableDataArea<WalletTransaction>
+			queryConfig={{
+				filterOptions,
+				sortOptions: sortingOptions,
+				initialFilters: [],
+				initialSorts,
+				debounceTime: 300,
+			}}
+			dataConfig={{
+				queryKey: 'fetchAllWalletTransactionsMain',
+				fetchFn: async (params) =>
+					WalletApi.getAllWalletTransactionsByFilter({
+						...params,
+						expand: generateExpandQueryParams([EXPAND.CUSTOMER, EXPAND.CREATED_BY_USER]),
+					}),
+				probeFetchFn: async (params) =>
+					WalletApi.getAllWalletTransactionsByFilter({
+						...params,
+						limit: 1,
+						offset: 0,
+						filters: [],
+						sort: [],
+					}),
+			}}
+			tableConfig={{
+				columns,
+				showEmptyRow: true,
+			}}
+			paginationConfig={{
+				unit: 'Transactions',
+				prefix: PAGINATION_PREFIX.WALLET_TRANSACTIONS,
+			}}
+			emptyStateConfig={{
+				heading: 'Wallet Transactions',
+				description: 'Wallet transactions will appear here once customers make payments or receive credits.',
+				tags: ['Payments'],
+			}}
+		/>
 	);
 };
 
