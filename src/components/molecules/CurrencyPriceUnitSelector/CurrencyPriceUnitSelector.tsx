@@ -33,7 +33,7 @@ const CurrencyPriceUnitSelector: FC<Props> = ({
 	label = 'Currency',
 	description,
 	error,
-	placeholder = 'Select currency or price unit',
+	placeholder = 'Select currency',
 	disabled = false,
 	className,
 }) => {
@@ -111,39 +111,50 @@ const CurrencyPriceUnitSelector: FC<Props> = ({
 						</div>
 					) : isError ? (
 						<SelectItem value='error' disabled>
-							Error loading price units
+							Error loading options
 						</SelectItem>
 					) : (
 						<>
-							{/* Price Units Group */}
+							{/* Custom Currencies Group */}
 							{priceUnitOptionsList.length > 0 && (
 								<SelectGroup>
-									<SelectLabel>Price Units</SelectLabel>
+									<SelectLabel>Custom</SelectLabel>
 									{priceUnitOptionsList.map((option) => (
 										<SelectItem key={option.value} value={option.value}>
 											<div className='flex items-center gap-2'>
-												<Layers className='h-4 w-4 text-blue-600' />
-												<span>{option.label}</span>
+												<Layers className='h-4 w-4 text-blue-600 flex-shrink-0' />
+												<div className='flex flex-col min-w-0'>
+													<span className='truncate'>{option.label}</span>
+													<span className='text-xs text-muted-foreground'>
+														1 {option.code} = {option.conversion_rate} {option.base_currency.toUpperCase()}
+													</span>
+												</div>
 											</div>
 										</SelectItem>
 									))}
 								</SelectGroup>
 							)}
 
-							{/* Currencies Group */}
-							{currencyOptionsList.length > 0 && (
-								<SelectGroup>
-									<SelectLabel>Currencies</SelectLabel>
-									{currencyOptionsList.map((option) => (
+							{currencyOptionsList.length > 0 &&
+								(priceUnitOptionsList.length > 0 ? (
+									<SelectGroup>
+										<SelectLabel>Standard</SelectLabel>
+										{currencyOptionsList.map((option) => (
+											<SelectItem key={option.value} value={option.value}>
+												<div className='flex items-center gap-2'>
+													<Coins className='h-4 w-4 text-green-600' />
+													<span className='truncate'>{option.label}</span>
+												</div>
+											</SelectItem>
+										))}
+									</SelectGroup>
+								) : (
+									currencyOptionsList.map((option) => (
 										<SelectItem key={option.value} value={option.value}>
-											<div className='flex items-center gap-2'>
-												<Coins className='h-4 w-4 text-green-600' />
-												<span>{option.label}</span>
-											</div>
+											<span className='truncate'>{option.label}</span>
 										</SelectItem>
-									))}
-								</SelectGroup>
-							)}
+									))
+								))}
 
 							{/* No options */}
 							{currencyOptionsList.length === 0 && priceUnitOptionsList.length === 0 && (

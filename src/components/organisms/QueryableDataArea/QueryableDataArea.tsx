@@ -160,82 +160,32 @@ QueryBuilderWrapper.displayName = 'QueryBuilderWrapper';
 const DataArea = <T,>({
 	sanitizedFilters,
 	sanitizedSorts,
-	dataConfig,
 	tableConfig,
 	paginationConfig,
-	page,
-	limit,
-	offset,
 	reset,
 	emptyStateConfig,
 	onError,
+	data,
+	isLoading,
+	isError,
+	error,
+	showEmptyPage,
 }: {
 	sanitizedFilters: any[];
 	sanitizedSorts: any[];
-	dataConfig: DataConfig<T>;
 	tableConfig: TableConfig<T>;
 	paginationConfig?: PaginationConfig;
-	page: number;
-	limit: number;
-	offset: number;
 	reset: () => void;
 	emptyStateConfig?: EmptyStateConfig;
 	onError?: (error: any) => void;
+	data: { items: T[]; pagination: { total?: number } } | undefined;
+	isLoading: boolean;
+	isError: boolean;
+	error: any;
+	showEmptyPage: boolean;
 }) => {
 	// Reset pagination when filters or sorts change
 	usePaginationReset(reset, sanitizedFilters, sanitizedSorts);
-
-	// Create fetch function with all params
-	const fetchData = useCallback(async () => {
-		return await dataConfig.fetchFn({
-			limit,
-			offset,
-			filters: sanitizedFilters,
-			sort: sanitizedSorts,
-			...dataConfig.additionalQueryParams,
-		});
-	}, [dataConfig, limit, offset, sanitizedFilters, sanitizedSorts]);
-
-	// Create probe fetch function
-	const probeFetch = useCallback(async () => {
-		if (dataConfig.probeFetchFn) {
-			return await dataConfig.probeFetchFn({
-				limit: 1,
-				offset: 0,
-				filters: [],
-				sort: [],
-				...dataConfig.additionalQueryParams,
-			});
-		}
-		// Default probe: use main fetch with limit 1
-		return await dataConfig.fetchFn({
-			limit: 1,
-			offset: 0,
-			filters: [],
-			sort: [],
-			...dataConfig.additionalQueryParams,
-		});
-	}, [dataConfig]);
-
-	// Data fetching with empty state detection
-	const { data, isLoading, isError, error, probeData } = useQueryWithEmptyState({
-		main: {
-			queryKey: [dataConfig.queryKey, page, JSON.stringify(sanitizedFilters), JSON.stringify(sanitizedSorts)],
-			queryFn: fetchData,
-		},
-		probe: {
-			queryKey: [dataConfig.queryKey, 'probe', page, JSON.stringify(sanitizedFilters), JSON.stringify(sanitizedSorts)],
-			queryFn: probeFetch,
-		},
-		shouldProbe: (mainData) => {
-			return mainData?.items.length === 0;
-		},
-	});
-
-	// Show empty page when no data exists
-	const showEmptyPage = useMemo(() => {
-		return !isLoading && probeData?.items.length === 0 && data?.items.length === 0;
-	}, [isLoading, probeData, data]);
 
 	// Handle errors
 	if (isError) {
@@ -396,31 +346,89 @@ const QueryableDataArea = <T = any,>({
 		debounceTime: queryConfig.debounceTime ?? 300,
 	});
 
+	// Create fetch function with all params
+	const fetchData = useCallback(async () => {
+		return await dataConfig.fetchFn({
+			limit,
+			offset,
+			filters: sanitizedFilters,
+			sort: sanitizedSorts,
+			...dataConfig.additionalQueryParams,
+		});
+	}, [dataConfig, limit, offset, sanitizedFilters, sanitizedSorts]);
+
+	// Create probe fetch function
+	const probeFetch = useCallback(async () => {
+		if (dataConfig.probeFetchFn) {
+			return await dataConfig.probeFetchFn({
+				limit: 1,
+				offset: 0,
+				filters: [],
+				sort: [],
+				...dataConfig.additionalQueryParams,
+			});
+		}
+		// Default probe: use main fetch with limit 1
+		return await dataConfig.fetchFn({
+			limit: 1,
+			offset: 0,
+			filters: [],
+			sort: [],
+			...dataConfig.additionalQueryParams,
+		});
+	}, [dataConfig]);
+
+	// Data fetching with empty state detection
+	const { data, isLoading, isError, error, probeData } = useQueryWithEmptyState({
+		main: {
+			queryKey: [dataConfig.queryKey, page, JSON.stringify(sanitizedFilters), JSON.stringify(sanitizedSorts)],
+			queryFn: fetchData,
+		},
+		probe: {
+			queryKey: [dataConfig.queryKey, 'probe', page, JSON.stringify(sanitizedFilters), JSON.stringify(sanitizedSorts)],
+			queryFn: probeFetch,
+		},
+		shouldProbe: (mainData) => {
+			return mainData?.items.length === 0;
+		},
+	});
+
+	// Show empty page when no data exists
+	const showEmptyPage = useMemo(() => {
+		return !isLoading && probeData?.items.length === 0 && data?.items.length === 0;
+	}, [isLoading, probeData, data]);
+
+	// Only hide QueryBuilder when showing empty state (when emptyStateConfig is provided)
+	const shouldShowEmptyState = showEmptyPage && !!emptyStateConfig;
+
 	return (
 		<div>
-			{/* Stable QueryBuilder - doesn't re-render */}
-			<QueryBuilderWrapper
-				filterOptions={queryConfig.filterOptions}
-				sortOptions={queryConfig.sortOptions}
-				filters={filters}
-				sorts={sorts}
-				onFilterChange={setFilters}
-				onSortChange={setSorts}
-			/>
+			{/* Stable QueryBuilder - doesn't re-render, only show when not in empty state */}
+			{!shouldShowEmptyState && (
+				<QueryBuilderWrapper
+					filterOptions={queryConfig.filterOptions}
+					sortOptions={queryConfig.sortOptions}
+					filters={filters}
+					sorts={sorts}
+					onFilterChange={setFilters}
+					onSortChange={setSorts}
+				/>
+			)}
 
 			{/* Data area - re-renders when query params change */}
 			<DataArea<T>
 				sanitizedFilters={sanitizedFilters}
 				sanitizedSorts={sanitizedSorts}
-				dataConfig={dataConfig}
 				tableConfig={tableConfig}
 				paginationConfig={paginationConfig}
-				page={page}
-				limit={limit}
-				offset={offset}
 				reset={reset}
 				emptyStateConfig={emptyStateConfig}
 				onError={onError}
+				data={data}
+				isLoading={isLoading}
+				isError={isError}
+				error={error}
+				showEmptyPage={showEmptyPage}
 			/>
 		</div>
 	);

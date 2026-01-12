@@ -18,7 +18,6 @@ export interface WalletTransactionResponse {
 export interface CreateWalletPayload {
 	customer_id: string;
 	currency: string;
-	name?: string;
 	metadata?: Metadata;
 	initial_credits_to_load?: number;
 	conversion_rate?: number;
@@ -32,9 +31,6 @@ export interface CreateWalletPayload {
 		invoicing: boolean;
 	};
 	wallet_type?: WALLET_TYPE;
-	config?: {
-		allowed_price_types: WALLET_CONFIG_PRICE_TYPE[];
-	};
 }
 
 export interface TopupWalletPayload {
