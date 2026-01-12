@@ -356,15 +356,16 @@ const QueryableDataArea = <T = any,>({
 	const shouldShowEmptyState = showEmptyPage && !!emptyStateConfig;
 
 	// Determine if we should show QueryBuilder
-	// Hide during initial mount until we know if data exists (prevents jerky UX)
+	// Hide only on initial mount; after that, always show unless in empty state
 	const shouldShowQueryBuilder = useMemo(() => {
-		// Don't show during initial mount while loading (we don't know if data exists yet)
-		if (isInitialMount && isLoading) return false;
+		// Don't show during initial mount (we don't know if data exists yet)
+		if (isInitialMount) return false;
 		// Don't show when in empty state
 		if (shouldShowEmptyState) return false;
-		// Show if loading is complete (we know the state) or we have data
-		return !isLoading || (data && data.items.length > 0);
-	}, [isInitialMount, isLoading, shouldShowEmptyState, data]);
+		// After initial mount, always show QueryBuilder (even during filter changes)
+		// This prevents blinking when filters/sorts change
+		return true;
+	}, [isInitialMount, shouldShowEmptyState]);
 
 	return (
 		<div>
