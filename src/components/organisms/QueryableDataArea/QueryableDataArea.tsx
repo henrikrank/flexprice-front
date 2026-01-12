@@ -1,4 +1,4 @@
-import { memo, useCallback, useMemo } from 'react';
+import { memo, useCallback, useMemo, useRef, useState, useEffect } from 'react';
 import { QueryBuilder } from '@/components/molecules';
 import { Loader, ShortPagination, Spacer, Button, Card } from '@/components/atoms';
 import { ApiDocsContent } from '@/components/molecules';
@@ -166,10 +166,10 @@ const DataArea = <T,>({
 	emptyStateConfig,
 	onError,
 	data,
-	isLoading,
 	isError,
 	error,
 	showEmptyPage,
+	shouldShowLoading,
 }: {
 	sanitizedFilters: any[];
 	sanitizedSorts: any[];
@@ -179,13 +179,22 @@ const DataArea = <T,>({
 	emptyStateConfig?: EmptyStateConfig;
 	onError?: (error: any) => void;
 	data: { items: T[]; pagination: { total?: number } } | undefined;
-	isLoading: boolean;
 	isError: boolean;
 	error: any;
 	showEmptyPage: boolean;
+	shouldShowLoading: boolean;
 }) => {
 	// Reset pagination when filters or sorts change
 	usePaginationReset(reset, sanitizedFilters, sanitizedSorts);
+
+	// Loading state - prioritize showing loading during transitions
+	if (shouldShowLoading) {
+		return (
+			<div className='flex justify-center items-center min-h-[200px]'>
+				<Loader />
+			</div>
+		);
+	}
 
 	// Handle errors
 	if (isError) {
@@ -202,6 +211,7 @@ const DataArea = <T,>({
 	}
 
 	// Show empty state - render simple empty state without Page wrapper
+	// Only show when NOT loading and we have definitive data
 	if (showEmptyPage && emptyStateConfig) {
 		return (
 			<div className='space-y-6'>
@@ -253,15 +263,6 @@ const DataArea = <T,>({
 						})}
 					</div>
 				)}
-			</div>
-		);
-	}
-
-	// Loading state
-	if (isLoading) {
-		return (
-			<div className='flex justify-center items-center min-h-[200px]'>
-				<Loader />
 			</div>
 		);
 	}
@@ -333,6 +334,11 @@ const QueryableDataArea = <T = any,>({
 	emptyStateConfig,
 	onError,
 }: QueryableDataAreaProps<T>) => {
+	// Track loading state (initial mount + filter/sort transitions)
+	const [isInitialMount, setIsInitialMount] = useState(true);
+	const [isTransitionLoading, setIsTransitionLoading] = useState(false);
+	const prevQueryKeyRef = useRef<string>('');
+
 	// Pagination
 	const { limit, offset, page, reset } = usePagination({
 		initialLimit: paginationConfig?.initialLimit ?? 10,
@@ -345,6 +351,12 @@ const QueryableDataArea = <T = any,>({
 		initialSorts: queryConfig.initialSorts ?? [],
 		debounceTime: queryConfig.debounceTime ?? 300,
 	});
+
+	// Generate query key for tracking changes
+	const queryKey = useMemo(
+		() => JSON.stringify({ page, filters: sanitizedFilters, sorts: sanitizedSorts }),
+		[page, sanitizedFilters, sanitizedSorts],
+	);
 
 	// Create fetch function with all params
 	const fetchData = useCallback(async () => {
@@ -368,7 +380,6 @@ const QueryableDataArea = <T = any,>({
 				...dataConfig.additionalQueryParams,
 			});
 		}
-		// Default probe: use main fetch with limit 1
 		return await dataConfig.fetchFn({
 			limit: 1,
 			offset: 0,
@@ -381,24 +392,48 @@ const QueryableDataArea = <T = any,>({
 	// Data fetching with empty state detection
 	const { data, isLoading, isError, error, probeData } = useQueryWithEmptyState({
 		main: {
-			queryKey: [dataConfig.queryKey, page, JSON.stringify(sanitizedFilters), JSON.stringify(sanitizedSorts)],
+			queryKey: [dataConfig.queryKey, queryKey],
 			queryFn: fetchData,
 		},
 		probe: {
-			queryKey: [dataConfig.queryKey, 'probe', page, JSON.stringify(sanitizedFilters), JSON.stringify(sanitizedSorts)],
+			queryKey: [dataConfig.queryKey, 'probe', queryKey],
 			queryFn: probeFetch,
 		},
-		shouldProbe: (mainData) => {
-			return mainData?.items.length === 0;
-		},
+		shouldProbe: (mainData) => mainData?.items.length === 0,
 	});
 
-	// Show empty page when no data exists
-	const showEmptyPage = useMemo(() => {
-		return !isLoading && probeData?.items.length === 0 && data?.items.length === 0;
-	}, [isLoading, probeData, data]);
+	// Consolidated effect: detect query changes and manage loading states
+	useEffect(() => {
+		const queryChanged = prevQueryKeyRef.current !== queryKey;
 
-	// Only hide QueryBuilder when showing empty state (when emptyStateConfig is provided)
+		// Set transition loading if query changed (after initial mount)
+		if (queryChanged && !isInitialMount) {
+			setIsTransitionLoading(true);
+		}
+
+		// Clear loading states when query completes
+		if (!isLoading) {
+			if (isInitialMount && (data || probeData)) {
+				setIsInitialMount(false);
+			}
+			if (isTransitionLoading) {
+				setIsTransitionLoading(false);
+			}
+		}
+
+		// Update previous query key
+		prevQueryKeyRef.current = queryKey;
+	}, [queryKey, isLoading, data, probeData, isInitialMount, isTransitionLoading]);
+
+	// Calculate loading state
+	const shouldShowLoading = isLoading || isInitialMount || isTransitionLoading;
+
+	// Show empty page when no data exists (only when not loading and have definitive data)
+	const showEmptyPage = useMemo(() => {
+		if (shouldShowLoading || !data || !probeData) return false;
+		return probeData.items.length === 0 && data.items.length === 0;
+	}, [shouldShowLoading, probeData, data]);
+
 	const shouldShowEmptyState = showEmptyPage && !!emptyStateConfig;
 
 	return (
@@ -425,10 +460,10 @@ const QueryableDataArea = <T = any,>({
 				emptyStateConfig={emptyStateConfig}
 				onError={onError}
 				data={data}
-				isLoading={isLoading}
 				isError={isError}
 				error={error}
 				showEmptyPage={showEmptyPage}
+				shouldShowLoading={shouldShowLoading}
 			/>
 		</div>
 	);
