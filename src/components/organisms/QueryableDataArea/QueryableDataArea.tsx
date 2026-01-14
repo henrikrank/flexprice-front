@@ -1,16 +1,15 @@
-import { memo, useCallback, useMemo } from 'react';
+import { memo, useCallback, useMemo, useRef, useState, useEffect } from 'react';
 import { QueryBuilder } from '@/components/molecules';
-import { Loader, ShortPagination, Spacer, Button, Card } from '@/components/atoms';
-import { ApiDocsContent } from '@/components/molecules';
-import FlexpriceTable, { ColumnData } from '@/components/molecules/Table';
+import { ColumnData } from '@/components/molecules/Table';
 import usePagination from '@/hooks/usePagination';
 import { usePaginationReset } from '@/hooks/usePaginationReset';
 import useFilterSorting from '@/hooks/useFilterSorting';
 import { useQueryWithEmptyState } from '@/hooks/useQueryWithEmptyState';
 import { FilterField, FilterCondition, SortOption } from '@/types/common/QueryBuilder';
-import toast from 'react-hot-toast';
-import { motion } from 'framer-motion';
-import { ArrowRight } from 'lucide-react';
+import LoadingState from './LoadingState';
+import ErrorState from './ErrorState';
+import EmptyState from './EmptyState';
+import TableArea from './TableArea';
 
 /**
  * Configuration for filtering and sorting functionality.
@@ -103,6 +102,8 @@ export interface EmptyStateConfig {
 	tags?: string[];
 	/** Tutorial cards to display */
 	tutorials?: any[];
+	/** Custom React component to render instead of default empty state (takes priority) */
+	customComponent?: React.ReactNode;
 }
 
 /**
@@ -166,10 +167,10 @@ const DataArea = <T,>({
 	emptyStateConfig,
 	onError,
 	data,
-	isLoading,
 	isError,
 	error,
 	showEmptyPage,
+	shouldShowLoading,
 }: {
 	sanitizedFilters: any[];
 	sanitizedSorts: any[];
@@ -179,112 +180,31 @@ const DataArea = <T,>({
 	emptyStateConfig?: EmptyStateConfig;
 	onError?: (error: any) => void;
 	data: { items: T[]; pagination: { total?: number } } | undefined;
-	isLoading: boolean;
 	isError: boolean;
 	error: any;
 	showEmptyPage: boolean;
+	shouldShowLoading: boolean;
 }) => {
 	// Reset pagination when filters or sorts change
 	usePaginationReset(reset, sanitizedFilters, sanitizedSorts);
 
+	// Loading state - prioritize showing loading during transitions
+	if (shouldShowLoading) {
+		return <LoadingState />;
+	}
+
 	// Handle errors
 	if (isError) {
-		const errorMessage = error as any;
-		toast.error(errorMessage?.error?.message || 'Error fetching data');
-		if (onError) {
-			onError(error);
-		}
-		return (
-			<div className='flex justify-center items-center min-h-[200px]'>
-				<div>Error fetching data</div>
-			</div>
-		);
+		return <ErrorState error={error} onError={onError} />;
 	}
 
-	// Show empty state - render simple empty state without Page wrapper
+	// Show empty state - only when NOT loading and we have definitive data
 	if (showEmptyPage && emptyStateConfig) {
-		return (
-			<div className='space-y-6'>
-				<div className='bg-[#fafafa] border border-[#E9E9E9] rounded-xl w-full h-[360px] flex flex-col items-center justify-center mx-auto'>
-					{emptyStateConfig.heading && (
-						<div className='font-medium text-[20px] leading-normal text-gray-700 mb-4 text-center'>{emptyStateConfig.heading}</div>
-					)}
-					{emptyStateConfig.description && (
-						<div className='font-normal bg-[#F9F9F9] text-[16px] leading-normal text-gray-400 mb-8 text-center max-w-[350px]'>
-							{emptyStateConfig.description}
-						</div>
-					)}
-					{emptyStateConfig.buttonAction && emptyStateConfig.buttonLabel && (
-						<Button variant='outline' onClick={emptyStateConfig.buttonAction} className='!p-5 !bg-[#fbfbfb] !border-[#CFCFCF]'>
-							{emptyStateConfig.buttonLabel}
-						</Button>
-					)}
-				</div>
-				{emptyStateConfig.tags && <ApiDocsContent tags={emptyStateConfig.tags} />}
-				{emptyStateConfig.tutorials && emptyStateConfig.tutorials.length > 0 && (
-					<div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5 mt-10'>
-						{emptyStateConfig.tutorials.map((item: any, index: number) => {
-							const imageUrl =
-								item.imageUrl && item.imageUrl.trim() !== ''
-									? item.imageUrl
-									: 'https://mintlify.s3.us-west-1.amazonaws.com/flexprice/UsageBaseMetering(1).jpg';
-							return (
-								<motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }} key={index}>
-									<Card
-										className='h-full group bg-white border border-slate-100 rounded-xl shadow-sm hover:border-blue-100 hover:bg-slate-50 transition-all duration-200 cursor-pointer hover:shadow-lg hover:shadow-blue-500/5 flex flex-col max-w-[280px] mx-auto p-4 bg-gradient-to-r from-[#ffffff] to-[#fcfcfc]'
-										onClick={item.onClick}>
-										<div className='w-full h-[80px] aspect-video rounded-t-lg overflow-hidden bg-[#f5f5f5] flex items-center justify-center'>
-											<img src={imageUrl} loading='lazy' className='object-cover bg-gray-100 w-full h-full' alt=' ' />
-										</div>
-										<div className='flex-1 flex flex-col justify-between mt-4'>
-											<div>
-												<h3 className='text-slate-800 text-base font-medium group-hover:text-gray-600 transition-colors duration-200 text-left'>
-													{item.title}
-												</h3>
-											</div>
-											<div className='flex items-center gap-1 mt-8 text-slate-400 group-hover:text-gray-500 transition-all duration-200 text-left'>
-												<span className='text-xs font-regular'>Learn More</span>
-												<ArrowRight className='w-4 h-4 transform group-hover:translate-x-1 transition-transform duration-200' />
-											</div>
-										</div>
-									</Card>
-								</motion.div>
-							);
-						})}
-					</div>
-				)}
-			</div>
-		);
-	}
-
-	// Loading state
-	if (isLoading) {
-		return (
-			<div className='flex justify-center items-center min-h-[200px]'>
-				<Loader />
-			</div>
-		);
+		return <EmptyState config={emptyStateConfig} />;
 	}
 
 	// Render table with data
-	return (
-		<>
-			<FlexpriceTable
-				columns={tableConfig.columns}
-				data={data?.items || []}
-				onRowClick={tableConfig.onRowClick}
-				showEmptyRow={tableConfig.showEmptyRow}
-				hideBottomBorder={tableConfig.hideBottomBorder}
-				variant={tableConfig.variant}
-			/>
-			{paginationConfig?.unit && (
-				<>
-					<Spacer className='!h-4' />
-					<ShortPagination unit={paginationConfig.unit} totalItems={data?.pagination.total ?? 0} prefix={paginationConfig.prefix as any} />
-				</>
-			)}
-		</>
-	);
+	return <TableArea data={data} tableConfig={tableConfig} paginationConfig={paginationConfig} />;
 };
 
 /**
@@ -333,6 +253,11 @@ const QueryableDataArea = <T = any,>({
 	emptyStateConfig,
 	onError,
 }: QueryableDataAreaProps<T>) => {
+	// Track loading state (initial mount + filter/sort transitions)
+	const [isInitialMount, setIsInitialMount] = useState(true);
+	const [isTransitionLoading, setIsTransitionLoading] = useState(false);
+	const prevQueryKeyRef = useRef<string>('');
+
 	// Pagination
 	const { limit, offset, page, reset } = usePagination({
 		initialLimit: paginationConfig?.initialLimit ?? 10,
@@ -345,6 +270,12 @@ const QueryableDataArea = <T = any,>({
 		initialSorts: queryConfig.initialSorts ?? [],
 		debounceTime: queryConfig.debounceTime ?? 300,
 	});
+
+	// Generate query key for tracking changes
+	const queryKey = useMemo(
+		() => JSON.stringify({ page, filters: sanitizedFilters, sorts: sanitizedSorts }),
+		[page, sanitizedFilters, sanitizedSorts],
+	);
 
 	// Create fetch function with all params
 	const fetchData = useCallback(async () => {
@@ -368,7 +299,6 @@ const QueryableDataArea = <T = any,>({
 				...dataConfig.additionalQueryParams,
 			});
 		}
-		// Default probe: use main fetch with limit 1
 		return await dataConfig.fetchFn({
 			limit: 1,
 			offset: 0,
@@ -381,30 +311,66 @@ const QueryableDataArea = <T = any,>({
 	// Data fetching with empty state detection
 	const { data, isLoading, isError, error, probeData } = useQueryWithEmptyState({
 		main: {
-			queryKey: [dataConfig.queryKey, page, JSON.stringify(sanitizedFilters), JSON.stringify(sanitizedSorts)],
+			queryKey: [dataConfig.queryKey, queryKey],
 			queryFn: fetchData,
 		},
 		probe: {
-			queryKey: [dataConfig.queryKey, 'probe', page, JSON.stringify(sanitizedFilters), JSON.stringify(sanitizedSorts)],
+			queryKey: [dataConfig.queryKey, 'probe', queryKey],
 			queryFn: probeFetch,
 		},
-		shouldProbe: (mainData) => {
-			return mainData?.items.length === 0;
-		},
+		shouldProbe: (mainData) => mainData?.items.length === 0,
 	});
 
-	// Show empty page when no data exists
-	const showEmptyPage = useMemo(() => {
-		return !isLoading && probeData?.items.length === 0 && data?.items.length === 0;
-	}, [isLoading, probeData, data]);
+	// Consolidated effect: detect query changes and manage loading states
+	useEffect(() => {
+		const queryChanged = prevQueryKeyRef.current !== queryKey;
 
-	// Only hide QueryBuilder when showing empty state (when emptyStateConfig is provided)
+		// Set transition loading if query changed (after initial mount)
+		if (queryChanged && !isInitialMount) {
+			setIsTransitionLoading(true);
+		}
+
+		// Clear loading states when query completes
+		if (!isLoading) {
+			if (isInitialMount && (data || probeData)) {
+				setIsInitialMount(false);
+			}
+			if (isTransitionLoading) {
+				setIsTransitionLoading(false);
+			}
+		}
+
+		// Update previous query key
+		prevQueryKeyRef.current = queryKey;
+	}, [queryKey, isLoading, data, probeData, isInitialMount, isTransitionLoading]);
+
+	// Calculate loading state
+	const shouldShowLoading = isLoading || isInitialMount || isTransitionLoading;
+
+	// Show empty page when no data exists (only when not loading and have definitive data)
+	const showEmptyPage = useMemo(() => {
+		if (shouldShowLoading || !data || !probeData) return false;
+		return probeData.items.length === 0 && data.items.length === 0;
+	}, [shouldShowLoading, probeData, data]);
+
 	const shouldShowEmptyState = showEmptyPage && !!emptyStateConfig;
+
+	// Determine if we should show QueryBuilder
+	// Hide only on initial mount; after that, always show unless in empty state
+	const shouldShowQueryBuilder = useMemo(() => {
+		// Don't show during initial mount (we don't know if data exists yet)
+		if (isInitialMount) return false;
+		// Don't show when in empty state
+		if (shouldShowEmptyState) return false;
+		// After initial mount, always show QueryBuilder (even during filter changes)
+		// This prevents blinking when filters/sorts change
+		return true;
+	}, [isInitialMount, shouldShowEmptyState]);
 
 	return (
 		<div>
-			{/* Stable QueryBuilder - doesn't re-render, only show when not in empty state */}
-			{!shouldShowEmptyState && (
+			{/* Stable QueryBuilder - only show when we know data state (not during initial loading) */}
+			{shouldShowQueryBuilder && (
 				<QueryBuilderWrapper
 					filterOptions={queryConfig.filterOptions}
 					sortOptions={queryConfig.sortOptions}
@@ -425,10 +391,10 @@ const QueryableDataArea = <T = any,>({
 				emptyStateConfig={emptyStateConfig}
 				onError={onError}
 				data={data}
-				isLoading={isLoading}
 				isError={isError}
 				error={error}
 				showEmptyPage={showEmptyPage}
+				shouldShowLoading={shouldShowLoading}
 			/>
 		</div>
 	);
