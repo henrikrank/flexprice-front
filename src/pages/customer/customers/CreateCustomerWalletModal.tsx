@@ -273,9 +273,9 @@ const CreateCustomerWalletModal: FC<Props> = ({ customerId, onSuccess = () => { 
 									popoverTriggerClassName='w-full'
 									className='w-full'
 									placeholder='Select Expiry Date'
-									date={walletPayload.initial_credits_expiry_date_utc}
+									date={walletPayload.initial_credits_expiry_date_utc ? new Date(walletPayload.initial_credits_expiry_date_utc) : undefined}
 									setDate={(e) => {
-										setwalletPayload({ ...walletPayload, initial_credits_expiry_date_utc: e as unknown as Date });
+										setwalletPayload({ ...walletPayload, initial_credits_expiry_date_utc: e ? e.toISOString() : undefined });
 									}}
 								/>
 							</div>
