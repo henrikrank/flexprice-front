@@ -175,6 +175,7 @@ const CustomerInvoiceDetail: FC<Props> = ({ invoice_id, breadcrumb_index }) => {
 						title='Order Details'
 						subtotal={data?.subtotal}
 						total={data?.total}
+						total_prepaid_credits_applied={data?.total_prepaid_credits_applied}
 						discount={data?.total_discount}
 						total_tax={data?.total_tax}
 						amount_paid={data?.amount_paid}

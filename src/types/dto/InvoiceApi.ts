@@ -39,10 +39,46 @@ export interface GetInvoicePreviewPayload {
 	subscription_id: string;
 }
 
+// InvoiceCoupon represents a coupon to be applied at the invoice level
+export interface InvoiceCoupon {
+	coupon_id: string;
+	coupon_association_id?: string;
+}
+
+// InvoiceLineItemCoupon represents a coupon applied to a specific invoice line item
+export interface InvoiceLineItemCoupon {
+	line_item_id: string; // price_id used to match the line item
+	coupon_id: string;
+	coupon_association_id?: string;
+}
+
 export interface CreateInvoiceLineItemRequest {
-	display_name: string;
-	quantity: string;
+	entity_id?: string;
+	entity_type?: string;
+	price_id?: string;
+	plan_display_name?: string;
+	price_type?: string;
+	meter_id?: string;
+	meter_display_name?: string;
+	price_unit?: string;
+	price_unit_amount?: number;
+	display_name?: string;
 	amount: number;
+	quantity: string;
+	period_start?: string;
+	period_end?: string;
+	metadata?: Metadata;
+	plan_id?: string; // TODO: !REMOVE after migration
+	commitment_info?: {
+		commitment_amount?: number;
+		commitment_quantity?: number;
+		commitment_type?: string;
+		overage_factor?: number;
+		enable_true_up?: boolean;
+		is_window_commitment?: boolean;
+	};
+	prepaid_credits_applied?: number; // prepaid credits applied to this line item
+	line_item_discount?: number; // discount applied directly to this line item
 }
 
 export interface CreateInvoicePayload {
@@ -109,8 +145,17 @@ export interface CreateInvoicePayload {
 	// Optional: unique identifier of the environment this invoice belongs to
 	environment_id?: string;
 
-	// Optional: unique identifier of the coupons applied to this invoice
+	// Optional: unique identifier of the coupons applied to this invoice (legacy)
 	coupons?: string[];
+
+	// Optional: invoice-level coupons
+	invoice_coupons?: InvoiceCoupon[];
+
+	// Optional: line-item-level coupons
+	line_item_coupons?: InvoiceLineItemCoupon[];
+
+	// Optional: total prepaid credits applied to this invoice
+	total_prepaid_applied?: number;
 
 	// Optional: tax rate overrides to apply on this invoice
 	tax_rate_overrides?: TaxRateOverride[];

@@ -4,6 +4,7 @@ import { getCurrencySymbol } from '@/utils/common/helper_functions';
 import { FC, useState } from 'react';
 import { RefreshCw, Info } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { PRICE_TYPE } from '@/models';
 
 interface Props {
 	data: LineItem[];
@@ -11,6 +12,7 @@ interface Props {
 	amount_due?: number;
 	total?: number;
 	subtotal?: number;
+	total_prepaid_credits_applied?: number;
 	total_tax?: number;
 	discount?: number;
 	amount_paid?: number;
@@ -31,11 +33,11 @@ const formatAmount = (amount: number, currency: string): string => {
 	return `${getCurrencySymbol(currency)}${amount}`;
 };
 
-const formatPriceType = (value: string): string => {
+const formatPriceType = (value: PRICE_TYPE): string => {
 	switch (value) {
-		case 'FIXED':
+		case PRICE_TYPE.FIXED:
 			return 'Recurring';
-		case 'USAGE':
+		case PRICE_TYPE.USAGE:
 			return 'Usage Based';
 		default:
 			return 'Unknown';
@@ -55,6 +57,7 @@ const InvoiceLineItemTable: FC<Props> = ({
 	amount_paid,
 	amount_remaining,
 	subtotal,
+	total_prepaid_credits_applied,
 }) => {
 	const [showZeroCharges, setShowZeroCharges] = useState(false);
 	const filteredData = data.filter((item) => showZeroCharges || Number(item.amount) !== 0);
@@ -131,68 +134,74 @@ const InvoiceLineItemTable: FC<Props> = ({
 					</table>
 				</div>
 
-				{/* Stripe-style Summary Section */}
+				{/* Summary Section */}
 				<div className='flex justify-end'>
-					<div className='w-80 space-y-2'>
+					<div className='w-72 space-y-1'>
 						{/* Subtotal - always show if exists */}
 						{subtotal !== undefined && subtotal !== null && Number(subtotal) !== 0 && (
-							<div className='flex flex-row justify-end items-center py-1'>
-								<div className='w-40 text-right text-sm font-medium text-gray-900'>Subtotal</div>
-								<div className='flex-1 text-right text-sm text-gray-900 font-medium'>{formatAmount(Number(subtotal), currency ?? '')}</div>
+							<div className='flex justify-between items-center py-1.5'>
+								<span className='text-xs text-gray-500'>Subtotal</span>
+								<span className='text-sm text-gray-900 font-medium'>{formatAmount(Number(subtotal), currency ?? '')}</span>
 							</div>
 						)}
 
+						{/* Prepaid Credits Applied - only show if provided and > 0 */}
+						{total_prepaid_credits_applied !== undefined &&
+							total_prepaid_credits_applied !== null &&
+							Number(total_prepaid_credits_applied) > 0 && (
+								<div className='flex justify-between items-center py-1.5'>
+									<span className='text-xs text-gray-500'>Prepaid Credits Applied</span>
+									<span className='text-sm text-gray-600'>−{formatAmount(Number(total_prepaid_credits_applied), currency ?? '')}</span>
+								</div>
+							)}
+
 						{/* Discount - only show if provided and > 0 */}
 						{discount !== undefined && discount !== null && Number(discount) > 0 && (
-							<div className='flex flex-row justify-end items-center py-1'>
-								<div className='w-40 text-right text-sm font-medium text-gray-900'>Discount</div>
-								<div className='flex-1 text-right text-sm text-gray-900 font-medium'>−{formatAmount(Number(discount), currency ?? '')}</div>
+							<div className='flex justify-between items-center py-1.5'>
+								<span className='text-xs text-gray-500'>Discount</span>
+								<span className='text-sm text-gray-600'>−{formatAmount(Number(discount), currency ?? '')}</span>
 							</div>
 						)}
 
 						{total_tax !== undefined && total_tax !== null && Number(total_tax) !== 0 && (
-							<div className='flex flex-row justify-end items-center py-1'>
-								<div className='w-40 text-right text-sm font-medium text-gray-900'>Tax</div>
-								<div className='flex-1 text-right text-sm text-gray-900 font-medium'>{formatAmount(Number(total_tax), currency ?? '')}</div>
+							<div className='flex justify-between items-center py-1.5'>
+								<span className='text-xs text-gray-500'>Tax</span>
+								<span className='text-sm text-gray-900 font-medium'>{formatAmount(Number(total_tax), currency ?? '')}</span>
 							</div>
 						)}
 
 						{/* Net payable - always show, default to 0 if not provided */}
-						<div className='flex flex-row justify-end border-t border-gray-200 items-center py-3'>
-							<div className='w-40 flex items-center gap-2 justify-end'>
-								<span className='text-sm text-gray-900 font-medium'>Net payable</span>
+						<div className='flex justify-between items-center pt-3 mt-2 border-t border-gray-100'>
+							<div className='flex items-center gap-1.5'>
+								<span className='text-sm text-gray-900 font-semibold'>Net payable</span>
 								<TooltipProvider delayDuration={0}>
 									<Tooltip>
-										<TooltipTrigger>
-											<Info className='h-4 w-4 text-gray-400 hover:text-gray-600 transition-colors' />
+										<TooltipTrigger asChild>
+											<Info className='h-3.5 w-3.5 text-gray-400 hover:text-gray-600 transition-colors cursor-help' />
 										</TooltipTrigger>
-										<TooltipContent sideOffset={5} className='bg-gray-900 text-xs text-white px-3 py-1.5 rounded-lg max-w-[200px]'>
+										<TooltipContent sideOffset={5} className='bg-gray-900 text-xs text-white px-2.5 py-1.5 rounded-md max-w-[200px]'>
 											Final amount due after applying credit notes
 										</TooltipContent>
 									</Tooltip>
 								</TooltipProvider>
 							</div>
-							<div className='flex-1 text-right text-sm text-gray-900 font-semibold'>
-								{formatAmount(Number(amount_due ?? 0), currency ?? '')}
-							</div>
+							<span className='text-base text-gray-900 font-semibold'>{formatAmount(Number(amount_due ?? 0), currency ?? '')}</span>
 						</div>
 
 						{/* Amount paid - always show, default to 0 if not provided */}
-						<div className='flex flex-row justify-end items-center py-1'>
-							<div className='w-40 text-right text-sm font-medium text-gray-900'>Amount paid</div>
-							<div className='flex-1 text-right text-sm text-gray-900 font-medium'>
-								{formatAmount(Number(amount_paid ?? 0), currency ?? '')}
-							</div>
+						<div className='flex justify-between items-center py-1.5'>
+							<span className='text-xs text-gray-500'>Amount paid</span>
+							<span className='text-sm text-gray-900 font-medium'>{formatAmount(Number(amount_paid ?? 0), currency ?? '')}</span>
 						</div>
 
 						{/* Remaining balance - show the final outstanding amount */}
 						{((amount_remaining !== undefined && amount_remaining !== null && Number(amount_remaining) > 0) ||
 							(amount_due !== undefined && amount_due !== null && Number(amount_due) > 0)) && (
-							<div className='flex flex-row justify-end items-center py-3 border-t border-gray-200'>
-								<div className='w-40 text-right text-sm font-medium text-gray-900'>Remaining balance</div>
-								<div className='flex-1 text-right text-sm font-semibold text-gray-900'>
+							<div className='flex justify-between items-center pt-3 mt-2 border-t border-gray-100'>
+								<span className='text-sm text-gray-900 font-semibold'>Remaining balance</span>
+								<span className='text-base text-gray-900 font-semibold'>
 									{formatAmount(Number(amount_remaining ?? amount_due ?? 0), currency ?? '')}
-								</div>
+								</span>
 							</div>
 						)}
 					</div>
