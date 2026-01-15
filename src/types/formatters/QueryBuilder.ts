@@ -7,7 +7,7 @@ import { FilterCondition, DataType, FilterOperator } from '../common/QueryBuilde
 
 /**
  * Backend filter operator - matches backend FilterOperatorType
- * Values: "eq", "contains", "gt", "lt", "in", "not_in", "before", "after"
+ * Values: "eq", "contains", "not_contains", "gt", "lt", "in", "not_in", "before", "after"
  */
 export type BackendFilterOperator = FilterOperator;
 
