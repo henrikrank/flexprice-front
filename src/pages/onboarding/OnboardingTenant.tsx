@@ -1,5 +1,6 @@
 import { Page, Spacer, Input, Button, Card, Select, SelectOption } from '@/components/atoms';
 import TenantApi from '@/api/TenantApi';
+import OnboardingApi from '@/api/OnboardingApi';
 import { useMutation } from '@tanstack/react-query';
 import { Check, Globe, Gauge, Users, ArrowRight, ExternalLink } from 'lucide-react';
 import { ReactNode, useState } from 'react';
@@ -88,6 +89,24 @@ const OnboardingTenant = () => {
 		},
 	});
 
+	const { mutate: recordOnboardingData } = useMutation({
+		mutationFn: () =>
+			OnboardingApi.recordOnboardingData({
+				orgName: tenant?.name || orgName,
+				role: role || '',
+				teamSize: teamSize || '',
+				referralSource: referralSource || '',
+				pricingType: pricingType || '',
+				userEmail: user?.email || '',
+				tenantId: user?.tenant?.id || '',
+				timestamp: new Date().toISOString(),
+			}),
+		onError: (error) => {
+			// Silently fail - don't block the onboarding flow
+			console.error('Failed to record onboarding data:', error);
+		},
+	});
+
 	const {
 		mutate: saveOnboardingInfo,
 		isPending: isSavingOnboardingInfo,
@@ -107,6 +126,10 @@ const OnboardingTenant = () => {
 		onSuccess: async () => {
 			await refetchQueries(['user']);
 			toast.success('Onboarding information saved successfully');
+
+			// Record onboarding data to Google Sheets (non-blocking)
+			recordOnboardingData();
+
 			handleStepComplete(1);
 		},
 		onError: (error: ServerError) => {
