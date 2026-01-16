@@ -24,15 +24,32 @@ const App = () => {
 								primary: '#5CA7A0',
 								secondary: '#fff',
 							},
+							style: {
+								whiteSpace: 'nowrap',
+								minWidth: 'fit-content',
+								width: 'auto',
+								maxWidth: 'none',
+							},
+							className: 'whitespace-nowrap',
 						},
 						error: {
 							iconTheme: {
 								primary: '#E76E50',
 								secondary: '#fff',
 							},
+							style: {
+								whiteSpace: 'nowrap',
+								minWidth: 'fit-content',
+								width: 'auto',
+								maxWidth: 'none',
+							},
+							className: 'whitespace-nowrap',
 						},
 					}}
 					position='bottom-center'
+					containerStyle={{
+						bottom: '80px',
+					}}
 				/>
 				<div id='modal-root'></div>
 			</UserProvider>

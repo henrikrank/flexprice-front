@@ -1,16 +1,15 @@
-import { Page, Spacer, Input, Button, Card } from '@/components/atoms';
-import SecretKeysApi from '@/api/SecretKeysApi';
+import { Page, Spacer, Input, Button, Card, Select, SelectOption } from '@/components/atoms';
 import TenantApi from '@/api/TenantApi';
 import { useMutation } from '@tanstack/react-query';
-import { Copy, CheckCircle, Check, Eye, EyeOff, Lock, Globe, Gauge, Users, ArrowRight, ExternalLink } from 'lucide-react';
+import { Check, Globe, Gauge, Users, ArrowRight, ExternalLink } from 'lucide-react';
 import { ReactNode, useState } from 'react';
 import { toast } from 'react-hot-toast';
 import { cn } from '@/lib/utils';
 import { refetchQueries } from '@/core/services/tanstack/ReactQueryProvider';
-import { CreateSecretKeyResponse } from '@/types/dto';
 import { TenantMetadataKey } from '@/models/Tenant';
 import useUser from '@/hooks/useUser';
 import { useQuery } from '@tanstack/react-query';
+import { ServerError } from '@/core/axios/types';
 interface TutorialItem {
 	title: string;
 	description: string;
@@ -29,25 +28,32 @@ const exploreTutorials: TutorialItem[] = [
 		title: 'Define Usage Metering',
 		description: 'Set up billable metrics to track customer usage',
 		icon: <Gauge className='w-5 h-5 text-blue-600' />,
-		onClick: () => window.open('https://docs.flexprice.io/guides/billable-metric/billable-metrics-create', '_blank'),
+		onClick: () => window.open('https://docs.flexprice.io/docs/event-ingestion/creating-a-metered-feature', '_blank'),
 	},
 	{
 		title: 'Billing',
 		description: 'Create customers, assign plans, and manage subscriptions',
 		icon: <Users className='w-5 h-5 text-blue-600' />,
-		onClick: () => window.open('https://docs.flexprice.io/guides/subscription/customers-create-subscription', '_blank'),
+		onClick: () => window.open('https://docs.flexprice.io/docs/product-catalogue/plans/create', '_blank'),
 	},
 ];
 
 const OnboardingTenant = () => {
 	const { user } = useUser();
 	const [orgName, setOrgName] = useState<string>('');
-	const [secretKeyData, setSecretKeyData] = useState<string>('');
-	const [isCopied, setIsCopied] = useState<boolean>(false);
-	const [showSecretKey, setShowSecretKey] = useState<boolean>(false);
+	const [role, setRole] = useState<string>('');
+	const [teamSize, setTeamSize] = useState<string>('');
+	const [referralSource, setReferralSource] = useState<string>('');
+	const [pricingType, setPricingType] = useState<string>('');
 	const [activeStep, setActiveStep] = useState<number>(0);
 	const [completedSteps, setCompletedSteps] = useState<number[]>([]);
-	const [errors, setErrors] = useState<{ orgName: string }>({
+	const [errors, setErrors] = useState<{
+		orgName: string;
+		role?: string;
+		teamSize?: string;
+		referralSource?: string;
+		pricingType?: string;
+	}>({
 		orgName: '',
 	});
 
@@ -83,36 +89,30 @@ const OnboardingTenant = () => {
 	});
 
 	const {
-		mutate: createSecretKey,
-		isPending: isCreatingSecretKey,
-		isSuccess: isSecretKeyCreated,
+		mutate: saveOnboardingInfo,
+		isPending: isSavingOnboardingInfo,
+		isSuccess: isOnboardingInfoSaved,
 	} = useMutation({
 		mutationFn: () =>
-			SecretKeysApi.createSecretKey({
-				name: 'Onboarding Secret Key',
-				type: 'private_key',
+			TenantApi.updateTenant({
+				name: tenant?.name || orgName,
+				metadata: {
+					...tenant?.metadata,
+					onboarding_role: role,
+					onboarding_team_size: teamSize,
+					onboarding_referral_source: referralSource,
+					onboarding_pricing_type: pricingType,
+				},
 			}),
-		onSuccess: (data: CreateSecretKeyResponse) => {
-			setSecretKeyData(data.api_key);
+		onSuccess: async () => {
+			await refetchQueries(['user']);
+			toast.success('Onboarding information saved successfully');
 			handleStepComplete(1);
 		},
 		onError: (error: ServerError) => {
-			toast.error(`Failed to create secret key: ${error.error.message}`);
+			toast.error(error.error.message || 'Failed to save onboarding information. Please try again.');
 		},
 	});
-
-	const handleCopySecretKey = () => {
-		if (secretKeyData) {
-			navigator.clipboard.writeText(secretKeyData);
-			setIsCopied(true);
-			toast.success('Secret key copied to clipboard');
-			setTimeout(() => setIsCopied(false), 2000);
-		}
-	};
-
-	const toggleSecretKeyVisibility = () => {
-		setShowSecretKey(!showSecretKey);
-	};
 
 	const handleStepComplete = (stepIndex: number) => {
 		if (!completedSteps.includes(stepIndex)) {
@@ -136,17 +136,60 @@ const OnboardingTenant = () => {
 		}
 	};
 
+	const handleSaveOnboardingInfo = () => {
+		setErrors({
+			orgName: '',
+			role: '',
+			teamSize: '',
+			referralSource: '',
+			pricingType: '',
+		});
+		if (referralSource) {
+			saveOnboardingInfo();
+		} else {
+			setErrors({
+				orgName: '',
+				role: '',
+				teamSize: '',
+				referralSource: !referralSource ? 'Referral source is required' : '',
+				pricingType: '',
+			});
+		}
+	};
+
+	const teamSizeOptions: SelectOption[] = [
+		{ label: '1-10', value: '1-10' },
+		{ label: '11-20', value: '11-20' },
+		{ label: '21-50', value: '21-50' },
+		{ label: '50+', value: '50+' },
+	];
+
+	const referralSourceOptions: SelectOption[] = [
+		{ label: 'LinkedIn', value: 'LinkedIn' },
+		{ label: 'X (Formerly Twitter)', value: 'X' },
+		{ label: 'Blogs', value: 'Blogs' },
+		{ label: 'ChatGPT / Perplexity / Gemini', value: 'ChatGPT / Perplexity / Gemini' },
+		{ label: 'HackerNews', value: 'HackerNews' },
+		{ label: 'Product Hunt', value: 'Product Hunt' },
+	];
+
+	const pricingTypeOptions: SelectOption[] = [
+		{ label: 'Usage-Based', value: 'Usage-Based' },
+		{ label: 'Subscription', value: 'Subscription' },
+		{ label: 'Hybrid Pricing', value: 'Hybrid Pricing' },
+		{ label: 'Others', value: 'Others' },
+	];
+
 	const steps: { label: string; description: ReactNode; component: ReactNode; showAfterComplete?: boolean }[] = [
 		{
 			label: 'Create your organization',
 			description: 'Create an organization to get started and integrate pricing within 5 minutes.',
 			showAfterComplete: true,
 			component: (
-				<div className='flex flex-col  gap-4'>
+				<div className='flex flex-col gap-4'>
 					<Input
 						error={errors.orgName}
 						disabled={isUpdatingTenant || isTenantUpdated}
-						label='Organization Name'
 						placeholder='Enter your organization name'
 						value={orgName}
 						onChange={(e) => setOrgName(e)}
@@ -160,69 +203,103 @@ const OnboardingTenant = () => {
 			),
 		},
 		{
-			label: 'Add an API Key',
-			description: 'Use the following generated key to authenticate requests',
+			label: 'Tell us about yourself',
+			description: 'Help us understand your needs better',
 			showAfterComplete: true,
 			component: (
-				<div className='flex flex-col gap-4'>
-					{isSecretKeyCreated ? (
-						<div className='relative'>
-							<div className='relative'>
-								<Input
-									type={showSecretKey ? 'text' : 'password'}
-									disabled={true}
-									label='Secret Key'
-									placeholder='Your secret key'
-									value={secretKeyData}
-									className='max-h-8'
-									suffix={
-										<div className='flex gap-2'>
-											<button onClick={toggleSecretKeyVisibility} className=' hover:bg-gray-100 rounded-md transition-colors' type='button'>
-												{showSecretKey ? <EyeOff className='h-4 w-4 text-gray-500' /> : <Eye className='h-4 w-4 text-gray-500' />}
-											</button>
-											<button onClick={handleCopySecretKey} className='p-2 hover:bg-gray-100 rounded-md transition-colors' type='button'>
-												{isCopied ? <CheckCircle className='h-4 w-4 text-green-500' /> : <Copy className='h-4 w-4 text-gray-500' />}
-											</button>
-										</div>
-									}
-									onChange={(e) => setSecretKeyData(e)}
-								/>
-							</div>
-							<p className='text-sm text-gray-500 mt-2'>Make sure to copy your secret key now. You won't be able to see it again!</p>
+				<div className='flex flex-col gap-6'>
+					<div className='grid grid-cols-2 gap-x-20 gap-y-8'>
+						<div className='min-w-[320px]'>
+							<Input
+								error={errors.role}
+								disabled={isSavingOnboardingInfo || isOnboardingInfoSaved}
+								label='What role do you perform in your organization?'
+								placeholder='Your role'
+								value={role}
+								onChange={(e) => setRole(e)}
+							/>
 						</div>
-					) : (
-						<div>
-							<Button
-								onClick={() => createSecretKey()}
-								disabled={isCreatingSecretKey || isSecretKeyCreated || activeStep !== 1}
-								isLoading={isCreatingSecretKey}
-								className='bg-blue-600 flex justify-center gap-2 hover:bg-blue-700 text-white'>
-								<Lock className='h-4 w-4' />
-								Add API Key
-							</Button>
+						<div className='min-w-[320px]'>
+							<Select
+								options={teamSizeOptions}
+								value={teamSize}
+								label="What's your team size?"
+								placeholder='Team size'
+								error={errors.teamSize}
+								disabled={isSavingOnboardingInfo || isOnboardingInfoSaved}
+								onChange={(value) => setTeamSize(value)}
+							/>
 						</div>
-					)}
+						<div className='min-w-[320px]'>
+							<Select
+								options={referralSourceOptions}
+								value={referralSource}
+								label='How did you find us?'
+								placeholder='Where did you hear about us?'
+								error={errors.referralSource}
+								disabled={isSavingOnboardingInfo || isOnboardingInfoSaved}
+								onChange={(value) => setReferralSource(value)}
+							/>
+						</div>
+						<div className='min-w-[320px]'>
+							<Select
+								options={pricingTypeOptions}
+								value={pricingType}
+								label='What type of pricing are you choosing flexprice for?'
+								placeholder='How do you price today?'
+								error={errors.pricingType}
+								disabled={isSavingOnboardingInfo || isOnboardingInfoSaved}
+								onChange={(value) => setPricingType(value)}
+							/>
+						</div>
+					</div>
+					<div className={cn(activeStep != 1 && 'hidden', isSavingOnboardingInfo || isOnboardingInfoSaved ? 'opacity-50' : '')}>
+						<Button
+							onClick={handleSaveOnboardingInfo}
+							disabled={isSavingOnboardingInfo || isOnboardingInfoSaved}
+							isLoading={isSavingOnboardingInfo}>
+							Save
+						</Button>
+					</div>
 				</div>
 			),
 		},
 		{
-			label: 'Demo Video',
-			description: 'Watch a demo video to get started',
+			label: "You're all Set 🎉",
+			description: (
+				<>
+					You now have access to flexprice in the sandbox environment. <br />
+					All features are unlocked by default in this environment. Join our community or book a demo for continued support.
+				</>
+			),
 			showAfterComplete: true,
 			component: (
-				<div className='flex flex-col gap-4'>
-					<iframe
-						src='https://www.loom.com/embed/60d8308781254fe0bc5be341501f9fd5?sid=c034e9a8-e243-4def-ab50-976f08d56cee&amp;hideEmbedTopBar=true&amp;hide_title=true&amp;hide_owner=true&amp;hide_speed=true&amp;hide_share=true'
-						allowFullScreen
-						className='aspect-video max-w-96 max-h-96 rounded-lg overflow-clip'></iframe>
-					<div>
+				<div className='flex flex-col gap-10'>
+					<div className='flex flex-col sm:flex-row gap-4'>
 						<Button
 							onClick={() => {
-								window.open('https://calendly.com/flexprice-30mins-chat/manish', '_blank');
-							}}>
-							Book a Personalized Demo
+								window.open('https://calendly.com/nikhil-flexprice/30min', '_blank');
+							}}
+							className='flex items-center gap-2'>
+							Book a Demo
 							<ExternalLink className='h-4 w-4' />
 						</Button>
+						<Button
+							variant='outline'
+							onClick={() => {
+								window.open('https://join.slack.com/t/flexpricecommunity/shared_invite/zt-39uat51l0-n8JmSikHZP~bHJNXladeaQ', '_blank');
+							}}
+							className='flex items-center gap-2'>
+							Join our Slack Community
+							<ExternalLink className='h-4 w-4' />
+						</Button>
+					</div>
+					<div className='flex flex-col gap-6'>
+						<p className='text-sm text-gray-500'>or watch this demo video to get started</p>
+						<iframe
+							src='https://www.loom.com/embed/60d8308781254fe0bc5be341501f9fd5?sid=c034e9a8-e243-4def-ab50-976f08d56cee&amp;hideEmbedTopBar=true&amp;hide_title=true&amp;hide_owner=true&amp;hide_speed=true&amp;hide_share=true'
+							allowFullScreen
+							className='aspect-video max-w-96 max-h-96 rounded-lg overflow-clip'></iframe>
 					</div>
 				</div>
 			),
@@ -232,7 +309,7 @@ const OnboardingTenant = () => {
 	return (
 		<Page heading='Onboarding'>
 			<Spacer height={40} />
-			<div className='flex flex-col max-w-2xl'>
+			<div className='flex flex-col max-w-4xl'>
 				{steps.map((step, index) => {
 					const isCompleted = completedSteps.includes(index);
 					const isActive = activeStep === index;
@@ -244,16 +321,16 @@ const OnboardingTenant = () => {
 							<div className='relative flex flex-col items-center'>
 								<div
 									className={cn(
-										'w-3 h-3 rounded-full flex items-center justify-center transition-all duration-200 mt-2',
+										'w-4 h-4 rounded-full flex items-center justify-center transition-all duration-200 mt-2',
 										isCompleted ? 'bg-green-700 border-0' : isActive ? 'bg-blue-600 border-0' : 'border-2 border-gray-300 bg-white',
-										isUpcoming && 'opacity-50',
+										isUpcoming && 'opacity-40',
 									)}>
-									{isCompleted && <Check className='w-2 h-2 text-white' />}
+									{isCompleted && <Check className='w-2.5 h-2.5 text-white' />}
 								</div>
 								{index < steps.length && (
 									<div
 										className={cn(
-											'absolute top-5 w-[2px] h-full transition-colors duration-200',
+											'absolute top-6 w-[2px] h-full transition-colors duration-200',
 											isCompleted ? 'bg-green-600' : 'bg-gray-200',
 											isUpcoming && 'opacity-50',
 											index < steps.length - 1 ? 'bottom-0' : 'bottom-12 h-[95%]',
@@ -265,12 +342,12 @@ const OnboardingTenant = () => {
 							<div
 								className={cn(
 									'flex-1 transition-opacity duration-200',
-									isUpcoming && 'opacity-50',
+									isUpcoming && 'opacity-45 blur-[2.5px]',
 									index < steps.length - 1 ? 'pb-12' : 'pb-0',
 								)}>
 								<h1 className={cn('text-base font-medium mb-2')}>{step.label}</h1>
 								<p className='text-sm text-gray-500'>{step.description}</p>
-								{(isActive || step.showAfterComplete) && <div className='mt-2'>{step.component}</div>}
+								{(isActive || step.showAfterComplete) && <div className='mt-6'>{step.component}</div>}
 							</div>
 						</div>
 					);
