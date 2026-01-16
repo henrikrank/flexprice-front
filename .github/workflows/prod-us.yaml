@@ -2,7 +2,7 @@ name: Flexprice.io Production Deployment
 
 env:
   VERCEL_ORG_ID: ${{secrets.VERCEL_ORG_ID}}
-  VERCEL_PROJECT_ID: ${{secrets.VERCEL_PROJECT_ID}}
+  VERCEL_PROJECT_ID: ${{secrets.VERCEL_PROJECT_US}}
   SENTRY_AUTH_TOKEN: ${{secrets.SENTRY_AUTH_TOKEN}}
 
 on:
