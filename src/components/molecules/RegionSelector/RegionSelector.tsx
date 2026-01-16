@@ -51,7 +51,7 @@ const RegionSelector: React.FC = () => {
 					<button
 						type='button'
 						onClick={() => setIsDialogOpen(true)}
-						className='text-sm text-orange-600 hover:text-orange-700 hover:underline cursor-pointer'>
+						className='text-sm text-[#0E5AC9] hover:text-[#0E5AC9] hover:underline cursor-pointer'>
 						(what is this?)
 					</button>
 				</Tooltip>
