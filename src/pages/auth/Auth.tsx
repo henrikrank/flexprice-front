@@ -5,6 +5,7 @@ import SignupForm from './SignupForm';
 import ForgotPasswordForm from './ForgotPasswordForm';
 import AuthService from '@/core/auth/AuthService';
 import LandingSection from './LandingSection';
+import RegionSelector from '@/components/molecules/RegionSelector/RegionSelector';
 
 enum AuthTab {
 	LOGIN = 'login',
@@ -76,20 +77,24 @@ const AuthPage: React.FC = () => {
 			{/* Left side - Auth Form */}
 			<div className='w-[45%] flex justify-center items-center'>
 				<div className='flex flex-col justify-center max-w-xl w-[55%] mx-auto'>
-					<div className='flex justify-center mb-4'>
+					<div className='flex justify-center mb-6'>
 						<img src={'/newlogobrowser.png'} alt='Flexprice Logo' className='h-12' />
 					</div>
 
 					{currentTab === AuthTab.SIGNUP && (
 						<>
 							<h2 className='text-3xl font-medium text-center text-gray-800 mb-2'>Create your account</h2>
-							<p className='text-center text-gray-600 mb-8'>Sign up to start using Flexprice.</p>
+							<p className='text-center text-gray-600 mb-6'>Sign up to start using Flexprice.</p>
+							{/* Region Selector */}
+							<RegionSelector />
 						</>
 					)}
 					{currentTab === AuthTab.LOGIN && (
 						<>
 							<h2 className='text-3xl font-medium text-center text-gray-800 mb-3'>Login to your account</h2>
-							<p className='text-center text-gray-600 mb-10'>Let's get you back in.</p>
+							<p className='text-center text-gray-600 mb-6'>Let's get you back in.</p>
+							{/* Region Selector */}
+							<RegionSelector />
 						</>
 					)}
 					{currentTab === AuthTab.FORGOT_PASSWORD && (
