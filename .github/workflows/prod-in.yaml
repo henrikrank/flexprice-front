@@ -1,4 +1,4 @@
-name: Flexprice.io Production Deployment
+name: Flexprice.io IN Production Deployment
 
 env:
   VERCEL_ORG_ID: ${{secrets.VERCEL_ORG_ID}}
@@ -11,7 +11,7 @@ on:
       - main
 
 jobs:
-  deploy-production:
+  deploy-in-production:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
