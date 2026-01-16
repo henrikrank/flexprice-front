@@ -38,7 +38,7 @@ const RegionSelector: React.FC = () => {
 	const availableOptions = regionOptions.filter((option) => {
 		const urls = getDashboardUrls();
 		if (option.value === Region.INDIA) return !!urls.india;
-		if (option.value === Region.US) return !!urls.us;
+		// if (option.value === Region.US) return !!urls.us;
 		return false;
 	});
 
