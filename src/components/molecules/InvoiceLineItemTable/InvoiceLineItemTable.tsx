@@ -145,16 +145,6 @@ const InvoiceLineItemTable: FC<Props> = ({
 							</div>
 						)}
 
-						{/* Prepaid Credits Applied - only show if provided and > 0 */}
-						{total_prepaid_credits_applied !== undefined &&
-							total_prepaid_credits_applied !== null &&
-							Number(total_prepaid_credits_applied) > 0 && (
-								<div className='flex justify-between items-center py-1.5'>
-									<span className='text-xs text-gray-500'>Prepaid Credits Applied</span>
-									<span className='text-sm text-gray-600'>−{formatAmount(Number(total_prepaid_credits_applied), currency ?? '')}</span>
-								</div>
-							)}
-
 						{/* Discount - only show if provided and > 0 */}
 						{discount !== undefined && discount !== null && Number(discount) > 0 && (
 							<div className='flex justify-between items-center py-1.5'>
@@ -162,6 +152,16 @@ const InvoiceLineItemTable: FC<Props> = ({
 								<span className='text-sm text-gray-600'>−{formatAmount(Number(discount), currency ?? '')}</span>
 							</div>
 						)}
+
+						{/* Prepaid Credits Applied - only show if provided and > 0 */}
+						{total_prepaid_credits_applied !== undefined &&
+							total_prepaid_credits_applied !== null &&
+							Number(total_prepaid_credits_applied) > 0 && (
+								<div className='flex justify-between items-center py-1.5'>
+									<span className='text-xs text-gray-500'>Prepaid Credits</span>
+									<span className='text-sm text-gray-600'>−{formatAmount(Number(total_prepaid_credits_applied), currency ?? '')}</span>
+								</div>
+							)}
 
 						{total_tax !== undefined && total_tax !== null && Number(total_tax) !== 0 && (
 							<div className='flex justify-between items-center py-1.5'>
