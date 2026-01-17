@@ -19,10 +19,9 @@ import WalletApi from '@/api/WalletApi';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { useEffect, useMemo, useState } from 'react';
 import toast from 'react-hot-toast';
-import { IoSearch } from 'react-icons/io5';
 import { useParams, useOutletContext } from 'react-router';
 import CreateCustomerWalletModal from '../customers/CreateCustomerWalletModal';
-import { EllipsisVertical, Info, Pencil, SlidersHorizontal, Trash2, Wallet as WalletIcon, Bell, Minus, RefreshCw } from 'lucide-react';
+import { EllipsisVertical, Info, Pencil, Trash2, Wallet as WalletIcon, Bell, Minus, RefreshCw } from 'lucide-react';
 import { getCurrencySymbol } from '@/utils/common/helper_functions';
 import useQueryParams from '@/hooks/useQueryParams';
 import { DetailsCard } from '@/components/molecules';
@@ -417,14 +416,6 @@ const CustomerWalletTab = () => {
 								<div className='card'>
 									<div className='w-full flex justify-between items-center'>
 										<FormHeader title='Transactions' titleClassName='!font-semibold' variant='form-title' />
-										<div className='flex items-center space-x-2'>
-											<button className='px-2 py-1'>
-												<IoSearch className='size-4 text-[#09090B]' />
-											</button>
-											<button className='px-2 py-1'>
-												<SlidersHorizontal className='size-4 text-[#09090B]' />
-											</button>
-										</div>
 									</div>
 									<Spacer className='!h-6' />
 									<WalletTransactionsTable data={transactionsData?.items || []} />
