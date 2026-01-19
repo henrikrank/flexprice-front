@@ -1,6 +1,5 @@
 import { AxiosClient } from '@/core/axios/verbs';
 import { FireEventsPayload } from '@/types/dto';
-import axios from 'axios';
 
 export interface SetupDemoRequest {
 	// Add fields based on backend requirements
@@ -48,15 +47,36 @@ class OnboardingApi {
 			return;
 		}
 
-		// Create a clean axios instance without auth interceptors for external API calls
-		const externalClient = axios.create({
-			headers: {
-				'Content-Type': 'application/json',
-			},
-			timeout: 10000, // 10 second timeout
-		});
+		// Use a "simple" fetch request to avoid CORS preflight (OPTIONS) where possible.
+		// Note: `Content-Type: application/json` would trigger a preflight in browsers.
+		const controller = new AbortController();
+		const timeoutId = window.setTimeout(() => controller.abort(), 10_000);
 
-		await externalClient.post(webAppUrl, payload);
+		try {
+			const res = await fetch(webAppUrl, {
+				method: 'POST',
+				headers: {
+					// Keep request "simple" to reduce preflight chances (Google Apps Script can still read raw body).
+					'Content-Type': 'text/plain;charset=UTF-8',
+				},
+				body: JSON.stringify(payload),
+				signal: controller.signal,
+			});
+
+			// This is non-critical telemetry; don't hard-fail onboarding on sheet issues.
+			if (!res.ok) {
+				const text = await res.text().catch(() => '');
+				console.warn('Failed to record onboarding data to Google Sheets.', {
+					status: res.status,
+					statusText: res.statusText,
+					body: text,
+				});
+			}
+		} catch (err) {
+			console.warn('Failed to record onboarding data to Google Sheets.', err);
+		} finally {
+			window.clearTimeout(timeoutId);
+		}
 	}
 }
 
