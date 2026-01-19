@@ -41,10 +41,26 @@ class SubscriptionApi {
 	// =============================================================================
 
 	/**
-	 * Get a subscription by ID
+	 * Get a subscription by ID (full response)
 	 */
 	public static async getSubscription(id: string): Promise<SubscriptionResponse> {
 		return await AxiosClient.get<SubscriptionResponse>(`${this.baseUrl}/${id}`);
+	}
+
+	/**
+	 * Get a subscription by ID with expand options (v2 - minimal response support)
+	 * @param id - Subscription ID
+	 * @param options - Optional parameters
+	 * @param options.expand - Comma-separated list of fields to expand (e.g., 'plan,schedule,pauses'). Pass empty string for minimal response.
+	 */
+	public static async getSubscriptionV2(id: string, options?: { expand?: string }): Promise<SubscriptionResponse> {
+		const params = new URLSearchParams();
+		if (options?.expand !== undefined) {
+			params.append('expand', options.expand);
+		}
+		const queryString = params.toString();
+		const url = queryString ? `${this.baseUrl}/${id}/v2?${queryString}` : `${this.baseUrl}/${id}/v2`;
+		return await AxiosClient.get<SubscriptionResponse>(url);
 	}
 
 	/**
