@@ -132,3 +132,52 @@
 		display: none;
 	}
 }
+
+/* Toast notification styles - prevent line breaks and allow container to expand */
+div[class*='react-hot-toast'] {
+	white-space: nowrap !important;
+	min-width: fit-content !important;
+	width: auto !important;
+	max-width: none !important;
+}
+
+div[class*='react-hot-toast'] > div {
+	white-space: nowrap !important;
+	min-width: fit-content !important;
+	width: auto !important;
+}
+
+div[class*='react-hot-toast'] > div > div {
+	white-space: nowrap !important;
+	min-width: fit-content !important;
+	width: auto !important;
+}
+
+/* Target the message text specifically */
+div[class*='react-hot-toast'] div[class*='message'] {
+	white-space: nowrap !important;
+}
+
+/* General toast container */
+div[role='status'] {
+	white-space: nowrap !important;
+	min-width: fit-content !important;
+	width: auto !important;
+	max-width: none !important;
+}
+
+div[role='status'] > div {
+	white-space: nowrap !important;
+	min-width: fit-content !important;
+	width: auto !important;
+}
+
+/* Toast container positioning - move higher from bottom */
+div[class*='react-hot-toast'][style*='bottom'] {
+	bottom: 80px !important;
+}
+
+/* Alternative selector for toast container */
+div[data-hot-toast-container] {
+	bottom: 80px !important;
+}
