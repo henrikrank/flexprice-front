@@ -25,7 +25,8 @@ const CustomerSubscriptionDetailsPage: FC = () => {
 	const { data: subscriptionDetails, isLoading: isSubscriptionDetailsLoading } = useQuery<SubscriptionType>({
 		queryKey: ['subscriptionDetails', subscription_id],
 		queryFn: async (): Promise<SubscriptionType> => {
-			return await SubscriptionApi.getSubscription(subscription_id!);
+			// Use v2 API with minimal expand - only request fields needed for this page
+			return await SubscriptionApi.getSubscriptionV2(subscription_id!, { expand: 'plan' });
 		},
 		staleTime: 1,
 	});
