@@ -1,6 +1,7 @@
 import { AxiosClient } from '@/core/axios/verbs';
 import { generateQueryParams } from '@/utils/common/api_helper';
 import {
+	GetEventDebugResponse,
 	GetEventsPayload,
 	GetEventsRequest,
 	GetEventsResponse,
@@ -23,6 +24,14 @@ class EventsApi {
 	public static async getRawEvents(payload: GetEventsPayload): Promise<GetEventsResponse> {
 		const url = generateQueryParams(EventsApi.baseUrl, payload);
 		return await AxiosClient.get<GetEventsResponse>(url);
+	}
+
+	/**
+	 * Event debugger response for a single event
+	 * GET /events/:id
+	 */
+	public static async getEventDebug(eventId: string): Promise<GetEventDebugResponse> {
+		return await AxiosClient.get<GetEventDebugResponse>(`${EventsApi.baseUrl}/${eventId}`);
 	}
 
 	/**
