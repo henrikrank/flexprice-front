@@ -2,14 +2,18 @@ import { FC, useEffect, useMemo, useState } from 'react';
 import { Sheet } from '@/components/atoms';
 import { Event } from '@/models/Event';
 import { Highlight, themes } from 'prism-react-renderer';
-import { CheckCircle2, Copy, Circle, XCircle } from 'lucide-react';
+import { CheckCircle2, Copy, XCircle, Circle } from 'lucide-react';
 import toast from 'react-hot-toast';
 import EventsApi from '@/api/EventsApi';
-import { DebugTrackerStatus, GetEventDebugResponse, EventProcessedEvent } from '@/types/dto';
+import { DebugTrackerStatus, EventDebugStatus, GetEventDebugResponse, EventProcessedEvent } from '@/types/dto';
 import { Skeleton } from '@/components/ui/skeleton';
 import { cn } from '@/lib/utils';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { formatDateTimeWithSecondsAndTimezone } from '@/utils/common/format_date';
+import { Link } from 'react-router';
+import { RouteNames } from '@/core/routes/Routes';
+import { useNavigate } from 'react-router';
+import SubscriptionApi from '@/api/SubscriptionApi';
 
 interface Props {
 	isOpen: boolean;
@@ -51,6 +55,7 @@ const JsonCodeBlock: FC<{ value: any; title?: string; onCopy?: () => void }> = (
 };
 
 const EventPropertiesDrawer: FC<Props> = ({ isOpen, onOpenChange, event }) => {
+	const navigate = useNavigate();
 	const [loading, setLoading] = useState(false);
 	const [debugResponse, setDebugResponse] = useState<GetEventDebugResponse | null>(null);
 	const [loadError, setLoadError] = useState<string | null>(null);
@@ -84,6 +89,31 @@ const EventPropertiesDrawer: FC<Props> = ({ isOpen, onOpenChange, event }) => {
 
 	// Fallback to the table event while the debug payload loads
 	const displayEvent = debugResponse?.event ?? event;
+	const resolvedCustomerId =
+		debugResponse?.customer?.customer_id ??
+		(displayEvent?.customer_id && displayEvent.customer_id.trim().length > 0 ? displayEvent.customer_id : undefined) ??
+		debugResponse?.debug_tracker?.customer_lookup?.customer?.id;
+
+	const openSubscription = async (subscriptionId: string) => {
+		try {
+			// If we already know the customerId, navigate directly
+			if (resolvedCustomerId) {
+				navigate(`${RouteNames.customers}/${resolvedCustomerId}/subscription/${subscriptionId}`);
+				return;
+			}
+
+			// Otherwise, fetch subscription to discover customer_id
+			const sub = await SubscriptionApi.getSubscription(subscriptionId);
+			if (sub?.customer_id) {
+				navigate(`${RouteNames.customers}/${sub.customer_id}/subscription/${subscriptionId}`);
+				return;
+			}
+
+			toast.error('Could not resolve customer for this subscription');
+		} catch (e: any) {
+			toast.error(e?.message || 'Failed to open subscription');
+		}
+	};
 
 	const handleCopyCode = () => {
 		if (!displayEvent) return;
@@ -94,41 +124,46 @@ const EventPropertiesDrawer: FC<Props> = ({ isOpen, onOpenChange, event }) => {
 	const processedEvents = debugResponse?.processed_events ?? [];
 	const showProcessedOnly = useMemo(() => processedEvents.length > 0, [processedEvents.length]);
 
-	const renderStepIcon = (status?: DebugTrackerStatus) => {
+	const renderStepIcon = (status?: DebugTrackerStatus | EventDebugStatus) => {
 		switch (status) {
+			case 'processing':
+				return <Circle className='h-5 w-5 text-blue-500' />;
+			case 'failed':
+				return <XCircle className='h-5 w-5 text-red-500' />;
 			case 'found':
 				return <CheckCircle2 className='h-5 w-5 text-emerald-500' />;
 			case 'not_found':
 				return <XCircle className='h-5 w-5 text-amber-500' />;
 			case 'error':
 				return <XCircle className='h-5 w-5 text-red-500' />;
-			case 'unprocessed':
 			default:
-				return <Circle className='h-5 w-5 text-slate-300' />;
+				return <XCircle className='h-5 w-5 text-slate-300' />;
 		}
 	};
 
-	const renderStepStatusText = (status?: DebugTrackerStatus) => {
+	const renderStepStatusText = (status?: DebugTrackerStatus | EventDebugStatus) => {
 		switch (status) {
+			case 'processing':
+				return 'Processing';
+			case 'failed':
+				return 'Failed';
 			case 'found':
-				return 'found';
+				return 'Successful';
 			case 'not_found':
-				return 'not found';
+				return 'Failed';
 			case 'error':
-				return 'error';
-			case 'unprocessed':
+				return 'Failed';
 			default:
-				return 'unprocessed';
+				return 'Skipped';
 		}
 	};
 
-	const renderProcessedEvents = (items: EventProcessedEvent[]) => {
+	const renderProcessedEvents = (items: EventProcessedEvent[], customer?: { customer_id: string; customer_name?: string } | null) => {
 		return (
 			<div className='rounded-lg border border-gray-200 bg-white'>
 				<div className='px-4 py-3 border-b border-gray-200 flex items-start justify-between gap-3'>
 					<div>
 						<p className='text-sm font-medium text-foreground'>Processed Events</p>
-						<p className='text-xs text-slate-500'>All processed feature-usage records created with this event</p>
 					</div>
 					<div className='shrink-0'>
 						<span className='inline-flex items-center rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 px-2 py-0.5 text-xs font-medium'>
@@ -149,8 +184,35 @@ const EventPropertiesDrawer: FC<Props> = ({ isOpen, onOpenChange, event }) => {
 								</div>
 
 								<dl className='mt-3 grid grid-cols-12 gap-x-3 gap-y-2'>
+									<dt className='col-span-4 text-xs text-slate-500'>Customer</dt>
+									<dd className='col-span-8 text-xs break-all'>
+										{customer?.customer_id ? (
+											<div className='flex flex-col'>
+												<Link to={`${RouteNames.customers}/${customer.customer_id}`} className='text-blue-600 hover:underline font-medium'>
+													{customer.customer_name || customer.customer_id}
+												</Link>
+											</div>
+										) : (
+											<span className='text-slate-500'>—</span>
+										)}
+									</dd>
+
 									<dt className='col-span-4 text-xs text-slate-500'>Subscription</dt>
-									<dd className='col-span-8 text-xs font-mono text-slate-900 break-all'>{pe.subscription_id}</dd>
+									<dd className='col-span-8 text-xs font-mono break-all'>
+										<button
+											type='button'
+											onClick={() => openSubscription(pe.subscription_id)}
+											className='text-blue-600 hover:underline text-left'>
+											{pe.subscription_id}
+										</button>
+									</dd>
+
+									<dt className='col-span-4 text-xs text-slate-500'>Feature</dt>
+									<dd className='col-span-8 text-xs font-mono break-all'>
+										<Link to={`${RouteNames.featureDetails}/${pe.feature_id}`} className='text-blue-600 hover:underline'>
+											{pe.feature_id}
+										</Link>
+									</dd>
 
 									<dt className='col-span-4 text-xs text-slate-500'>Line item</dt>
 									<dd className='col-span-8 text-xs font-mono text-slate-900 break-all'>{pe.sub_line_item_id}</dd>
@@ -160,9 +222,6 @@ const EventPropertiesDrawer: FC<Props> = ({ isOpen, onOpenChange, event }) => {
 
 									<dt className='col-span-4 text-xs text-slate-500'>Price</dt>
 									<dd className='col-span-8 text-xs font-mono text-slate-900 break-all'>{pe.price_id}</dd>
-
-									<dt className='col-span-4 text-xs text-slate-500'>Feature</dt>
-									<dd className='col-span-8 text-xs font-mono text-slate-900 break-all'>{pe.feature_id}</dd>
 
 									<dt className='col-span-4 text-xs text-slate-500'>Qty</dt>
 									<dd className='col-span-8 text-xs font-mono text-slate-900 break-all'>{pe.qty_total}</dd>
@@ -177,37 +236,37 @@ const EventPropertiesDrawer: FC<Props> = ({ isOpen, onOpenChange, event }) => {
 
 	const renderFailedTracker = () => {
 		const t = debugResponse?.debug_tracker;
-		if (!t) return null;
+		const overallStatus = debugResponse?.status;
 
 		const steps: Array<{
 			key: 'customer_lookup' | 'meter_lookup' | 'price_lookup' | 'subscription_line_item_lookup';
 			title: string;
-			status?: DebugTrackerStatus;
+			status?: DebugTrackerStatus | EventDebugStatus;
 			value: any;
 		}> = [
 			{
 				key: 'customer_lookup',
 				title: 'Customer Lookup',
-				status: t.customer_lookup?.status,
-				value: t.customer_lookup,
+				status: t?.customer_lookup?.status ?? 'unprocessed',
+				value: t?.customer_lookup ?? {},
 			},
 			{
 				key: 'meter_lookup',
-				title: 'Meter Lookup',
-				status: t.meter_matching?.status,
-				value: t.meter_matching,
+				title: 'Feature Lookup',
+				status: t?.meter_matching?.status ?? 'unprocessed',
+				value: t?.meter_matching ?? {},
 			},
 			{
 				key: 'price_lookup',
 				title: 'Price Lookup',
-				status: t.price_lookup?.status,
-				value: t.price_lookup,
+				status: t?.price_lookup?.status ?? 'unprocessed',
+				value: t?.price_lookup ?? {},
 			},
 			{
 				key: 'subscription_line_item_lookup',
 				title: 'Subscription Line Item Lookup',
-				status: t.subscription_line_item_lookup?.status,
-				value: t.subscription_line_item_lookup,
+				status: t?.subscription_line_item_lookup?.status ?? 'unprocessed',
+				value: t?.subscription_line_item_lookup ?? {},
 			},
 		];
 
@@ -215,7 +274,6 @@ const EventPropertiesDrawer: FC<Props> = ({ isOpen, onOpenChange, event }) => {
 			<div className='rounded-lg border border-gray-200 bg-white'>
 				<div className='px-4 py-3 border-b border-gray-200'>
 					<p className='text-sm font-medium text-foreground'>Event Tracker</p>
-					<p className='text-xs text-slate-500'>Follow the event ingestion process step by step</p>
 				</div>
 
 				<div className='px-4 py-3'>
@@ -272,16 +330,19 @@ const EventPropertiesDrawer: FC<Props> = ({ isOpen, onOpenChange, event }) => {
 							))}
 						</Accordion>
 
-						{t.failure_point?.failure_point_type ? (
-							<div className='mt-4 ml-[40px] relative z-10 rounded-md bg-slate-50 border border-slate-200 px-3 py-2'>
-								<p className='text-xs text-slate-700'>
-									<span className='font-medium'>Failure point:</span> {t.failure_point.failure_point_type}
-								</p>
-								{t.failure_point.error?.error?.message ? (
-									<p className='text-xs text-slate-600 mt-1'>{t.failure_point.error.error.message}</p>
-								) : null}
+						{/* Attributed to Customer: status row only (no dropdown) */}
+						<div className='grid grid-cols-[24px_1fr] gap-x-4 py-3'>
+							<div className='relative z-10 flex justify-center pt-0.5'>
+								<div className='bg-white rounded-full p-0.5'>
+									{/* Always grey crossed for this row */}
+									<XCircle className='h-5 w-5 text-slate-300' />
+								</div>
 							</div>
-						) : null}
+							<div className='min-w-0'>
+								<p className='text-sm text-foreground'>Attributed to Customer</p>
+								<p className='text-xs mt-1 text-slate-500'>{overallStatus === 'processing' ? 'Processing' : 'Failed'}</p>
+							</div>
+						</div>
 					</div>
 				</div>
 			</div>
@@ -319,7 +380,7 @@ const EventPropertiesDrawer: FC<Props> = ({ isOpen, onOpenChange, event }) => {
 
 							{/* Processed: show processed events only. Failed: show tracker waterfall. */}
 							{showProcessedOnly ? (
-								renderProcessedEvents(processedEvents)
+								renderProcessedEvents(processedEvents, debugResponse.customer ?? null)
 							) : debugResponse.debug_tracker ? (
 								renderFailedTracker()
 							) : (

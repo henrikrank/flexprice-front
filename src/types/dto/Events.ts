@@ -1,6 +1,6 @@
 import { Event, WindowSize, UsageAnalyticItem } from '@/models';
 
-export type EventDebugStatus = 'processed' | 'unprocessed' | 'failed';
+export type EventDebugStatus = 'processed' | 'processing' | 'failed';
 export type DebugTrackerStatus = 'unprocessed' | 'found' | 'not_found' | 'error';
 
 export interface EventDebugErrorDetail {
@@ -86,6 +86,10 @@ export interface EventDebugTracker {
 export interface GetEventDebugResponse {
 	event: Event;
 	status: EventDebugStatus;
+	customer?: {
+		customer_id: string;
+		customer_name?: string;
+	};
 	processed_events?: EventProcessedEvent[];
 	debug_tracker?: EventDebugTracker;
 }
