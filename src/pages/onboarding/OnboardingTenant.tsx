@@ -258,6 +258,7 @@ const OnboardingTenant = () => {
 								options={referralSourceOptions}
 								value={referralSource}
 								label='How did you find us?'
+								required
 								placeholder='Where did you hear about us?'
 								error={errors.referralSource}
 								disabled={isSavingOnboardingInfo || isOnboardingInfoSaved}
@@ -268,7 +269,7 @@ const OnboardingTenant = () => {
 							<Select
 								options={pricingTypeOptions}
 								value={pricingType}
-								label='What type of pricing are you choosing flexprice for?'
+								label='What pricing model are you choosing for Flexprice?'
 								placeholder='How do you price today?'
 								error={errors.pricingType}
 								disabled={isSavingOnboardingInfo || isOnboardingInfoSaved}
@@ -289,15 +290,16 @@ const OnboardingTenant = () => {
 		},
 		{
 			label: "You're all Set 🎉",
-			description: (
-				<>
-					You now have access to flexprice in the sandbox environment. <br />
-					All features are unlocked by default in this environment. Join our community or book a demo for continued support.
-				</>
-			),
+			description: <>Join our community or book a demo for continued support.</>,
 			showAfterComplete: true,
 			component: (
-				<div className='flex flex-col gap-10'>
+				<div className='flex flex-col gap-8'>
+					<div className='flex flex-col'>
+						<iframe
+							src='https://www.loom.com/embed/60d8308781254fe0bc5be341501f9fd5?sid=c034e9a8-e243-4def-ab50-976f08d56cee&amp;hideEmbedTopBar=true&amp;hide_title=true&amp;hide_owner=true&amp;hide_speed=true&amp;hide_share=true'
+							allowFullScreen
+							className='aspect-video max-w-96 max-h-96 rounded-lg overflow-clip'></iframe>
+					</div>
 					<div className='flex flex-col sm:flex-row gap-4'>
 						<Button
 							onClick={() => {
@@ -316,13 +318,6 @@ const OnboardingTenant = () => {
 							Join our Slack Community
 							<ExternalLink className='h-4 w-4' />
 						</Button>
-					</div>
-					<div className='flex flex-col gap-6'>
-						<p className='text-sm text-gray-500'>or watch this demo video to get started</p>
-						<iframe
-							src='https://www.loom.com/embed/60d8308781254fe0bc5be341501f9fd5?sid=c034e9a8-e243-4def-ab50-976f08d56cee&amp;hideEmbedTopBar=true&amp;hide_title=true&amp;hide_owner=true&amp;hide_speed=true&amp;hide_share=true'
-							allowFullScreen
-							className='aspect-video max-w-96 max-h-96 rounded-lg overflow-clip'></iframe>
 					</div>
 				</div>
 			),
