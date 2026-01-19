@@ -21,7 +21,7 @@ const EnvironmentCreator: React.FC<Props> = ({ isOpen, onOpenChange, onEnvironme
 		() => [
 			{
 				value: ENVIRONMENT_TYPE.DEVELOPMENT,
-				label: 'Development',
+				label: 'Sandbox',
 				description: 'For development and testing purposes',
 			},
 			{

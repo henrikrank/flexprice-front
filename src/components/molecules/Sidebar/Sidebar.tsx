@@ -139,7 +139,7 @@ const AppSidebar: React.FC<React.ComponentProps<typeof Sidebar>> = ({ ...props }
 			<SidebarHeader>
 				<EnvironmentSelector />
 			</SidebarHeader>
-			<SidebarContent className='gap-0 mt-4'>
+			<SidebarContent className='gap-0 mt-1'>
 				<SidebarNav items={navMain} />
 			</SidebarContent>
 			<SidebarFooter>

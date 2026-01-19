@@ -290,16 +290,10 @@ const OnboardingTenant = () => {
 		},
 		{
 			label: "You're all Set 🎉",
-			description: <>Join our community or book a demo for continued support.</>,
+			description: <>Book a demo or Join our community for continued support.</>,
 			showAfterComplete: true,
 			component: (
 				<div className='flex flex-col gap-8'>
-					<div className='flex flex-col'>
-						<iframe
-							src='https://www.loom.com/embed/60d8308781254fe0bc5be341501f9fd5?sid=c034e9a8-e243-4def-ab50-976f08d56cee&amp;hideEmbedTopBar=true&amp;hide_title=true&amp;hide_owner=true&amp;hide_speed=true&amp;hide_share=true'
-							allowFullScreen
-							className='aspect-video max-w-96 max-h-96 rounded-lg overflow-clip'></iframe>
-					</div>
 					<div className='flex flex-col sm:flex-row gap-4'>
 						<Button
 							onClick={() => {
@@ -307,7 +301,7 @@ const OnboardingTenant = () => {
 							}}
 							className='flex items-center gap-2'>
 							Book a Demo
-							<ExternalLink className='h-4 w-4' />
+							<ExternalLink className='h-3.5 w-3.5' />
 						</Button>
 						<Button
 							variant='outline'
@@ -316,8 +310,14 @@ const OnboardingTenant = () => {
 							}}
 							className='flex items-center gap-2'>
 							Join our Slack Community
-							<ExternalLink className='h-4 w-4' />
+							<ExternalLink className='h-3.5 w-3.5' />
 						</Button>
+					</div>
+					<div className='flex flex-col'>
+						<iframe
+							src='https://www.loom.com/embed/60d8308781254fe0bc5be341501f9fd5?sid=c034e9a8-e243-4def-ab50-976f08d56cee&amp;hideEmbedTopBar=true&amp;hide_title=true&amp;hide_owner=true&amp;hide_speed=true&amp;hide_share=true'
+							allowFullScreen
+							className='aspect-video max-w-96 max-h-96 rounded-lg overflow-clip'></iframe>
 					</div>
 				</div>
 			),
