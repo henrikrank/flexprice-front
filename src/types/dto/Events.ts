@@ -1,5 +1,99 @@
 import { Event, WindowSize, UsageAnalyticItem } from '@/models';
 
+export type EventDebugStatus = 'processed' | 'processing' | 'failed';
+export type DebugTrackerStatus = 'unprocessed' | 'found' | 'not_found' | 'error';
+
+export interface EventDebugErrorDetail {
+	message: string;
+	internal_error?: string;
+	details?: Record<string, any>;
+}
+
+export interface EventDebugErrorResponse {
+	success: boolean;
+	error: EventDebugErrorDetail;
+}
+
+export interface EventProcessedEvent {
+	subscription_id: string;
+	sub_line_item_id: string;
+	price_id: string;
+	meter_id: string;
+	feature_id: string;
+	qty_total: string;
+	processed_at?: string;
+}
+
+export interface EventDebugCustomerLookupResult {
+	status: DebugTrackerStatus;
+	customer?: {
+		id: string;
+		external_customer_id: string;
+	};
+	error?: EventDebugErrorResponse;
+}
+
+export interface EventDebugMeterMatchingResult {
+	status: DebugTrackerStatus;
+	matched_meters?: Array<{
+		meter_id: string;
+		event_name: string;
+		meter?: Record<string, any>;
+		filters?: Array<Record<string, any>>;
+	}>;
+	error?: EventDebugErrorResponse;
+}
+
+export interface EventDebugPriceLookupResult {
+	status: DebugTrackerStatus;
+	matched_prices?: Array<{
+		price_id: string;
+		meter_id: string;
+		status?: string;
+		price?: Record<string, any>;
+	}>;
+	error?: EventDebugErrorResponse;
+}
+
+export interface EventDebugSubscriptionLineItemLookupResult {
+	status: DebugTrackerStatus;
+	matched_line_items?: Array<{
+		sub_line_item_id: string;
+		subscription_id: string;
+		price_id: string;
+		start_date?: string;
+		end_date?: string;
+		is_active_for_event?: boolean;
+		timestamp_within_range?: boolean;
+		subscription_line_item?: Record<string, any>;
+	}>;
+	error?: EventDebugErrorResponse;
+}
+
+export interface EventDebugFailurePoint {
+	failure_point_type: 'customer_lookup' | 'meter_lookup' | 'price_lookup' | 'subscription_line_item_lookup' | null;
+	error?: EventDebugErrorResponse;
+}
+
+export interface EventDebugTracker {
+	customer_lookup: EventDebugCustomerLookupResult;
+	meter_matching: EventDebugMeterMatchingResult;
+	price_lookup: EventDebugPriceLookupResult;
+	subscription_line_item_lookup: EventDebugSubscriptionLineItemLookupResult;
+	failure_point?: EventDebugFailurePoint;
+}
+
+export interface GetEventDebugResponse {
+	event: Event;
+	status: EventDebugStatus;
+	customer?: {
+		customer_id: string;
+		customer_name?: string;
+	};
+	processed_events?: EventProcessedEvent[];
+	debug_tracker?: EventDebugTracker;
+}
+
 export interface GetEventsPayload {
 	external_customer_id?: string;
 	event_name?: string;

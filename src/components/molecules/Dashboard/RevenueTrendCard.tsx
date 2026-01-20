@@ -71,7 +71,7 @@ export const RevenueTrendCard: React.FC<RevenueTrendCardProps> = ({ revenueData,
 									<Info className='h-4 w-4 text-zinc-400 hover:text-zinc-600 transition-colors duration-150' />
 								</TooltipTrigger>
 								<TooltipContent sideOffset={5} className='bg-zinc-900 text-xs text-white px-3 py-1.5 rounded-lg max-w-[250px]'>
-									Total revenue from paid invoices for the selected currency in each time period
+									Sum of finalized invoices for the selected currency in the respective time periods.
 								</TooltipContent>
 							</Tooltip>
 						</TooltipProvider>
