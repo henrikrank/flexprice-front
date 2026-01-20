@@ -10,10 +10,10 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { cn } from '@/lib/utils';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { formatDateTimeWithSecondsAndTimezone } from '@/utils/common/format_date';
-import { Link } from 'react-router';
 import { RouteNames } from '@/core/routes/Routes';
 import { useNavigate } from 'react-router';
 import SubscriptionApi from '@/api/SubscriptionApi';
+import RedirectCell from '@/components/molecules/Table/RedirectCell';
 
 interface Props {
 	isOpen: boolean;
@@ -89,8 +89,9 @@ const EventPropertiesDrawer: FC<Props> = ({ isOpen, onOpenChange, event }) => {
 
 	// Fallback to the table event while the debug payload loads
 	const displayEvent = debugResponse?.event ?? event;
+	const processedEvents = debugResponse?.processed_events ?? [];
 	const resolvedCustomerId =
-		debugResponse?.customer?.customer_id ??
+		processedEvents?.[0]?.customer_id ??
 		(displayEvent?.customer_id && displayEvent.customer_id.trim().length > 0 ? displayEvent.customer_id : undefined) ??
 		debugResponse?.debug_tracker?.customer_lookup?.customer?.id;
 
@@ -121,7 +122,6 @@ const EventPropertiesDrawer: FC<Props> = ({ isOpen, onOpenChange, event }) => {
 		toast.success('Properties copied to clipboard!');
 	};
 
-	const processedEvents = debugResponse?.processed_events ?? [];
 	const showProcessedOnly = useMemo(() => processedEvents.length > 0, [processedEvents.length]);
 
 	const renderStepIcon = (status?: DebugTrackerStatus | EventDebugStatus) => {
@@ -158,7 +158,7 @@ const EventPropertiesDrawer: FC<Props> = ({ isOpen, onOpenChange, event }) => {
 		}
 	};
 
-	const renderProcessedEvents = (items: EventProcessedEvent[], customer?: { customer_id: string; customer_name?: string } | null) => {
+	const renderProcessedEvents = (items: EventProcessedEvent[]) => {
 		return (
 			<div className='rounded-lg border border-gray-200 bg-white'>
 				<div className='px-4 py-3 border-b border-gray-200 flex items-start justify-between gap-3'>
@@ -186,12 +186,8 @@ const EventPropertiesDrawer: FC<Props> = ({ isOpen, onOpenChange, event }) => {
 								<dl className='mt-3 grid grid-cols-12 gap-x-3 gap-y-2'>
 									<dt className='col-span-4 text-xs text-slate-500'>Customer</dt>
 									<dd className='col-span-8 text-xs break-all'>
-										{customer?.customer_id ? (
-											<div className='flex flex-col'>
-												<Link to={`${RouteNames.customers}/${customer.customer_id}`} className='text-blue-600 hover:underline font-medium'>
-													{customer.customer_name || customer.customer_id}
-												</Link>
-											</div>
+										{pe.customer_id ? (
+											<RedirectCell redirectUrl={`${RouteNames.customers}/${pe.customer_id}`}>{pe.customer_id}</RedirectCell>
 										) : (
 											<span className='text-slate-500'>—</span>
 										)}
@@ -199,19 +195,32 @@ const EventPropertiesDrawer: FC<Props> = ({ isOpen, onOpenChange, event }) => {
 
 									<dt className='col-span-4 text-xs text-slate-500'>Subscription</dt>
 									<dd className='col-span-8 text-xs font-mono break-all'>
-										<button
-											type='button'
-											onClick={() => openSubscription(pe.subscription_id)}
-											className='text-blue-600 hover:underline text-left'>
-											{pe.subscription_id}
-										</button>
+										{pe.customer_id ? (
+											<RedirectCell redirectUrl={`${RouteNames.customers}/${pe.customer_id}/subscription/${pe.subscription_id}`}>
+												{pe.subscription_id}
+											</RedirectCell>
+										) : (
+											<button
+												type='button'
+												onClick={() => openSubscription(pe.subscription_id)}
+												className='text-blue-600 hover:underline text-left'>
+												{pe.subscription_id}
+											</button>
+										)}
 									</dd>
 
 									<dt className='col-span-4 text-xs text-slate-500'>Feature</dt>
 									<dd className='col-span-8 text-xs font-mono break-all'>
-										<Link to={`${RouteNames.featureDetails}/${pe.feature_id}`} className='text-blue-600 hover:underline'>
-											{pe.feature_id}
-										</Link>
+										{pe.customer_id ? (
+											<RedirectCell redirectUrl={`${RouteNames.featureDetails}/${pe.feature_id}`}>{pe.feature_id}</RedirectCell>
+										) : (
+											<button
+												type='button'
+												onClick={() => openSubscription(pe.subscription_id)}
+												className='text-blue-600 hover:underline text-left'>
+												{pe.subscription_id}
+											</button>
+										)}
 									</dd>
 
 									<dt className='col-span-4 text-xs text-slate-500'>Line item</dt>
@@ -380,7 +389,7 @@ const EventPropertiesDrawer: FC<Props> = ({ isOpen, onOpenChange, event }) => {
 
 							{/* Processed: show processed events only. Failed: show tracker waterfall. */}
 							{showProcessedOnly ? (
-								renderProcessedEvents(processedEvents, debugResponse.customer ?? null)
+								renderProcessedEvents(processedEvents)
 							) : debugResponse.debug_tracker ? (
 								renderFailedTracker()
 							) : (
