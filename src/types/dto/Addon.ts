@@ -3,6 +3,7 @@ import { TypedBackendFilter, TypedBackendSort } from '../formatters/QueryBuilder
 import { QueryFilter, TimeRangeFilter } from './base';
 import { FilterCondition } from '../common/QueryBuilder';
 import { SortOption } from '../common/QueryBuilder';
+import { LineItemCommitmentsMap } from './LineItemCommitmentConfig';
 
 export interface ExtendedAddon extends Addon {
 	prices: Price[];
@@ -33,6 +34,7 @@ export interface AddAddonToSubscriptionRequest {
 	start_date?: string;
 	end_date?: string;
 	metadata?: Metadata;
+	line_item_commitments?: LineItemCommitmentsMap;
 }
 
 export interface GetAddonsPayload {
