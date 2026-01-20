@@ -639,6 +639,8 @@ const SubscriptionForm = ({
 							setState((prev) => ({ ...prev, addons: data }));
 						}}
 						disabled={isDisabled}
+						billingPeriod={state.billingPeriod}
+						currency={state.currency}
 					/>
 				</div>
 			)}

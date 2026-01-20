@@ -505,6 +505,18 @@ const CreateCustomerSubscriptionPage: React.FC = () => {
 			sanitizedPhases = undefined;
 		}
 
+		const sanitizedAddons =
+			subscriptionState.addons && subscriptionState.addons.length > 0
+				? subscriptionState.addons.map((addon: AddAddonToSubscriptionRequest) => {
+						const commitments = addon.line_item_commitments;
+						const hasCommitments = commitments && Object.keys(commitments).length > 0;
+						return {
+							...addon,
+							line_item_commitments: hasCommitments ? commitments : undefined,
+						};
+					})
+				: undefined;
+
 		return {
 			billingPeriod,
 			selectedPlan,
@@ -523,6 +535,7 @@ const CreateCustomerSubscriptionPage: React.FC = () => {
 			entitlementOverrides,
 			creditGrants,
 			invoiceBillingConfig,
+			sanitizedAddons,
 		};
 	};
 
@@ -556,7 +569,7 @@ const CreateCustomerSubscriptionPage: React.FC = () => {
 			override_line_items:
 				sanitized.finalOverrideLineItems && sanitized.finalOverrideLineItems.length > 0 ? sanitized.finalOverrideLineItems : undefined,
 			line_item_commitments: sanitized.finalLineItemCommitments,
-			addons: subscriptionState.addons && subscriptionState.addons.length > 0 ? subscriptionState.addons : undefined,
+			addons: sanitized.sanitizedAddons,
 			coupons: sanitized.finalCoupons,
 			line_item_coupons: sanitized.finalLineItemCoupons,
 			tax_rate_overrides: sanitized.tax_rate_overrides.length > 0 ? sanitized.tax_rate_overrides : undefined,
