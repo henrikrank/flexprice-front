@@ -211,16 +211,7 @@ const EventPropertiesDrawer: FC<Props> = ({ isOpen, onOpenChange, event }) => {
 
 									<dt className='col-span-4 text-xs text-slate-500'>Feature</dt>
 									<dd className='col-span-8 text-xs font-mono break-all'>
-										{pe.customer_id ? (
-											<RedirectCell redirectUrl={`${RouteNames.featureDetails}/${pe.feature_id}`}>{pe.feature_id}</RedirectCell>
-										) : (
-											<button
-												type='button'
-												onClick={() => openSubscription(pe.subscription_id)}
-												className='text-blue-600 hover:underline text-left'>
-												{pe.subscription_id}
-											</button>
-										)}
+										<RedirectCell redirectUrl={`${RouteNames.featureDetails}/${pe.feature_id}`}>{pe.feature_id}</RedirectCell>
 									</dd>
 
 									<dt className='col-span-4 text-xs text-slate-500'>Line item</dt>
