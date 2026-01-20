@@ -15,6 +15,7 @@ export interface EventDebugErrorResponse {
 }
 
 export interface EventProcessedEvent {
+	customer_id: string;
 	subscription_id: string;
 	sub_line_item_id: string;
 	price_id: string;
@@ -86,10 +87,6 @@ export interface EventDebugTracker {
 export interface GetEventDebugResponse {
 	event: Event;
 	status: EventDebugStatus;
-	customer?: {
-		customer_id: string;
-		customer_name?: string;
-	};
 	processed_events?: EventProcessedEvent[];
 	debug_tracker?: EventDebugTracker;
 }
