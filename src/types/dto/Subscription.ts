@@ -438,6 +438,7 @@ export interface AddAddonRequest {
 	start_date?: string;
 	end_date?: string;
 	metadata?: Metadata;
+	line_item_commitments?: LineItemCommitmentsMap;
 }
 
 export interface RemoveAddonRequest {

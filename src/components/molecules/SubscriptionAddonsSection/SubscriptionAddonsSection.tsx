@@ -146,6 +146,15 @@ const SubscriptionAddonsSection: FC<SubscriptionAddonsSectionProps> = ({ subscri
 	const [dropdownOpen, setDropdownOpen] = useState<string | null>(null);
 	const queryClient = useQueryClient();
 
+	// Fetch subscription details (for billing_period + currency context)
+	const { data: subscriptionDetails } = useQuery({
+		queryKey: ['subscriptionDetails', subscriptionId],
+		queryFn: async () => {
+			return await SubscriptionApi.getSubscription(subscriptionId);
+		},
+		enabled: !!subscriptionId,
+	});
+
 	// Fetch active addons (backend returns { items, pagination })
 	const {
 		data: addonAssociationsResponse,
@@ -328,6 +337,8 @@ const SubscriptionAddonsSection: FC<SubscriptionAddonsSectionProps> = ({ subscri
 				onOpenChange={setIsAddDialogOpen}
 				subscriptionId={subscriptionId}
 				existingAddons={addonAssociations.map((a) => a.addon).filter((addon): addon is NonNullable<typeof addon> => Boolean(addon))}
+				billingPeriod={subscriptionDetails?.billing_period}
+				currency={subscriptionDetails?.currency}
 			/>
 
 			{/* Delete Confirmation Dialog */}
