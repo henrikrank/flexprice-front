@@ -1,5 +1,7 @@
 import CustomerApi from '@/api/CustomerApi';
 import { useQuery } from '@tanstack/react-query';
+import { Copy } from 'lucide-react';
+import toast from 'react-hot-toast';
 
 const fetchCustomer = async (customerId: string) => {
 	return await CustomerApi.getCustomerById(customerId);
@@ -16,6 +18,13 @@ const CustomerHeader: React.FC<CustomerHeaderProps> = ({ customerId }) => {
 
 		// staleTime: 1000 * 60 * 5,
 	});
+
+	const handleCopyCustomerId = () => {
+		if (customer?.id) {
+			navigator.clipboard.writeText(customer.id);
+			toast.success('Customer ID copied to clipboard');
+		}
+	};
 
 	if (isLoading) {
 		return (
@@ -45,7 +54,14 @@ const CustomerHeader: React.FC<CustomerHeaderProps> = ({ customerId }) => {
 						.slice(0, 2)}
 				</span>
 				<div className='flex flex-col'>
-					<div className='text-xl font-normal text-gray-800'>{customer?.name}</div>
+					<div className='flex items-center gap-2'>
+						<div className='text-xl font-normal text-gray-800'>{customer?.name}</div>
+						{customer?.id && (
+							<button onClick={handleCopyCustomerId} className='h-6 w-6 p-0 hover:bg-gray-100 rounded' title='Copy Customer ID'>
+								<Copy className='w-4 h-4 text-gray-500' />
+							</button>
+						)}
+					</div>
 				</div>
 			</div>
 		</div>

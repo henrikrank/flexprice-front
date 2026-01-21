@@ -4,7 +4,7 @@ import { useNavigate, useParams } from 'react-router';
 
 // Third-party libraries
 import { useMutation, useQuery } from '@tanstack/react-query';
-import { EyeOff, Plus, Pencil, Trash2 } from 'lucide-react';
+import { EyeOff, Plus, Pencil, Trash2, Copy } from 'lucide-react';
 import { uniqueId } from 'lodash';
 import toast from 'react-hot-toast';
 
@@ -179,6 +179,13 @@ const PlanDetailsPage = () => {
 		}
 	}, [planData?.metadata]);
 
+	const handleCopyPlanId = () => {
+		if (planData?.id) {
+			navigator.clipboard.writeText(planData.id);
+			toast.success('Plan ID copied to clipboard');
+		}
+	};
+
 	const columnData: ColumnData<EntitlementResponse>[] = [
 		{
 			title: 'Feature Name',
@@ -279,7 +286,17 @@ const PlanDetailsPage = () => {
 
 	return (
 		<Page
-			heading={planData?.name}
+			heading={
+				<div className='flex items-center gap-2'>
+					<span>{planData.name}</span>
+
+					{planData.id && (
+						<Button variant='ghost' size='icon' onClick={handleCopyPlanId} className='h-6 w-6 p-0 hover:bg-gray-100' title='Copy Plan ID'>
+							<Copy className='w-4 h-4 text-gray-500' />
+						</Button>
+					)}
+				</div>
+			}
 			headingCTA={
 				<>
 					<Button onClick={() => setPlanDrawerOpen(true)} variant={'outline'} className='flex gap-2'>

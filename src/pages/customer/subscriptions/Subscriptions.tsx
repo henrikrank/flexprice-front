@@ -23,9 +23,10 @@ import { searchCustomersForFilter, searchPlansForFilter } from '@/utils/filterSe
 import { useNavigate } from 'react-router';
 import { RouteNames } from '@/core/routes/Routes';
 import formatDate from '@/utils/common/format_date';
-import { Trash2 } from 'lucide-react';
+import { Trash2, Copy } from 'lucide-react';
 import { SubscriptionResponse } from '@/types/dto/Subscription';
 import { useMemo } from 'react';
+import toast from 'react-hot-toast';
 
 const sortingOptions: SortOption[] = [
 	{
@@ -143,6 +144,11 @@ const getSubscriptionStatusChip = (status: SUBSCRIPTION_STATUS) => {
 	}
 };
 
+const handleCopySubscriptionId = (subscriptionId: string) => {
+	navigator.clipboard.writeText(subscriptionId);
+	toast.success('Subscription ID copied to clipboard');
+};
+
 const SubscriptionsPage = () => {
 	const navigate = useNavigate();
 
@@ -156,7 +162,17 @@ const SubscriptionsPage = () => {
 			},
 			{
 				title: 'Plan',
-				render: (row) => <RedirectCell redirectUrl={`${RouteNames.plan}/${row.plan_id}`}>{row.plan?.name || row.plan_id}</RedirectCell>,
+				render: (row) => (
+					<div className='flex items-center gap-2'>
+						<RedirectCell redirectUrl={`${RouteNames.plan}/${row.plan_id}`}>{row.plan?.name || row.plan_id}</RedirectCell>
+						<button
+							onClick={() => handleCopySubscriptionId(row.id)}
+							className='h-6 w-6 p-0 hover:bg-gray-100 rounded'
+							title='Copy Subscription ID'>
+							<Copy className='w-4 h-4 text-gray-500' />
+						</button>
+					</div>
+				),
 			},
 			{
 				title: 'Status',
