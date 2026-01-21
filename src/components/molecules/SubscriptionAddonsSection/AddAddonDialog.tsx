@@ -10,21 +10,32 @@ import { AddAddonRequest } from '@/types/dto/Subscription';
 import { AddonResponse } from '@/types/dto/Addon';
 import toast from 'react-hot-toast';
 import { refetchQueries } from '@/core/services/tanstack/ReactQueryProvider';
+import { ColumnData, FlexpriceTable } from '@/components/molecules';
+import { Price, PRICE_TYPE } from '@/models/Price';
+import { LineItemCommitmentConfig, LineItemCommitmentsMap } from '@/types/dto/LineItemCommitmentConfig';
+import CommitmentConfigDialog from '@/components/molecules/CommitmentConfigDialog';
+import { formatCommitmentSummary } from '@/utils/common/commitment_helpers';
 
 interface Props {
 	isOpen: boolean;
 	onOpenChange: (open: boolean) => void;
 	subscriptionId: string;
 	existingAddons: AddonResponse[];
+	billingPeriod?: string;
+	currency?: string;
 }
 
 interface FormErrors {
 	addon_id?: string;
 }
 
-const AddAddonDialog: React.FC<Props> = ({ isOpen, onOpenChange, subscriptionId, existingAddons }) => {
+const AddAddonDialog: React.FC<Props> = ({ isOpen, onOpenChange, subscriptionId, existingAddons, billingPeriod, currency }) => {
 	const [formData, setFormData] = useState<Partial<AddAddonRequest>>({});
 	const [errors, setErrors] = useState<FormErrors>({});
+	const [selectedAddonDetails, setSelectedAddonDetails] = useState<AddonResponse | null>(null);
+	const [lineItemCommitments, setLineItemCommitments] = useState<LineItemCommitmentsMap>({});
+	const [selectedCommitmentPrice, setSelectedCommitmentPrice] = useState<Price | null>(null);
+	const [isCommitmentDialogOpen, setIsCommitmentDialogOpen] = useState(false);
 
 	// Fetch available addons
 	const { data: addonsResponse } = useQuery({
@@ -41,6 +52,10 @@ const AddAddonDialog: React.FC<Props> = ({ isOpen, onOpenChange, subscriptionId,
 		if (isOpen) {
 			setFormData({});
 			setErrors({});
+			setSelectedAddonDetails(null);
+			setLineItemCommitments({});
+			setSelectedCommitmentPrice(null);
+			setIsCommitmentDialogOpen(false);
 		}
 	}, [isOpen]);
 
@@ -84,13 +99,15 @@ const AddAddonDialog: React.FC<Props> = ({ isOpen, onOpenChange, subscriptionId,
 		}
 
 		setErrors({});
+		const hasCommitments = Object.keys(lineItemCommitments || {}).length > 0;
 		const addonData: AddAddonRequest = {
 			subscription_id: subscriptionId,
 			addon_id: formData.addon_id!,
+			line_item_commitments: hasCommitments ? lineItemCommitments : undefined,
 		};
 
 		addAddon(addonData);
-	}, [formData, validateForm, subscriptionId, addAddon]);
+	}, [formData, validateForm, subscriptionId, addAddon, lineItemCommitments]);
 
 	const handleCancel = useCallback(() => {
 		setFormData({});
@@ -100,13 +117,90 @@ const AddAddonDialog: React.FC<Props> = ({ isOpen, onOpenChange, subscriptionId,
 
 	const handleAddonSelect = useCallback(
 		(addonId: string) => {
+			const addonDetails = (addonsResponse?.items || []).find((addon: AddonResponse) => addon.id === addonId) || null;
+			setSelectedAddonDetails(addonDetails);
+			// Reset commitments when switching addons to avoid leaking configs across addons
+			setLineItemCommitments({});
 			setFormData((prev) => ({ ...prev, addon_id: addonId }));
 			// Clear error for this field when user selects
 			if (errors.addon_id) {
 				setErrors((prev) => ({ ...prev, addon_id: undefined }));
 			}
 		},
-		[errors.addon_id],
+		[errors.addon_id, addonsResponse?.items],
+	);
+
+	const selectedAddonPrices = useMemo(() => {
+		const prices: Price[] = (selectedAddonDetails?.prices as Price[]) || [];
+		let filtered = prices;
+		if (billingPeriod) {
+			filtered = filtered.filter((p) => p.billing_period?.toLowerCase() === billingPeriod.toLowerCase());
+		}
+		if (currency) {
+			filtered = filtered.filter((p) => p.currency?.toLowerCase() === currency.toLowerCase());
+		}
+		return filtered;
+	}, [selectedAddonDetails, billingPeriod, currency]);
+
+	type AddonChargeRow = { price: Price };
+
+	const handleConfigureCommitment = useCallback((price: Price) => {
+		if (price.type !== PRICE_TYPE.USAGE) return;
+		setSelectedCommitmentPrice(price);
+		setIsCommitmentDialogOpen(true);
+	}, []);
+
+	const setCommitmentForPrice = useCallback((priceId: string, config: LineItemCommitmentConfig | null) => {
+		setLineItemCommitments((prev) => {
+			const next: LineItemCommitmentsMap = { ...(prev || {}) };
+			if (!config) {
+				delete next[priceId];
+			} else {
+				next[priceId] = config;
+			}
+			return next;
+		});
+	}, []);
+
+	const addonChargeColumns: ColumnData<AddonChargeRow>[] = useMemo(
+		() => [
+			{
+				title: 'Charge',
+				render: (row) => <span>{row.price.display_name || row.price.meter?.name || 'Charge'}</span>,
+			},
+			{
+				title: 'Type',
+				render: (row) => <span>{toSentenceCase(row.price.type || '--')}</span>,
+			},
+			{
+				title: 'Commitment',
+				render: (row) => {
+					if (row.price.type !== PRICE_TYPE.USAGE) {
+						return <span className='text-sm text-gray-400'>Not available</span>;
+					}
+					const config = lineItemCommitments[row.price.id];
+					return config ? <span className='text-sm text-gray-600'>{formatCommitmentSummary(config)}</span> : <span>—</span>;
+				},
+			},
+			{
+				fieldVariant: 'interactive',
+				hideOnEmpty: true,
+				title: '',
+				width: 140,
+				align: 'right',
+				render: (row) => {
+					const canConfigure = row.price.type === PRICE_TYPE.USAGE;
+					if (!canConfigure) return null;
+					const hasConfig = lineItemCommitments[row.price.id] !== undefined;
+					return (
+						<Button variant='outline' onClick={() => handleConfigureCommitment(row.price)} type='button'>
+							{hasConfig ? 'Edit' : 'Configure'}
+						</Button>
+					);
+				},
+			},
+		],
+		[lineItemCommitments, handleConfigureCommitment],
 	);
 
 	// Filter addon options based on existing addons and addon type
@@ -140,7 +234,45 @@ const AddAddonDialog: React.FC<Props> = ({ isOpen, onOpenChange, subscriptionId,
 						error={errors.addon_id}
 					/>
 				</div>
+
+				{/* Addon Charges & Commitments */}
+				{formData.addon_id && (
+					<div className='space-y-2'>
+						<div className='flex items-center justify-between'>
+							<div>
+								<p className='text-sm font-medium text-gray-700'>Addon Charges</p>
+								<p className='text-xs text-gray-500'>
+									Filtered by {billingPeriod ? toSentenceCase(billingPeriod.replace('_', ' ')) : 'billing period'} and{' '}
+									{currency ? currency.toUpperCase() : 'currency'}
+								</p>
+							</div>
+						</div>
+						{selectedAddonPrices.length > 0 ? (
+							<div className='rounded-xl border border-gray-200'>
+								<FlexpriceTable columns={addonChargeColumns} data={selectedAddonPrices.map((p) => ({ price: p }))} />
+							</div>
+						) : (
+							<div className='rounded-xl border border-gray-200 p-4'>
+								<p className='text-sm text-gray-600'>No charges for this billing period/currency.</p>
+							</div>
+						)}
+						<p className='text-xs text-gray-500'>Commitments can be configured only for usage-based charges.</p>
+					</div>
+				)}
 			</div>
+
+			{/* Commitment Configuration Dialog */}
+			{selectedCommitmentPrice && (
+				<CommitmentConfigDialog
+					isOpen={isCommitmentDialogOpen}
+					onOpenChange={setIsCommitmentDialogOpen}
+					price={selectedCommitmentPrice}
+					onSave={(priceId, config) => {
+						setCommitmentForPrice(priceId, config);
+					}}
+					currentConfig={lineItemCommitments[selectedCommitmentPrice.id]}
+				/>
+			)}
 
 			<div className='flex justify-end gap-2 mt-6'>
 				<Button variant='outline' onClick={handleCancel} disabled={isAddingAddon}>
