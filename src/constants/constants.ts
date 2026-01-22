@@ -160,3 +160,6 @@ export const subscriptionLineItemEntityTypeOptions = [
 	{ label: 'Plan', value: SUBSCRIPTION_LINE_ITEM_ENTITY_TYPE.PLAN },
 	{ label: 'Addon', value: SUBSCRIPTION_LINE_ITEM_ENTITY_TYPE.ADDON },
 ];
+
+// Sandbox environment auto-cancellation period (in days)
+export const SANDBOX_AUTO_CANCELLATION_DAYS = 45;

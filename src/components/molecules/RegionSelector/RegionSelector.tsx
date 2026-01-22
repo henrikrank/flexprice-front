@@ -43,7 +43,7 @@ const RegionSelector: React.FC = () => {
 	});
 
 	return (
-		<div className='space-y-2 mb-6'>
+		<div className='space-y-2'>
 			{/* Label with tooltip */}
 			<div className='flex items-center gap-1'>
 				<label className='block text-sm font-medium text-gray-700'>Data region</label>

@@ -81,11 +81,9 @@ const AuthPage: React.FC = () => {
 					href='https://join.slack.com/t/flexpricecommunity/shared_invite/zt-39uat51l0-n8JmSikHZP~bHJNXladeaQ'
 					target='_blank'
 					rel='noopener noreferrer'
-					className='w-full h-[55px] flex items-center justify-center gap-3 cursor-pointer hover:opacity-90 transition-opacity'
+					className='w-full h-[48px] flex items-center justify-center gap-2.5 cursor-pointer border-y border-gray-100 hover:opacity-90 transition-opacity'
 					style={{
 						background: 'linear-gradient(to right, #F7F7F7, #EDEDED, #F7F7F7)',
-						borderTop: '1px solid #c6c6c6',
-						borderBottom: '1px solid #c6c6c6',
 					}}>
 					<span className='text-[15px] font-medium text-gray-700'>Join the Flexprice Community on Slack</span>
 					<img src={'/assets/logo/slack-logo.png'} alt='Slack Logo' className='h-4 w-auto' />
@@ -101,7 +99,7 @@ const AuthPage: React.FC = () => {
 						{currentTab === AuthTab.SIGNUP && (
 							<>
 								<h2 className='text-3xl font-medium text-center text-gray-800 mb-2'>Create your account</h2>
-								<p className='text-center text-gray-600 mb-6'>Sign up to start using Flexprice.</p>
+								<p className='text-center text-gray-600 mb-10'>Sign up to start using Flexprice.</p>
 								<div className='mb-6'>
 									<RegionSelector />
 								</div>
@@ -110,7 +108,7 @@ const AuthPage: React.FC = () => {
 						{currentTab === AuthTab.LOGIN && (
 							<>
 								<h2 className='text-3xl font-medium text-center text-gray-800 mb-3'>Login to your account</h2>
-								<p className='text-center text-gray-600 mb-6'>Let's get you back in.</p>
+								<p className='text-center text-gray-600 mb-10'>Let's get you back in.</p>
 								<div className='mb-6'>
 									<RegionSelector />
 								</div>
