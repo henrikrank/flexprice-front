@@ -9,7 +9,7 @@ import { uniqueId } from 'lodash';
 import toast from 'react-hot-toast';
 
 // Internal components
-import { ActionButton, Button, Card, CardHeader, Chip, Loader, NoDataCard, Page, Spacer } from '@/components/atoms';
+import { ActionButton, Button, Card, CardHeader, Chip, CopyIdButton, Loader, NoDataCard, Page, Spacer } from '@/components/atoms';
 import { formatAmount } from '@/components/atoms/Input/Input';
 import {
 	AddEntitlementDrawer,
@@ -279,7 +279,12 @@ const PlanDetailsPage = () => {
 
 	return (
 		<Page
-			heading={planData?.name}
+			heading={
+				<div className='flex items-center gap-2'>
+					<span>{planData.name}</span>
+					{planData.id && <CopyIdButton id={planData.id} entityType='Plan' />}
+				</div>
+			}
 			headingCTA={
 				<>
 					<Button onClick={() => setPlanDrawerOpen(true)} variant={'outline'} className='flex gap-2'>

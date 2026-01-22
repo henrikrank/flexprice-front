@@ -1,5 +1,6 @@
 import CustomerApi from '@/api/CustomerApi';
 import { useQuery } from '@tanstack/react-query';
+import { CopyIdButton } from '@/components/atoms';
 
 const fetchCustomer = async (customerId: string) => {
 	return await CustomerApi.getCustomerById(customerId);
@@ -45,7 +46,10 @@ const CustomerHeader: React.FC<CustomerHeaderProps> = ({ customerId }) => {
 						.slice(0, 2)}
 				</span>
 				<div className='flex flex-col'>
-					<div className='text-xl font-normal text-gray-800'>{customer?.name}</div>
+					<div className='flex items-center gap-2'>
+						<div className='text-xl font-normal text-gray-800'>{customer?.name}</div>
+						{customer?.id && <CopyIdButton id={customer.id} entityType='Customer' />}
+					</div>
 				</div>
 			</div>
 		</div>

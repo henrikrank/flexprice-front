@@ -15,7 +15,7 @@ import formatChips from '@/utils/common/format_chips';
 import { useBreadcrumbsStore } from '@/store/useBreadcrumbsStore';
 
 // Components
-import { Button, Card, CardHeader, Chip, Divider, Loader, NoDataCard, Page, Spacer } from '@/components/atoms';
+import { Button, Card, CardHeader, Chip, CopyIdButton, Divider, Loader, NoDataCard, Page, Spacer } from '@/components/atoms';
 import {
 	ApiDocsContent,
 	ColumnData,
@@ -278,7 +278,12 @@ const FeatureDetails = () => {
 					/>
 				</div>
 			}
-			heading={data?.name}>
+			heading={
+				<div className='flex items-center gap-2'>
+					{data?.name}
+					{data?.id && <CopyIdButton id={data.id} entityType='Feature' />}
+				</div>
+			}>
 			<ApiDocsContent tags={['Features']} snippets={data?.type === FEATURE_TYPE.METERED ? snippets : undefined} />
 
 			{/* Feature Alert Dialog */}
