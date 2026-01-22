@@ -19,6 +19,7 @@ interface Props {
 	defaultOpen?: boolean;
 	placeholder?: string;
 	label?: string;
+	required?: boolean;
 	description?: string;
 	error?: string;
 	onChange?: (value: string) => void;
@@ -61,6 +62,7 @@ const FlexPriceSelect: React.FC<Props> = ({
 	value,
 	placeholder = 'Select an option',
 	label = '',
+	required = false,
 	description,
 	onChange,
 	error,
@@ -78,6 +80,7 @@ const FlexPriceSelect: React.FC<Props> = ({
 			{label && (
 				<label className={cn(' block text-sm font-medium text-zinc break-words', disabled ? 'text-zinc-500' : 'text-zinc-950')}>
 					{label}
+					{required && <span className='text-destructive'> *</span>}
 				</label>
 			)}
 
