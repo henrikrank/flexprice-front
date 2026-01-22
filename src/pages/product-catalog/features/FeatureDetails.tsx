@@ -3,7 +3,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { useParams } from 'react-router';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import toast from 'react-hot-toast';
-import { EyeOff, Bell, EllipsisVertical, Pencil, Copy } from 'lucide-react';
+import { EyeOff, Bell, EllipsisVertical, Pencil } from 'lucide-react';
 import { v4 as uuidv4 } from 'uuid';
 // Core utilities and APIs
 import { RouteNames } from '@/core/routes/Routes';
@@ -15,7 +15,7 @@ import formatChips from '@/utils/common/format_chips';
 import { useBreadcrumbsStore } from '@/store/useBreadcrumbsStore';
 
 // Components
-import { Button, Card, CardHeader, Chip, Divider, Loader, NoDataCard, Page, Spacer } from '@/components/atoms';
+import { Button, Card, CardHeader, Chip, CopyIdButton, Divider, Loader, NoDataCard, Page, Spacer } from '@/components/atoms';
 import {
 	ApiDocsContent,
 	ColumnData,
@@ -173,13 +173,6 @@ const FeatureDetails = () => {
 		[],
 	);
 
-	const handleCopyFeatureId = () => {
-		if (data?.id) {
-			navigator.clipboard.writeText(data.id);
-			toast.success('Feature ID copied to clipboard');
-		}
-	};
-
 	const columns: ColumnData<EntitlementResponse>[] = [
 		{
 			title: 'Plan',
@@ -288,16 +281,7 @@ const FeatureDetails = () => {
 			heading={
 				<div className='flex items-center gap-2'>
 					{data?.name}
-					{data?.id && (
-						<Button
-							variant={'ghost'}
-							size={'icon'}
-							onClick={handleCopyFeatureId}
-							className='h-6 w-6 p-0 hover:bg-gray-100'
-							title='Copy Feature ID'>
-							<Copy className='w-4 h-4 text-gray-500' />
-						</Button>
-					)}
+					{data?.id && <CopyIdButton id={data.id} entityType='Feature' />}
 				</div>
 			}>
 			<ApiDocsContent tags={['Features']} snippets={data?.type === FEATURE_TYPE.METERED ? snippets : undefined} />
