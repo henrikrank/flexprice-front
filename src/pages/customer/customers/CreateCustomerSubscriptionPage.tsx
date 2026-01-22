@@ -43,6 +43,7 @@ import { extractLineItemCommitments } from '@/utils/common/commitment_helpers';
 import { extractSubscriptionBoundaries, extractFirstPhaseData } from '@/utils/subscription/phaseConversion';
 
 import { useBreadcrumbsStore } from '@/store/useBreadcrumbsStore';
+import { useEnvironment } from '@/hooks/useEnvironment';
 
 type Params = {
 	id: string;
@@ -260,6 +261,7 @@ const CreateCustomerSubscriptionPage: React.FC = () => {
 		isLoading: isLoadingPlanDetails,
 		isError: isPlanDetailsError,
 	} = usePlanDetails(subscriptionState.selectedPlan);
+	const { isDevelopment } = useEnvironment();
 
 	const { data: couponsResponse } = useQuery({
 		queryKey: ['coupons'],
@@ -641,6 +643,22 @@ const CreateCustomerSubscriptionPage: React.FC = () => {
 					}}
 					allCoupons={allCouponsData}
 				/>
+
+				{/* Sandbox Note */}
+				{isDevelopment && subscriptionState.selectedPlan && subscriptionState.startDate && (
+					<div className='bg-blue-50 border border-blue-200 rounded-lg p-4'>
+						<strong className='text-sm text-blue-800 block mb-1'>Note:</strong>
+						<p className='text-sm text-blue-800'>
+							This subscription will be auto-cancelled on{' '}
+							{new Date(new Date(subscriptionState.startDate).getTime() + 45 * 24 * 60 * 60 * 1000).toLocaleDateString('en-US', {
+								year: 'numeric',
+								month: 'long',
+								day: 'numeric',
+							})}
+							.
+						</p>
+					</div>
+				)}
 
 				{subscriptionState.selectedPlan && !subscription_id && (
 					<div className='flex items-center justify-between'>
