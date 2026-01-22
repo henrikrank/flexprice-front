@@ -18,7 +18,7 @@ class AddonApi {
 	public static async List(payload: GetAddonsPayload = {}): Promise<GetAddonsResponse> {
 		const url = generateQueryParams(this.baseUrl, {
 			...payload,
-			expand: 'prices,entitlements',
+			expand: 'prices,meters,entitlements',
 		});
 		return await AxiosClient.get<GetAddonsResponse>(url);
 	}
