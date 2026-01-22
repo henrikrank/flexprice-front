@@ -6,6 +6,7 @@ import { CreateEnvironmentPayload } from '@/types/dto/Environment';
 import EnvironmentApi from '@/api/EnvironmentApi';
 import toast from 'react-hot-toast';
 import { Mail, Calendar } from 'lucide-react';
+import { SANDBOX_AUTO_CANCELLATION_DAYS } from '@/constants/constants';
 
 interface Props {
 	isOpen: boolean;
@@ -88,7 +89,7 @@ const EnvironmentCreator: React.FC<Props> = ({ isOpen, onOpenChange, onEnvironme
 	const emailLink = 'mailto:support@flexprice.io';
 
 	const handleContactClick = (url: string) => {
-		window.open(url, '_blank');
+		window.open(url, '_blank', 'noopener noreferrer');
 	};
 
 	return (
@@ -119,7 +120,7 @@ const EnvironmentCreator: React.FC<Props> = ({ isOpen, onOpenChange, onEnvironme
 				{isSandbox && (
 					<div className='bg-blue-50 border border-blue-200 rounded-lg p-4'>
 						<strong className='text-sm text-blue-800 block mb-1'>Note:</strong>
-						<p className='text-sm text-blue-800'>Subscriptions will be auto-cancelled after 45 days.</p>
+						<p className='text-sm text-blue-800'>Subscriptions will be auto-cancelled after {SANDBOX_AUTO_CANCELLATION_DAYS} days.</p>
 					</div>
 				)}
 

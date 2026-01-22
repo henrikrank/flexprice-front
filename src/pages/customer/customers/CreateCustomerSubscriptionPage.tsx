@@ -24,7 +24,7 @@ import {
 	SUBSCRIPTION_STATUS,
 } from '@/models';
 import { InternalCreditGrantRequest, creditGrantToInternal, internalToCreateRequest } from '@/types/dto/CreditGrant';
-import { BILLING_PERIOD } from '@/constants/constants';
+import { BILLING_PERIOD, SANDBOX_AUTO_CANCELLATION_DAYS } from '@/constants/constants';
 
 import {
 	PlanResponse,
@@ -650,7 +650,9 @@ const CreateCustomerSubscriptionPage: React.FC = () => {
 						<strong className='text-sm text-blue-800 block mb-1'>Note:</strong>
 						<p className='text-sm text-blue-800'>
 							This subscription will be auto-cancelled on{' '}
-							{new Date(new Date(subscriptionState.startDate).getTime() + 45 * 24 * 60 * 60 * 1000).toLocaleDateString('en-US', {
+							{new Date(
+								new Date(subscriptionState.startDate).getTime() + SANDBOX_AUTO_CANCELLATION_DAYS * 24 * 60 * 60 * 1000,
+							).toLocaleDateString('en-US', {
 								year: 'numeric',
 								month: 'long',
 								day: 'numeric',
