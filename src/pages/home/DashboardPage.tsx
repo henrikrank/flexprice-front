@@ -1,6 +1,7 @@
 import { useEffect, useState, useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { Page, Loader } from '@/components/atoms';
+import { Page } from '@/components/atoms';
+import { Skeleton } from '@/components/ui';
 import EventsApi from '@/api/EventsApi';
 import EnvironmentApi from '@/api/EnvironmentApi';
 import toast from 'react-hot-toast';
@@ -15,6 +16,9 @@ import {
 	InvoiceIssuesCard,
 } from '@/components/molecules';
 import { useRecentSubscriptions, useRevenueData, useInvoiceIssues } from '@/hooks/useDashboardData';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui';
+import { AlertCircle } from 'lucide-react';
+import { getTypographyClass } from '@/lib/typography';
 
 const getTimeRangeForPeriod = (period: TIME_PERIOD): { startDate: Date; endDate: Date } => {
 	const endDate = new Date();
@@ -39,7 +43,7 @@ const getTimeRangeForPeriod = (period: TIME_PERIOD): { startDate: Date; endDate:
 };
 
 const DashboardPage = () => {
-	const [timePeriod, setTimePeriod] = useState<TIME_PERIOD>(TIME_PERIOD.LAST_WEEK);
+	const [timePeriod, setTimePeriod] = useState<TIME_PERIOD>(TIME_PERIOD.LAST_DAY);
 	const [windowSize, setWindowSize] = useState<WindowSize>(WindowSize.HOUR);
 
 	// Calculate date range based on selected time period
@@ -113,6 +117,47 @@ const DashboardPage = () => {
 		invoiceErrors.forEach(() => toast.error('Error fetching invoice data'));
 	}, [subscriptionsError, revenueError, invoiceErrors]);
 
+	// Skeleton loader for Events Monitoring Chart
+	const EventsMonitoringChartSkeleton = () => (
+		<Card className='shadow-sm'>
+			<CardHeader className='pb-4'>
+				<div className='flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4'>
+					<div className='space-y-2'>
+						<Skeleton className='h-6 w-48' />
+						<Skeleton className='h-4 w-64' />
+					</div>
+				</div>
+			</CardHeader>
+			<CardContent className='pt-0'>
+				<Skeleton className='h-[300px] w-full' />
+			</CardContent>
+		</Card>
+	);
+
+	// Error state for Events Monitoring Chart
+	const EventsMonitoringChartError = () => (
+		<Card className='shadow-sm'>
+			<CardHeader className='pb-4'>
+				<div className='flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4'>
+					<div>
+						<CardTitle className={getTypographyClass('section-title', 'font-medium')}>Events Monitoring</CardTitle>
+						<CardDescription className={getTypographyClass('helper-text', 'mt-1')}>
+							Event processing metrics and lag information
+						</CardDescription>
+					</div>
+				</div>
+			</CardHeader>
+			<CardContent className='pt-0'>
+				<div className='flex flex-col items-center justify-center py-12'>
+					<AlertCircle className='h-10 w-10 text-red-500 mb-3' />
+					<p className={getTypographyClass('body-default', 'text-zinc-600 text-center')}>
+						Failed to load monitoring data. Please try again later.
+					</p>
+				</div>
+			</CardContent>
+		</Card>
+	);
+
 	return (
 		<Page
 			heading='Home'
@@ -128,9 +173,9 @@ const DashboardPage = () => {
 				{/* Events Monitoring Chart */}
 				<div>
 					{monitoringLoading ? (
-						<div className='flex items-center justify-center py-12 border rounded-lg'>
-							<Loader />
-						</div>
+						<EventsMonitoringChartSkeleton />
+					) : monitoringError ? (
+						<EventsMonitoringChartError />
 					) : (
 						monitoringData && <EventsMonitoringChart data={monitoringData} title='Events Monitoring' description={getUpdatedTime()} />
 					)}
@@ -138,8 +183,10 @@ const DashboardPage = () => {
 
 				{/* Business Metrics Cards */}
 				<div className='space-y-6 mt-6'>
-					{/* Revenue Trend Card - Full Width */}
-					<RevenueTrendCard revenueData={revenueData} isLoading={revenueLoading} />
+					{/* Revenue Trend Card - Full Width - Only render if there's data, loading, or error */}
+					{(revenueData.length > 0 || revenueLoading || revenueError) && (
+						<RevenueTrendCard revenueData={revenueData} isLoading={revenueLoading} error={revenueError} />
+					)}
 
 					{/* Recent Subscriptions and Invoice Payment Status - Side by Side */}
 					<div className='grid grid-cols-1 lg:grid-cols-2 gap-6'>
@@ -147,9 +194,10 @@ const DashboardPage = () => {
 							subscriptionsCount={subscriptionsCount}
 							subscriptionsByPlan={subscriptionsByPlan}
 							isLoading={subscriptionsLoading}
+							error={subscriptionsError}
 						/>
 
-						<InvoiceIssuesCard invoicesByStatus={invoicesByStatus} isLoading={invoiceIssuesLoading} />
+						<InvoiceIssuesCard invoicesByStatus={invoicesByStatus} isLoading={invoiceIssuesLoading} error={invoiceErrors.length > 0} />
 					</div>
 				</div>
 			</div>

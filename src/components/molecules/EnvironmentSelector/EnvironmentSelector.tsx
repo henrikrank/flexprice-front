@@ -13,7 +13,6 @@ import { useEnvironment } from '@/hooks/useEnvironment';
 import { Button } from '@/components/atoms';
 import EnvironmentCreator from '../EnvironmentCreator/EnvironmentCreator';
 import { ENVIRONMENT_TYPE } from '@/models/Environment';
-import Tooltip from '@/components/atoms/Tooltip/Tooltip';
 
 interface Props {
 	disabled?: boolean;
@@ -100,9 +99,9 @@ const EnvironmentSelector: React.FC<Props> = ({ disabled = false, className }) =
 		}
 	};
 
-	const environmentName = activeEnvironment?.name || 'No environment';
-	const environmentTypeLabel = isProduction ? 'Production Environment' : 'Sandbox Environment';
-	const sandboxTooltipText = 'Subscriptions will be auto-cancelled';
+	// If activeEnvironment is null, use the first environment as a fallback
+	const currentEnvironment = activeEnvironment || environments[0];
+	const environmentName = currentEnvironment?.name || 'No environment';
 
 	return (
 		<div className={cn('mt-1 w-full', className)}>
@@ -125,68 +124,27 @@ const EnvironmentSelector: React.FC<Props> = ({ disabled = false, className }) =
 			{/* Environment picker (colored box) */}
 			<Select open={isOpen} onOpenChange={setIsOpen} value={activeEnvironment?.id} onValueChange={handleChange} disabled={disabled}>
 				<SelectTrigger className={cn(sidebarOpen ? '' : 'hidden')}>
-					{isDevelopment ? (
-						<Tooltip
-							delayDuration={300}
-							side='bottom'
-							align='start'
-							sideOffset={8}
-							className='w-[310px] max-w-[310px] text-left px-4 py-3'
-							content={
-								<div className='space-y-2 text-left'>
-									<p className='text-sm font-semibold leading-snug break-words'>
-										<span>{environmentName}</span>{' '}
-										<span className='inline-block whitespace-nowrap font-medium text-muted-foreground'>({environmentTypeLabel})</span>
-									</p>
-									<p className='text-sm leading-snug text-muted-foreground hyphens-none break-normal'>
-										{sandboxTooltipText} <span className='whitespace-nowrap'>after 45 days</span>
-									</p>
-								</div>
-							}>
-							<div
-								className={cn(
-									'w-full mt-3.5 flex items-center justify-between h-10 px-2 py-[10px] rounded-[6px] border',
-									'border-yellow-400 text-yellow-900',
-								)}
-								style={{
-									background: 'linear-gradient(to right, #FFFCEE, #FFF9DD, #FFFCEE)',
-								}}>
-								<div className='flex items-center gap-2 min-w-0'>
-									<Blocks absoluteStrokeWidth className='!size-5 !stroke-[1.5px] text-current' />
-									<span className='block text-[14px] font-normal truncate max-w-[120px]'>{environmentName}</span>
-								</div>
-								<ChevronsUpDown className='h-4 w-4 opacity-60 shrink-0' />
-							</div>
-						</Tooltip>
-					) : (
-						<Tooltip
-							delayDuration={300}
-							side='bottom'
-							align='start'
-							sideOffset={8}
-							className='text-left px-4 py-3'
-							content={
-								<p className='text-sm font-semibold leading-snug break-words'>
-									<span>{environmentName}</span>{' '}
-									<span className='inline-block whitespace-nowrap font-medium text-muted-foreground'>(Production Environment)</span>
-								</p>
-							}>
-							<div
-								className={cn(
-									'w-full mt-3.5 flex items-center justify-between h-10 px-2 py-[10px] rounded-[8px] border',
-									isProduction && 'border-[#BFD0F5] text-[#1F5ADA]',
-								)}
-								style={{
-									background: isProduction ? 'linear-gradient(to right, #EEF4FF, #DDE7FF, #EEF4FF)' : undefined,
-								}}>
-								<div className='flex items-center gap-2 min-w-0'>
-									<Rocket absoluteStrokeWidth className='!size-5 !stroke-[1.5px] text-current' />
-									<span className='block text-[14px] font-normal truncate max-w-[120px]'>{environmentName}</span>
-								</div>
-								<ChevronsUpDown className='h-4 w-4 opacity-60 shrink-0' />
-							</div>
-						</Tooltip>
-					)}
+					<div
+						className={cn(
+							'w-full mt-3.5 flex items-center justify-between h-10 px-2 py-[10px] rounded-[8px] border',
+							isDevelopment && 'border-yellow-400 text-yellow-900',
+							isProduction && 'border-[#BFD0F5] text-[#1F5ADA]',
+						)}
+						style={{
+							background: isProduction
+								? 'linear-gradient(to right, #EEF4FF, #DDE7FF, #EEF4FF)'
+								: 'linear-gradient(to right, #FFFCEE, #FFF9DD, #FFFCEE)',
+						}}>
+						<div className='flex items-center gap-2 min-w-0'>
+							{isDevelopment ? (
+								<Blocks absoluteStrokeWidth className='!size-5 !stroke-[1.5px] text-current' />
+							) : (
+								<Rocket absoluteStrokeWidth className='!size-5 !stroke-[1.5px] text-current' />
+							)}
+							<span className='block text-[14px] font-normal truncate max-w-[120px]'>{environmentName}</span>
+						</div>
+						<ChevronsUpDown className='h-4 w-4 opacity-60 shrink-0' />
+					</div>
 				</SelectTrigger>
 				<SelectContent className='mt-2 w-[calc(var(--radix-select-trigger-width)+8px)] max-w-[calc(var(--radix-select-trigger-width)+8px)]'>
 					{options.map((option) => (

@@ -1,5 +1,3 @@
-'use client';
-
 import * as React from 'react';
 import { CartesianGrid, Line, LineChart, XAxis, YAxis, Tooltip, Legend, ResponsiveContainer, ReferenceArea, Brush } from 'recharts';
 import { useState } from 'react';
@@ -268,7 +266,7 @@ export const CustomerUsageChart: React.FC<CustomerUsageChartProps> = ({ data, ti
 						<ResponsiveContainer width='100%' height='100%'>
 							<LineChart
 								data={chartData}
-								margin={{ top: 20, right: 30, left: 20, bottom: 30 }}
+								margin={{ top: 20, right: 30, left: 20, bottom: 70 }}
 								onMouseDown={handleZoomStart}
 								onMouseMove={handleZoomMove}
 								onMouseUp={handleZoomEnd}>
@@ -410,7 +408,7 @@ export const CustomerUsageChart: React.FC<CustomerUsageChartProps> = ({ data, ti
 									stroke='rgba(99, 102, 241, 0.6)'
 									fill='rgba(243, 244, 246, 0.2)'
 									travellerWidth={8}
-									y={320} // Position at the bottom of the chart
+									y={330} // Position at the bottom of the chart, below the data lines
 									tickFormatter={(value) => {
 										const date = new Date(value);
 										return date.toLocaleDateString('en-US', {
