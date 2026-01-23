@@ -6,7 +6,7 @@ import toast from 'react-hot-toast';
 import { Button, SelectOption } from '@/components/atoms';
 import { ApiDocsContent } from '@/components/molecules';
 import { UsageTable, SubscriptionForm } from '@/components/organisms';
-import { Building, User } from 'lucide-react';
+import { Building, User, AlertTriangle } from 'lucide-react';
 
 import { AddonApi, CustomerApi, PlanApi, SubscriptionApi, TaxApi, CouponApi } from '@/api';
 import { refetchQueries } from '@/core/services/tanstack/ReactQueryProvider';
@@ -646,9 +646,9 @@ const CreateCustomerSubscriptionPage: React.FC = () => {
 
 				{/* Sandbox Note */}
 				{isDevelopment && subscriptionState.selectedPlan && subscriptionState.startDate && (
-					<div className='bg-blue-50 border border-blue-200 rounded-lg p-4'>
-						<strong className='text-sm text-blue-800 block mb-1'>Note:</strong>
-						<p className='text-sm text-blue-800'>
+					<div className='w-full flex items-center gap-2.5 rounded-md border border-amber-300 bg-amber-50/80 px-3 py-2.5'>
+						<AlertTriangle className='h-4 w-4 flex-shrink-0 text-amber-600' />
+						<span className='text-sm font-medium text-amber-800 leading-relaxed'>
 							This subscription will be auto-cancelled on{' '}
 							{new Date(
 								new Date(subscriptionState.startDate).getTime() + SANDBOX_AUTO_CANCELLATION_DAYS * 24 * 60 * 60 * 1000,
@@ -657,8 +657,7 @@ const CreateCustomerSubscriptionPage: React.FC = () => {
 								month: 'long',
 								day: 'numeric',
 							})}
-							.
-						</p>
+						</span>
 					</div>
 				)}
 

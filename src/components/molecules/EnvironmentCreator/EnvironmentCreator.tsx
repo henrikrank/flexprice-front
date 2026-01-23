@@ -5,7 +5,7 @@ import { ENVIRONMENT_TYPE } from '@/models/Environment';
 import { CreateEnvironmentPayload } from '@/types/dto/Environment';
 import EnvironmentApi from '@/api/EnvironmentApi';
 import toast from 'react-hot-toast';
-import { Mail, Calendar } from 'lucide-react';
+import { Mail, CalendarDays, AlertTriangle } from 'lucide-react';
 import { SANDBOX_AUTO_CANCELLATION_DAYS } from '@/constants/constants';
 
 interface Props {
@@ -15,7 +15,7 @@ interface Props {
 }
 
 const EnvironmentCreator: React.FC<Props> = ({ isOpen, onOpenChange, onEnvironmentCreated }) => {
-	const [name, setName] = useState('');
+	const [name, setName] = useState('Sandbox');
 	const [type, setType] = useState<ENVIRONMENT_TYPE>(ENVIRONMENT_TYPE.DEVELOPMENT);
 	const queryClient = useQueryClient();
 
@@ -97,18 +97,13 @@ const EnvironmentCreator: React.FC<Props> = ({ isOpen, onOpenChange, onEnvironme
 			isOpen={isOpen}
 			onOpenChange={onOpenChange}
 			title='Create Environment'
+			className='max-w-[550px]'
 			description='Create a new environment for your application'>
 			<div className='space-y-4'>
-				<Input
-					label='Environment Name'
-					placeholder='Enter environment name'
-					value={name}
-					onChange={setName}
-					disabled={isPending || isProduction}
-				/>
+				<Input label='Name' placeholder='Enter environment name' value={name} onChange={setName} disabled={isPending || isProduction} />
 
 				<Select
-					label='Environment Type'
+					label='Type'
 					placeholder='Select environment type'
 					options={environmentTypeOptions}
 					value={type}
@@ -118,9 +113,11 @@ const EnvironmentCreator: React.FC<Props> = ({ isOpen, onOpenChange, onEnvironme
 
 				{/* Sandbox Note */}
 				{isSandbox && (
-					<div className='bg-blue-50 border border-blue-200 rounded-lg p-4'>
-						<strong className='text-sm text-blue-800 block mb-1'>Note:</strong>
-						<p className='text-sm text-blue-800'>Subscriptions will be auto-cancelled after {SANDBOX_AUTO_CANCELLATION_DAYS} days.</p>
+					<div className='w-full flex items-center gap-2.5 rounded-md border border-amber-300 bg-amber-50/80 px-3 py-2.5'>
+						<AlertTriangle className='h-4 w-4 flex-shrink-0 text-amber-600' />
+						<span className='text-sm font-medium text-amber-800 leading-relaxed'>
+							Sandbox subscriptions are automatically cancelled after {SANDBOX_AUTO_CANCELLATION_DAYS} days
+						</span>
 					</div>
 				)}
 
@@ -171,7 +168,7 @@ const EnvironmentCreator: React.FC<Props> = ({ isOpen, onOpenChange, onEnvironme
 								<div
 									className='h-14 w-14 rounded-xl flex items-center justify-center shadow-sm transition-shadow duration-300 ease-in-out group-hover:shadow-md'
 									style={{ backgroundColor: '#0069FF' }}>
-									<Calendar className='h-7 w-7 text-white' strokeWidth={1.5} />
+									<CalendarDays className='h-7 w-7 text-white' strokeWidth={1.5} />
 								</div>
 								<span className='text-xs font-medium text-gray-700 group-hover:text-[#0069FF] transition-colors duration-300 ease-in-out'>
 									Book a call
