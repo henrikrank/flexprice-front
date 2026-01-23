@@ -1,10 +1,7 @@
-'use client';
-
-import { Loader } from '@/components/atoms';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription, Skeleton } from '@/components/ui';
 import { Cell, Pie, PieChart, ResponsiveContainer, Tooltip, Legend } from 'recharts';
 import { getTypographyClass } from '@/lib/typography';
-import { CalendarClock } from 'lucide-react';
+import { CalendarClock, AlertCircle } from 'lucide-react';
 
 interface SubscriptionsByPlan {
 	count: number;
@@ -16,9 +13,15 @@ interface RecentSubscriptionsCardProps {
 	subscriptionsCount: number;
 	subscriptionsByPlan: SubscriptionsByPlan[];
 	isLoading: boolean;
+	error?: Error | null;
 }
 
-export const RecentSubscriptionsCard: React.FC<RecentSubscriptionsCardProps> = ({ subscriptionsCount, subscriptionsByPlan, isLoading }) => {
+export const RecentSubscriptionsCard: React.FC<RecentSubscriptionsCardProps> = ({
+	subscriptionsCount,
+	subscriptionsByPlan,
+	isLoading,
+	error,
+}) => {
 	return (
 		<Card className='shadow-sm'>
 			<CardHeader className='pb-8'>
@@ -31,8 +34,26 @@ export const RecentSubscriptionsCard: React.FC<RecentSubscriptionsCardProps> = (
 			</CardHeader>
 			<CardContent className='pt-0'>
 				{isLoading ? (
-					<div className='flex items-center justify-center py-8'>
-						<Loader />
+					<div className='space-y-6 py-4'>
+						<div className='space-y-2'>
+							<Skeleton className='h-10 w-24' />
+							<Skeleton className='h-4 w-32' />
+						</div>
+						<div className='space-y-3'>
+							<Skeleton className='h-[180px] w-full rounded-lg' />
+							<div className='flex gap-2 justify-center'>
+								<Skeleton className='h-4 w-16' />
+								<Skeleton className='h-4 w-16' />
+								<Skeleton className='h-4 w-16' />
+							</div>
+						</div>
+					</div>
+				) : error ? (
+					<div className='flex flex-col items-center justify-center py-8'>
+						<AlertCircle className='h-8 w-8 text-red-500 mb-3' />
+						<p className={getTypographyClass('body-small', 'text-center text-zinc-600')}>
+							Failed to load subscription data. Please try again later.
+						</p>
 					</div>
 				) : (
 					<>

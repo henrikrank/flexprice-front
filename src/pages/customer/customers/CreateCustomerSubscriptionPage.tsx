@@ -649,14 +649,15 @@ const CreateCustomerSubscriptionPage: React.FC = () => {
 					<div className='w-full flex items-center gap-2.5 rounded-md border border-amber-300 bg-amber-50/80 px-3 py-2.5'>
 						<AlertTriangle className='h-4 w-4 flex-shrink-0 text-amber-600' />
 						<span className='text-sm font-medium text-amber-800 leading-relaxed'>
-							This subscription will be auto-cancelled on{' '}
+							This is a sandbox subscription and will automatically end on{' '}
 							{new Date(
 								new Date(subscriptionState.startDate).getTime() + SANDBOX_AUTO_CANCELLATION_DAYS * 24 * 60 * 60 * 1000,
 							).toLocaleDateString('en-US', {
 								year: 'numeric',
 								month: 'long',
 								day: 'numeric',
-							})}
+							})}{' '}
+							({SANDBOX_AUTO_CANCELLATION_DAYS} days from now).
 						</span>
 					</div>
 				)}
