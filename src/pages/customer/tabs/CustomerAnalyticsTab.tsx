@@ -180,7 +180,12 @@ const CustomerAnalyticsTab = () => {
 	const filteredUsageData = useMemo(() => {
 		if (!usageData?.items) return null;
 		const filteredItems = usageData.items.filter((item) => item.total_usage > 0);
-		if (filteredItems.length === 0) return null;
+		if (filteredItems.length === 0) {
+			return {
+				...usageData,
+				items: [],
+			};
+		}
 		return {
 			...usageData,
 			items: filteredItems,
