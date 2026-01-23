@@ -3,7 +3,6 @@ import { useQuery } from '@tanstack/react-query';
 import { Page } from '@/components/atoms';
 import { Skeleton } from '@/components/ui';
 import EventsApi from '@/api/EventsApi';
-import EnvironmentApi from '@/api/EnvironmentApi';
 import toast from 'react-hot-toast';
 import { GetMonitoringDataRequest } from '@/types';
 import { WindowSize } from '@/models';
@@ -19,6 +18,7 @@ import { useRecentSubscriptions, useRevenueData, useInvoiceIssues } from '@/hook
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui';
 import { AlertCircle } from 'lucide-react';
 import { getTypographyClass } from '@/lib/typography';
+import { useEnvironment } from '@/hooks/useEnvironment';
 
 const getTimeRangeForPeriod = (period: TIME_PERIOD): { startDate: Date; endDate: Date } => {
 	const endDate = new Date();
@@ -72,7 +72,9 @@ const DashboardPage = () => {
 		return () => clearTimeout(timeoutId);
 	}, [monitoringApiParams]);
 
-	const environmentId = EnvironmentApi.getActiveEnvironmentId();
+	// Use reactive environment hook instead of static API call
+	const { activeEnvironment } = useEnvironment();
+	const environmentId = activeEnvironment?.id || null;
 
 	const {
 		data: monitoringData,

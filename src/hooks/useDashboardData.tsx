@@ -1,15 +1,16 @@
 import { useQuery } from '@tanstack/react-query';
 import { useMemo } from 'react';
 import DashboardApi from '@/api/DashboardApi';
-import EnvironmentApi from '@/api/EnvironmentApi';
 import { WindowSize } from '@/models';
+import { useEnvironment } from './useEnvironment';
 
 // Default values matching backend
 const DEFAULT_WINDOW_SIZE = WindowSize.MONTH;
 const DEFAULT_WINDOW_COUNT = 3;
 
 export const useRecentSubscriptions = () => {
-	const environmentId = EnvironmentApi.getActiveEnvironmentId();
+	const { activeEnvironment } = useEnvironment();
+	const environmentId = activeEnvironment?.id || null;
 
 	const {
 		data: dashboardData,
@@ -50,7 +51,8 @@ export const useRecentSubscriptions = () => {
 };
 
 export const useRevenueData = () => {
-	const environmentId = EnvironmentApi.getActiveEnvironmentId();
+	const { activeEnvironment } = useEnvironment();
+	const environmentId = activeEnvironment?.id || null;
 
 	const {
 		data: dashboardData,
@@ -102,7 +104,8 @@ export const useRevenueData = () => {
 };
 
 export const useInvoiceIssues = () => {
-	const environmentId = EnvironmentApi.getActiveEnvironmentId();
+	const { activeEnvironment } = useEnvironment();
+	const environmentId = activeEnvironment?.id || null;
 
 	const {
 		data: dashboardData,
