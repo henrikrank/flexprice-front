@@ -2,11 +2,12 @@ import { useEffect, useState, useMemo } from 'react';
 import { useParams } from 'react-router';
 import { useQuery } from '@tanstack/react-query';
 import { useBreadcrumbsStore } from '@/store';
-import { Loader, FeatureMultiSelect, DateRangePicker } from '@/components/atoms';
+import { FeatureMultiSelect, DateRangePicker } from '@/components/atoms';
 import CustomerApi from '@/api/CustomerApi';
 import toast from 'react-hot-toast';
 import EventsApi from '@/api/EventsApi';
 import CostSheetApi from '@/api/CostSheetApi';
+import FeatureApi from '@/api/FeatureApi';
 import { Feature } from '@/models';
 import { GetUsageAnalyticsRequest, GetCostAnalyticsRequest } from '@/types';
 import { WindowSize } from '@/models';
@@ -15,6 +16,8 @@ import { UsageAnalyticItem } from '@/models';
 import { formatNumber } from '@/utils';
 import { MetricCard, CostDataTable } from '@/components/molecules';
 import { getCurrencySymbol } from '@/utils';
+import { Skeleton } from '@/components/ui';
+import { ENTITY_STATUS } from '@/models/base';
 
 const CustomerAnalyticsTab = () => {
 	const { id: customerId } = useParams();
@@ -25,15 +28,10 @@ const CustomerAnalyticsTab = () => {
 	const [startDate, setStartDate] = useState<Date | undefined>(new Date(new Date().setDate(new Date().getDate() - 30)));
 	const [endDate, setEndDate] = useState<Date | undefined>(new Date());
 
-	const {
-		data: customer,
-		isLoading: customerLoading,
-		error: customerError,
-	} = useQuery({
+	const { data: customer, error: customerError } = useQuery({
 		queryKey: ['customer', customerId],
 		queryFn: async () => {
-			if (!customerId) throw new Error('Customer ID is required');
-			return await CustomerApi.getCustomerById(customerId);
+			return await CustomerApi.getCustomerById(customerId!);
 		},
 		enabled: !!customerId,
 	});
@@ -145,6 +143,17 @@ const CustomerAnalyticsTab = () => {
 		enabled: !!debouncedCostParams,
 	});
 
+	// Check if features are loading (same query key as FeatureMultiSelect uses)
+	const { isLoading: featuresLoading } = useQuery({
+		queryKey: ['fetchFeatures2'],
+		queryFn: async () => {
+			return await FeatureApi.listFeatures({
+				status: ENTITY_STATUS.PUBLISHED,
+				limit: 1000,
+			});
+		},
+	});
+
 	useEffect(() => {
 		updateBreadcrumb(4, 'Analytics');
 	}, [updateBreadcrumb]);
@@ -167,9 +176,30 @@ const CustomerAnalyticsTab = () => {
 		}
 	}, [costError]);
 
-	if (customerLoading) {
-		return <Loader />;
-	}
+	// Filter zero-value features from usage data for chart
+	const filteredUsageData = useMemo(() => {
+		if (!usageData?.items) return null;
+		const filteredItems = usageData.items.filter((item) => item.total_usage > 0);
+		if (filteredItems.length === 0) {
+			return {
+				...usageData,
+				items: [],
+			};
+		}
+		return {
+			...usageData,
+			items: filteredItems,
+		};
+	}, [usageData]);
+
+	// Check if revenue metrics should be displayed
+	const hasRevenueData = useMemo(() => {
+		if (!costData) return false;
+		const totalRevenue = parseFloat(costData.total_revenue || '0');
+		const totalCost = parseFloat(costData.total_cost || '0');
+		const margin = parseFloat(costData.margin || '0');
+		return totalRevenue > 0 || totalCost > 0 || Math.abs(margin) > 0;
+	}, [costData]);
 
 	const handleDateRangeChange = ({ startDate: newStartDate, endDate: newEndDate }: { startDate?: Date; endDate?: Date }) => {
 		setStartDate(newStartDate);
@@ -178,39 +208,99 @@ const CustomerAnalyticsTab = () => {
 
 	const isLoading = usageLoading || costLoading;
 
+	// Skeleton Components
+	const RevenueMetricsSkeleton = () => (
+		<div className='pt-9'>
+			<div className='grid grid-cols-2 md:grid-cols-4 gap-3'>
+				{[1, 2, 3, 4].map((i) => (
+					<div key={i} className='bg-white border border-[#E5E7EB] p-[25px] rounded-md'>
+						<Skeleton className='h-5 w-20 mb-3' />
+						<Skeleton className='h-7 w-24' />
+					</div>
+				))}
+			</div>
+		</div>
+	);
+
+	const ChartSkeleton = () => (
+		<div className='space-y-4'>
+			<Skeleton className='h-6 w-32' />
+			<Skeleton className='h-[400px] w-full' />
+		</div>
+	);
+
+	const TableSkeleton = () => (
+		<div className='space-y-4'>
+			<Skeleton className='h-6 w-40' />
+			<div className='space-y-2'>
+				<Skeleton className='h-12 w-full' />
+				<Skeleton className='h-12 w-full' />
+				<Skeleton className='h-12 w-full' />
+			</div>
+		</div>
+	);
+
 	return (
 		<div className='space-y-6'>
 			<h3 className='text-lg font-medium text-gray-900 mb-8 mt-1'>Analytics</h3>
 
 			{/* Filters Section */}
 			<div className='flex flex-wrap items-end gap-8'>
-				<div className='flex-1 min-w-[200px] max-w-md'>
-					<FeatureMultiSelect
-						label='Features'
-						placeholder='Select features'
-						values={selectedFeatures.map((f) => f.id)}
-						onChange={setSelectedFeatures}
-						className='text-sm'
-					/>
-				</div>
-				<DateRangePicker
-					startDate={startDate}
-					endDate={endDate}
-					onChange={handleDateRangeChange}
-					placeholder='Select date range'
-					title='Date Range'
-				/>
+				{featuresLoading ? (
+					<>
+						<div className='flex-1 min-w-[200px] max-w-md'>
+							<div className='w-full'>
+								<Skeleton className='h-5 w-20 mb-1' />
+								<Skeleton className='h-10 w-full' />
+							</div>
+						</div>
+						<div>
+							<Skeleton className='h-5 w-24 mb-1' />
+							<Skeleton className='h-10 w-[280px]' />
+						</div>
+					</>
+				) : (
+					<>
+						<div className='flex-1 min-w-[200px] max-w-md'>
+							<FeatureMultiSelect
+								label='Features'
+								placeholder='Select features'
+								values={selectedFeatures.map((f) => f.id)}
+								onChange={setSelectedFeatures}
+								className='text-sm'
+							/>
+						</div>
+						<DateRangePicker
+							startDate={startDate}
+							endDate={endDate}
+							onChange={handleDateRangeChange}
+							placeholder='Select date range'
+							title='Date Range'
+						/>
+					</>
+				)}
 			</div>
 
-			{/* Single Loader at Page Level */}
+			{/* Skeletons for Loading State */}
 			{isLoading ? (
-				<div className='flex items-center justify-center py-12'>
-					<Loader />
-				</div>
+				<>
+					{costLoading && <RevenueMetricsSkeleton />}
+					{usageLoading && <ChartSkeleton />}
+					{usageLoading && (
+						<div className='!mt-10'>
+							<TableSkeleton />
+						</div>
+					)}
+					{costLoading && (
+						<div className='pt-9'>
+							<TableSkeleton />
+						</div>
+					)}
+				</>
 			) : (
 				<>
 					{/* Summary Metrics - Revenue tiles */}
-					{costData && (
+					{hasRevenueData && costData && (
 						<div className='pt-9'>
 							{(() => {
 								const totalRevenue = parseFloat(costData.total_revenue || '0');
@@ -243,21 +333,21 @@ const CustomerAnalyticsTab = () => {
 					)}
 
 					{/* Usage Chart */}
-					{usageData && (
+					{filteredUsageData && (
 						<div className=''>
-							<CustomerUsageChart data={usageData} />
+							<CustomerUsageChart data={filteredUsageData} />
 						</div>
 					)}
 
 					{/* Usage Data Table */}
-					{usageData && (
+					{filteredUsageData && filteredUsageData.items.length > 0 && (
 						<div className='!mt-10'>
-							<UsageDataTable items={usageData.items} />
+							<UsageDataTable items={filteredUsageData.items} />
 						</div>
 					)}
 
 					{/* Cost Data Table */}
-					{costData && (
+					{costData && costData.cost_analytics && costData.cost_analytics.length > 0 && (
 						<div className='pt-9'>
 							<CostDataTable items={costData.cost_analytics} />
 						</div>

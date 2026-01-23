@@ -17,13 +17,18 @@ import { ENVIRONMENT_TYPE } from '@/models/Environment';
 interface Props {
 	disabled?: boolean;
 	className?: string;
-	noOptionsText?: string;
 }
 const SelectTrigger = React.forwardRef<
 	React.ElementRef<typeof SelectPrimitive.Trigger>,
 	React.ComponentPropsWithoutRef<typeof SelectPrimitive.Trigger>
 >(({ className, children, ...props }, ref) => (
-	<SelectPrimitive.Trigger ref={ref} className={cn('w-full', className)} {...props}>
+	<SelectPrimitive.Trigger
+		ref={ref}
+		className={cn(
+			'w-full outline-none ring-0 focus:outline-none focus:ring-0 focus:ring-offset-0 focus-visible:outline-none focus-visible:ring-0 focus-visible:ring-offset-0',
+			className,
+		)}
+		{...props}>
 		{children}
 	</SelectPrimitive.Trigger>
 ));
@@ -60,7 +65,7 @@ const EnvironmentSelector: React.FC<Props> = ({ disabled = false, className }) =
 	const navigate = useNavigate();
 	const { setLoading } = useGlobalLoading();
 
-	const { environments, activeEnvironment, changeActiveEnvironment, refetchEnvironments } = useEnvironment();
+	const { environments, activeEnvironment, changeActiveEnvironment, refetchEnvironments, isDevelopment, isProduction } = useEnvironment();
 
 	const [isOpen, setIsOpen] = useState(false);
 	const [isCreatorOpen, setIsCreatorOpen] = useState(false);
@@ -76,15 +81,13 @@ const EnvironmentSelector: React.FC<Props> = ({ disabled = false, className }) =
 		return <div className='p-2 text-sm text-muted-foreground'>No environments available</div>;
 	}
 
-	const options: SelectOption[] =
-		environments.map((env) => ({
-			value: env.id,
-			label: env.name,
-			prefixIcon: getEnvironmentIcon(env.type),
-			onSelect: () => handleChange(env.id),
-		})) || [];
+	const options: SelectOption[] = environments.map((env) => ({
+		value: env.id,
+		label: env.name,
+		prefixIcon: getEnvironmentIcon(env.type),
+	}));
 
-	const handleEnvironmentChange = async (environmentId: string) => {
+	const handleChange = async (environmentId: string) => {
 		setLoading(true);
 		try {
 			changeActiveEnvironment(environmentId);
@@ -96,44 +99,61 @@ const EnvironmentSelector: React.FC<Props> = ({ disabled = false, className }) =
 		}
 	};
 
-	const handleChange = async (newValue: string) => {
-		await handleEnvironmentChange(newValue);
-	};
-
 	// If activeEnvironment is null, use the first environment as a fallback
 	const currentEnvironment = activeEnvironment || environments[0];
+	const environmentName = currentEnvironment?.name || 'No environment';
 
 	return (
 		<div className={cn('mt-1 w-full', className)}>
-			<Select open={isOpen} onOpenChange={setIsOpen} value={currentEnvironment?.id} onValueChange={handleChange} disabled={disabled}>
-				<SelectTrigger>
+			{/* Tenant */}
+			<div className='w-full mt-2 flex items-center justify-between gap-2'>
+				<div className='flex items-center text-start gap-2 min-w-0'>
+					<span className='size-7 bg-black text-white flex justify-center items-center bg-contain rounded-md text-xs font-semibold'>
+						{user?.tenant?.name
+							?.split(' ')
+							.map((n) => n[0])
+							.join('')
+							.slice(0, 2) || 'UN'}
+					</span>
+					<div className={cn('text-start min-w-0', sidebarOpen ? '' : 'hidden')}>
+						<p className='font-medium text-[16px] leading-snug truncate'>{user?.tenant?.name || 'Unknown'}</p>
+					</div>
+				</div>
+			</div>
+
+			{/* Environment picker (colored box) */}
+			<Select open={isOpen} onOpenChange={setIsOpen} value={activeEnvironment?.id} onValueChange={handleChange} disabled={disabled}>
+				<SelectTrigger className={cn(sidebarOpen ? '' : 'hidden')}>
 					<div
-						onClick={() => setIsOpen(!isOpen)}
-						className={`w-full mt-2 flex items-center justify-between h-6 rounded-md gap-2 bg-contain`}>
-						<div className='flex items-center text-start gap-2'>
-							<span className='size-9 bg-black text-white flex justify-center items-center bg-contain rounded-md'>
-								{user?.tenant?.name
-									?.split(' ')
-									.map((n) => n[0])
-									.join('')
-									.slice(0, 2) || 'UN'}
-							</span>
-							<div className={cn('text-start', sidebarOpen ? '' : 'hidden')}>
-								<p className='font-semibold text-sm'>{user?.tenant?.name || 'Unknown'}</p>
-								<p className='text-xs text-muted-foreground'>{currentEnvironment?.name || 'No environment'}</p>
-							</div>
+						className={cn(
+							'w-full mt-3.5 flex items-center justify-between h-10 px-2 py-[10px] rounded-[8px] border',
+							isDevelopment && 'border-yellow-400 text-yellow-900',
+							isProduction && 'border-[#BFD0F5] text-[#1F5ADA]',
+						)}
+						style={{
+							background: isProduction
+								? 'linear-gradient(to right, #EEF4FF, #DDE7FF, #EEF4FF)'
+								: 'linear-gradient(to right, #FFFCEE, #FFF9DD, #FFFCEE)',
+						}}>
+						<div className='flex items-center gap-2 min-w-0'>
+							{isDevelopment ? (
+								<Blocks absoluteStrokeWidth className='!size-5 !stroke-[1.5px] text-current' />
+							) : (
+								<Rocket absoluteStrokeWidth className='!size-5 !stroke-[1.5px] text-current' />
+							)}
+							<span className='block text-[14px] font-normal truncate max-w-[120px]'>{environmentName}</span>
 						</div>
-						<div className={cn(sidebarOpen ? '' : 'hidden')}>
-							<ChevronsUpDown className='h-4 w-4 opacity-50' />
-						</div>
+						<ChevronsUpDown className='h-4 w-4 opacity-60 shrink-0' />
 					</div>
 				</SelectTrigger>
-				<SelectContent className='w-full mt-2'>
+				<SelectContent className='mt-2 w-[calc(var(--radix-select-trigger-width)+8px)] max-w-[calc(var(--radix-select-trigger-width)+8px)]'>
 					{options.map((option) => (
 						<SelectItem key={option.value} value={option.value}>
-							<div className='flex items-center gap-2 text-muted-foreground'>
+							<div className='flex items-center gap-2 text-muted-foreground min-w-0'>
 								{option.prefixIcon}
-								{option.label}
+								<span className='block flex-1 min-w-0 truncate pr-2 max-w-[calc(var(--radix-select-trigger-width)-78px)]'>
+									{option.label}
+								</span>
 							</div>
 						</SelectItem>
 					))}
@@ -160,7 +180,7 @@ const EnvironmentSelector: React.FC<Props> = ({ disabled = false, className }) =
 				onEnvironmentCreated={async (environmentId) => {
 					await refetchEnvironments();
 					if (environmentId) {
-						handleEnvironmentChange(environmentId);
+						handleChange(environmentId);
 					}
 				}}
 			/>

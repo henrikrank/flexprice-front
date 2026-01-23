@@ -6,6 +6,7 @@ import { useQuery } from '@tanstack/react-query';
 import { Gauge, SquareCheckBig, Wrench, ChevronDown } from 'lucide-react';
 import React, { FC, useEffect } from 'react';
 import { ENTITY_STATUS } from '@/models/base';
+import { Skeleton } from '@/components/ui';
 
 const fetchFeatures = async () => {
 	return await FeatureApi.listFeatures({
@@ -69,7 +70,12 @@ const FeatureMultiSelect: FC<Props> = ({
 	}, [featuresData, onFeaturesFetched]);
 
 	if (isLoading) {
-		return <div></div>;
+		return (
+			<div className={cn('w-full')}>
+				{_label && <Skeleton className='h-5 w-20 mb-1' />}
+				<Skeleton className='h-10 w-full' />
+			</div>
+		);
 	}
 
 	if (isError) {

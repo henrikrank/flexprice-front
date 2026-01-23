@@ -1,11 +1,9 @@
-'use client';
-
 import { useState, useMemo, useEffect } from 'react';
-import { Loader, Select } from '@/components/atoms';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui';
+import { Select } from '@/components/atoms';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription, Skeleton } from '@/components/ui';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { getTypographyClass } from '@/lib/typography';
-import { Info } from 'lucide-react';
+import { Info, AlertCircle } from 'lucide-react';
 import { currencyOptions } from '@/constants/constants';
 
 interface RevenueMonth {
@@ -17,10 +15,11 @@ interface RevenueMonth {
 interface RevenueTrendCardProps {
 	revenueData: RevenueMonth[];
 	isLoading: boolean;
+	error?: Error | null;
 	className?: string;
 }
 
-export const RevenueTrendCard: React.FC<RevenueTrendCardProps> = ({ revenueData, isLoading, className }) => {
+export const RevenueTrendCard: React.FC<RevenueTrendCardProps> = ({ revenueData, isLoading, error, className }) => {
 	// Extract unique currencies from revenue data
 	const availableCurrencies = useMemo(() => {
 		const currencies = new Set<string>();
@@ -92,9 +91,20 @@ export const RevenueTrendCard: React.FC<RevenueTrendCardProps> = ({ revenueData,
 			</CardHeader>
 			<CardContent className='pt-0 pb-5'>
 				{isLoading ? (
-					<div className='flex items-center justify-center py-4 px-6'>
-						<Loader />
+					<div className='space-y-3 px-6 py-4'>
+						<Skeleton className='h-12 w-full' />
+						<Skeleton className='h-12 w-full' />
+						<Skeleton className='h-12 w-full' />
 					</div>
+				) : error ? (
+					<div className='flex flex-col items-center justify-center py-8 px-6'>
+						<AlertCircle className='h-8 w-8 text-red-500 mb-3' />
+						<p className={getTypographyClass('body-small', 'text-center text-zinc-600')}>
+							Failed to load revenue data. Please try again later.
+						</p>
+					</div>
+				) : revenueData.length === 0 ? (
+					<p className={getTypographyClass('body-small', 'text-center text-zinc-500 py-6 px-6')}>No revenue data available</p>
 				) : !selectedCurrency ? (
 					<p className={getTypographyClass('body-small', 'text-center text-zinc-500 py-6 px-6')}>Please select a currency</p>
 				) : filteredRevenueData && filteredRevenueData.length > 0 ? (

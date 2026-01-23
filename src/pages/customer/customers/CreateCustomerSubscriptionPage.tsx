@@ -6,7 +6,7 @@ import toast from 'react-hot-toast';
 import { Button, SelectOption } from '@/components/atoms';
 import { ApiDocsContent } from '@/components/molecules';
 import { UsageTable, SubscriptionForm } from '@/components/organisms';
-import { Building, User } from 'lucide-react';
+import { Building, User, AlertTriangle } from 'lucide-react';
 
 import { AddonApi, CustomerApi, PlanApi, SubscriptionApi, TaxApi, CouponApi } from '@/api';
 import { refetchQueries } from '@/core/services/tanstack/ReactQueryProvider';
@@ -24,7 +24,7 @@ import {
 	SUBSCRIPTION_STATUS,
 } from '@/models';
 import { InternalCreditGrantRequest, creditGrantToInternal, internalToCreateRequest } from '@/types/dto/CreditGrant';
-import { BILLING_PERIOD } from '@/constants/constants';
+import { BILLING_PERIOD, SANDBOX_AUTO_CANCELLATION_DAYS } from '@/constants/constants';
 
 import {
 	PlanResponse,
@@ -43,6 +43,7 @@ import { extractLineItemCommitments } from '@/utils/common/commitment_helpers';
 import { extractSubscriptionBoundaries, extractFirstPhaseData } from '@/utils/subscription/phaseConversion';
 
 import { useBreadcrumbsStore } from '@/store/useBreadcrumbsStore';
+import { useEnvironment } from '@/hooks/useEnvironment';
 
 type Params = {
 	id: string;
@@ -260,6 +261,7 @@ const CreateCustomerSubscriptionPage: React.FC = () => {
 		isLoading: isLoadingPlanDetails,
 		isError: isPlanDetailsError,
 	} = usePlanDetails(subscriptionState.selectedPlan);
+	const { isDevelopment } = useEnvironment();
 
 	const { data: couponsResponse } = useQuery({
 		queryKey: ['coupons'],
@@ -641,6 +643,24 @@ const CreateCustomerSubscriptionPage: React.FC = () => {
 					}}
 					allCoupons={allCouponsData}
 				/>
+
+				{/* Sandbox Note */}
+				{isDevelopment && subscriptionState.selectedPlan && subscriptionState.startDate && (
+					<div className='w-full flex items-center gap-2.5 rounded-md border border-amber-300 bg-amber-50/80 px-3 py-2.5'>
+						<AlertTriangle className='h-4 w-4 flex-shrink-0 text-amber-600' />
+						<span className='text-sm font-medium text-amber-800 leading-relaxed'>
+							This is a sandbox subscription and will automatically end on{' '}
+							{new Date(
+								new Date(subscriptionState.startDate).getTime() + SANDBOX_AUTO_CANCELLATION_DAYS * 24 * 60 * 60 * 1000,
+							).toLocaleDateString('en-US', {
+								year: 'numeric',
+								month: 'long',
+								day: 'numeric',
+							})}{' '}
+							({SANDBOX_AUTO_CANCELLATION_DAYS} days from now).
+						</span>
+					</div>
+				)}
 
 				{subscriptionState.selectedPlan && !subscription_id && (
 					<div className='flex items-center justify-between'>
