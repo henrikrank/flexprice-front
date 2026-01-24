@@ -10,7 +10,7 @@ interface Props {
 	isOpen?: boolean;
 	onOpenChange?: (isOpen: boolean) => void;
 	className?: string;
-	size?: 'sm' | 'md' | 'lg' | 'xl' | '2xl' | 'full';
+	size?: 'sm' | 'md' | 'lg' | 'xl' | '2xl' | '3xl' | 'full';
 }
 
 const Sheet: FC<Props> = ({ children, trigger, description, title, isOpen, onOpenChange, className, size = 'sm' }) => {
@@ -121,6 +121,7 @@ const Sheet: FC<Props> = ({ children, trigger, description, title, isOpen, onOpe
 					'sm:max-w-lg': size === 'lg',
 					'sm:max-w-xl': size === 'xl',
 					'sm:max-w-2xl': size === '2xl',
+					'sm:max-w-3xl': size === '3xl',
 					'sm:max-w-full': size === 'full',
 				})}>
 				{(title || description) && (
