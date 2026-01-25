@@ -283,7 +283,7 @@ describe('ActionButton Component', () => {
 			});
 
 			await waitFor(() => {
-				expect(toast.success).toHaveBeenCalledWith('Test Entity archive successfully');
+				expect(toast.success).toHaveBeenCalledWith('Successfully archived Test Entity');
 			});
 		});
 
