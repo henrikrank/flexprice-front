@@ -140,6 +140,7 @@ const PlanDetailsPage = () => {
 
 	return (
 		<Page
+			documentTitle={planData.name}
 			heading={
 				<div className='flex items-center gap-2'>
 					<span>{planData.name}</span>

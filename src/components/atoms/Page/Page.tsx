@@ -10,18 +10,26 @@ interface Props {
 	heading?: string | React.ReactNode;
 	headingClassName?: string;
 	headingCTA?: React.ReactNode;
+	documentTitle?: string;
 }
 
-const Page: FC<Props> = ({ children, className, type = 'default', header, heading, headingClassName, headingCTA }) => {
+const Page: FC<Props> = ({ children, className, type = 'default', header, heading, headingClassName, headingCTA, documentTitle }) => {
 	if (heading && header) {
 		throw new Error('You cannot pass both heading and header props');
 	}
 
 	useEffect(() => {
-		if (heading) {
-			document.title = `${heading} | Flexprice`;
+		// Use documentTitle if provided, otherwise try to extract string from heading
+		if (documentTitle) {
+			document.title = `${documentTitle} | Flexprice`;
+		} else if (heading) {
+			// If heading is a string, use it directly
+			if (typeof heading === 'string') {
+				document.title = `${heading} | Flexprice`;
+			}
+			// If heading is a ReactNode, don't set title (to avoid "[object Object]")
 		}
-	}, [heading]);
+	}, [heading, documentTitle]);
 
 	return (
 		<div className='min-h-screen flex flex-col'>

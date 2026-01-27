@@ -126,6 +126,7 @@ const TaxrateDetailsPage = () => {
 
 	return (
 		<Page
+			documentTitle={taxData?.name}
 			heading={taxData?.name}
 			headingCTA={
 				<>
