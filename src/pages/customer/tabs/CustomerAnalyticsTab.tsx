@@ -2,7 +2,7 @@ import { useEffect, useState, useMemo } from 'react';
 import { useParams } from 'react-router';
 import { useQuery } from '@tanstack/react-query';
 import { useBreadcrumbsStore } from '@/store';
-import { Loader, FeatureMultiSelect, DateRangePicker } from '@/components/atoms';
+import { Loader, FeatureMultiSelect, DatePicker } from '@/components/atoms';
 import CustomerApi from '@/api/CustomerApi';
 import toast from 'react-hot-toast';
 import EventsApi from '@/api/EventsApi';
@@ -22,7 +22,7 @@ const CustomerAnalyticsTab = () => {
 
 	// Filter states
 	const [selectedFeatures, setSelectedFeatures] = useState<Feature[]>([]);
-	const [startDate, setStartDate] = useState<Date | undefined>(new Date(new Date().setDate(new Date().getDate() - 30)));
+	const [startDate, setStartDate] = useState<Date | undefined>(new Date(new Date().setDate(new Date().getDate() - 7)));
 	const [endDate, setEndDate] = useState<Date | undefined>(new Date());
 
 	const {
@@ -171,10 +171,27 @@ const CustomerAnalyticsTab = () => {
 		return <Loader />;
 	}
 
-	const handleDateRangeChange = ({ startDate: newStartDate, endDate: newEndDate }: { startDate?: Date; endDate?: Date }) => {
-		setStartDate(newStartDate);
-		setEndDate(newEndDate);
+	const handleStartDateChange = (date: Date | undefined) => {
+		setStartDate(date);
+		if (date && endDate && endDate <= date) {
+			const newEndDate = new Date(date);
+			newEndDate.setDate(newEndDate.getDate() + 1);
+			setEndDate(newEndDate);
+		}
 	};
+
+	const handleEndDateChange = (date: Date | undefined) => {
+		setEndDate(date);
+		if (date && startDate && startDate >= date) {
+			const newStartDate = new Date(date);
+			newStartDate.setDate(newStartDate.getDate() - 1);
+			setStartDate(newStartDate);
+		}
+	};
+
+	const minEndDate = startDate ? new Date(new Date(startDate).setDate(startDate.getDate() + 1)) : undefined;
+
+	const maxStartDate = endDate ? new Date(new Date(endDate).setDate(endDate.getDate() - 1)) : undefined;
 
 	const isLoading = usageLoading || costLoading;
 
@@ -183,7 +200,7 @@ const CustomerAnalyticsTab = () => {
 			<h3 className='text-lg font-medium text-gray-900 mb-8 mt-1'>Analytics</h3>
 
 			{/* Filters Section */}
-			<div className='flex flex-wrap items-end gap-8'>
+			<div className='flex flex-wrap items-end gap-4'>
 				<div className='flex-1 min-w-[200px] max-w-md'>
 					<FeatureMultiSelect
 						label='Features'
@@ -193,13 +210,22 @@ const CustomerAnalyticsTab = () => {
 						className='text-sm'
 					/>
 				</div>
-				<DateRangePicker
-					startDate={startDate}
-					endDate={endDate}
-					onChange={handleDateRangeChange}
-					placeholder='Select date range'
-					title='Date Range'
-				/>
+
+				{/* Start Date Picker */}
+				<div className='min-w-[200px]'>
+					<DatePicker
+						date={startDate}
+						setDate={handleStartDateChange}
+						placeholder='Select start date'
+						label='Start Date'
+						maxDate={maxStartDate}
+					/>
+				</div>
+
+				{/* End Date Picker */}
+				<div className='min-w-[200px]'>
+					<DatePicker date={endDate} setDate={handleEndDateChange} placeholder='Select end date' label='End Date' minDate={minEndDate} />
+				</div>
 			</div>
 
 			{/* Single Loader at Page Level */}
@@ -211,7 +237,7 @@ const CustomerAnalyticsTab = () => {
 				<>
 					{/* Summary Metrics - Revenue tiles */}
 					{costData && (
-						<div className='pt-9'>
+						<div className=''>
 							{(() => {
 								const totalRevenue = parseFloat(costData.total_revenue || '0');
 								const totalCost = parseFloat(costData.total_cost || '0');
