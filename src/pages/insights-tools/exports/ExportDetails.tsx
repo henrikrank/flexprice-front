@@ -107,7 +107,9 @@ const ExportDetails = () => {
 	}
 
 	return (
-		<Page heading={`Export Details - ${formatEntityType(exportTask.entity_type)} Export`}>
+		<Page
+			documentTitle={`Export Details - ${formatEntityType(exportTask.entity_type)} Export`}
+			heading={`Export Details - ${formatEntityType(exportTask.entity_type)} Export`}>
 			{/* Back button and Action Buttons */}
 			<div className='mb-6 flex items-center justify-between'>
 				<Button variant='outline' onClick={() => navigate(`/tools/exports/s3/${connectionId}/export`)} className='flex items-center gap-2'>

@@ -455,7 +455,7 @@ const EntityChargesPage: React.FC<EntityChargesPageProps> = ({ entityType, entit
 
 	// ===== RENDER =====
 	return (
-		<Page heading={`Add Charges to ${entityName || entityType}`}>
+		<Page documentTitle={`Add Charges to ${entityName || entityType}`} heading={`Add Charges to ${entityName || entityType}`}>
 			{/* Rollout Charges Modal (only for plans) */}
 			{entityType === ENTITY_TYPE.PLAN && (
 				<Dialog open={showRolloutModal} onOpenChange={setShowRolloutModal}>
