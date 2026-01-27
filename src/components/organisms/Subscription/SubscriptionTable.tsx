@@ -1,15 +1,20 @@
 import { FC } from 'react';
 import { Subscription, SUBSCRIPTION_STATUS } from '@/models/Subscription';
 import { ColumnData, FlexpriceTable } from '@/components/molecules';
-import { Chip } from '@/components/atoms';
+import { Chip, Tooltip } from '@/components/atoms';
 import { formatBillingPeriodForDisplay } from '@/utils/common/helper_functions';
 import formatDate from '@/utils/common/format_date';
 import SubscriptionActionButton from './SubscriptionActionButton';
+import { Info, ExternalLink } from 'lucide-react';
+import { Link } from 'react-router';
+import { RouteNames } from '@/core/routes/Routes';
 
 export interface SubscriptionTableProps {
 	data: Subscription[];
 	onRowClick?: (row: Subscription) => void;
 	allowRedirect?: boolean;
+	subscriptionOverrides?: Map<string, boolean>;
+	customerName?: string;
 }
 
 export const getSubscriptionStatus = (status: string) => {
@@ -46,11 +51,49 @@ export const formatSubscriptionStatus = (status: string) => {
 	}
 };
 
-const SubscriptionTable: FC<SubscriptionTableProps> = ({ data, onRowClick, allowRedirect = true }): JSX.Element => {
+const SubscriptionTable: FC<SubscriptionTableProps> = ({
+	data,
+	onRowClick,
+	allowRedirect = true,
+	subscriptionOverrides,
+	customerName,
+}): JSX.Element => {
 	const columns: ColumnData<Subscription>[] = [
 		{
 			title: 'Plan Name',
-			render: (row) => row.plan?.name,
+			render: (row) => {
+				const hasOverride = subscriptionOverrides?.get(row.id);
+				const originalPlanName = row.plan?.name;
+				const originalPlanId = row.plan?.id;
+
+				if (hasOverride && customerName) {
+					const tooltipContent =
+						originalPlanName && originalPlanId ? (
+							<div className='flex items-center gap-1.5'>
+								<span>Overridden plan from</span>
+								<Link
+									to={`${RouteNames.plan}/${originalPlanId}`}
+									className='flex items-center gap-1 underline decoration-dashed decoration-[1px] decoration-gray-500/50 underline-offset-2 hover:decoration-gray-700/70 transition-colors'
+									onClick={(e) => e.stopPropagation()}>
+									<span>{originalPlanName}</span>
+									<ExternalLink className='w-3 h-3' />
+								</Link>
+							</div>
+						) : (
+							<span>Overridden plan from {originalPlanName || 'original plan'}</span>
+						);
+
+					return (
+						<div className='flex items-center gap-1.5'>
+							<span>{`${customerName} Custom Plan`}</span>
+							<Tooltip content={tooltipContent} delayDuration={0}>
+								<Info className='h-4 w-4 text-muted-foreground hover:text-foreground transition-colors' />
+							</Tooltip>
+						</div>
+					);
+				}
+				return originalPlanName;
+			},
 		},
 		{
 			title: 'Billing Period',
