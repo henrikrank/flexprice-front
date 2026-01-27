@@ -3,6 +3,7 @@ import { Check, Loader2 } from 'lucide-react';
 import { Button, Chip } from '@/components/atoms';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Command, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
+import { Checkbox } from '@/components/ui/checkbox';
 import { cn } from '@/lib/utils';
 import { useQuery } from '@tanstack/react-query';
 import { debounce } from 'lodash';
@@ -115,6 +116,33 @@ const FilterAsyncMultiSelect = <T = any,>({
 		[value, onChange],
 	);
 
+	// Check if all available options are selected
+	const isAllSelected = useMemo(() => {
+		if (availableOptions.length === 0) return false;
+		const enabledOptions = availableOptions.filter((opt) => !opt.disabled);
+		if (enabledOptions.length === 0) return false;
+		return enabledOptions.every((option) => value.includes(option.value));
+	}, [availableOptions, value]);
+
+	// Handle select all checkbox
+	const handleSelectAll = useCallback(
+		(checked: boolean) => {
+			const enabledOptions = availableOptions.filter((opt) => !opt.disabled);
+			if (checked) {
+				// Select all: Add all available options to the selection
+				const allOptionValues = enabledOptions.map((opt) => opt.value);
+				const newValue = [...new Set([...value, ...allOptionValues])]; // Merge with existing selections
+				onChange(newValue);
+			} else {
+				// Deselect all: Remove all available options from selection
+				const availableValues = new Set(enabledOptions.map((opt) => opt.value));
+				const newValue = value.filter((v) => !availableValues.has(v));
+				onChange(newValue);
+			}
+		},
+		[availableOptions, value, onChange],
+	);
+
 	return (
 		<Popover open={isOpen} onOpenChange={handleOpenChange}>
 			<PopoverTrigger asChild>
@@ -164,19 +192,30 @@ const FilterAsyncMultiSelect = <T = any,>({
 							</div>
 						)}
 						{!isLoading && !isError && availableOptions.length > 0 && (
-							<CommandGroup>
-								{availableOptions.map((option) => (
-									<CommandItem
-										key={option.value}
-										value={`${option.label} ${option.description || ''}`}
-										onSelect={() => handleSelect(option.value)}
-										disabled={option.disabled}
-										className='cursor-pointer'>
-										<span className='truncate flex-1'>{option.label}</span>
-										<Check className={cn('ml-auto h-4 w-4 shrink-0', value.includes(option.value) ? 'opacity-100' : 'opacity-0')} />
-									</CommandItem>
-								))}
-							</CommandGroup>
+							<>
+								{/* Select All Checkbox */}
+								<div className='flex items-center gap-2 px-2 py-2 border-b bg-muted/20'>
+									<Checkbox id='select-all-async-multi' checked={isAllSelected} onCheckedChange={handleSelectAll} className='h-4 w-4' />
+									<label htmlFor='select-all-async-multi' className='text-sm font-medium leading-none cursor-pointer select-none flex-1'>
+										Select all
+									</label>
+									<span className='text-xs text-muted-foreground'>{availableOptions.filter((opt) => !opt.disabled).length} items</span>
+								</div>
+
+								<CommandGroup>
+									{availableOptions.map((option) => (
+										<CommandItem
+											key={option.value}
+											value={`${option.label} ${option.description || ''}`}
+											onSelect={() => handleSelect(option.value)}
+											disabled={option.disabled}
+											className='cursor-pointer'>
+											<span className='truncate flex-1'>{option.label}</span>
+											<Check className={cn('ml-auto h-4 w-4 shrink-0', value.includes(option.value) ? 'opacity-100' : 'opacity-0')} />
+										</CommandItem>
+									))}
+								</CommandGroup>
+							</>
 						)}
 					</CommandList>
 				</Command>
