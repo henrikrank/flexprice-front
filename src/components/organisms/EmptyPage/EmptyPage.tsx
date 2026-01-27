@@ -33,9 +33,13 @@ interface Props {
 
 const EmptyPage: FC<Props> = ({ onAddClick, tags, heading, children, addButtonLabel, emptyStateCard, tutorials }) => {
 	const card = emptyStateCard;
+	// Use heading as documentTitle if it's a string, otherwise use undefined to avoid "[object Object]"
+	const documentTitle = typeof heading === 'string' ? heading : undefined;
+
 	return (
 		<Page
 			heading={heading}
+			documentTitle={documentTitle}
 			headingCTA={
 				onAddClick && (
 					<AddButton

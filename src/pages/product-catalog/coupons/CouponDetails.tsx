@@ -93,7 +93,7 @@ const CouponDetails = () => {
 	}
 
 	return (
-		<Page heading={coupon.name}>
+		<Page documentTitle={coupon.name} heading={coupon.name}>
 			<ApiDocsContent tags={['Coupons']} />
 
 			<Spacer className='!h-6' />

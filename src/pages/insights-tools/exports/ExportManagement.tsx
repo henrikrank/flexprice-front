@@ -66,7 +66,9 @@ const ExportManagement = () => {
 	}
 
 	return (
-		<Page heading={`Export Management - ${connection?.name || 'S3 Connection'}`}>
+		<Page
+			documentTitle={`Export Management - ${connection?.name || 'S3 Connection'}`}
+			heading={`Export Management - ${connection?.name || 'S3 Connection'}`}>
 			{/* Back button and Add Export Button */}
 			<div className='mb-6 flex items-center justify-between'>
 				<Button variant='outline' onClick={() => navigate('/tools/exports/s3')} className='flex items-center gap-2'>
