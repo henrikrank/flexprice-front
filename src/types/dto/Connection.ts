@@ -63,6 +63,12 @@ export interface CreateConnectionPayload {
 				provider_type: CONNECTION_PROVIDER_TYPE.NOMOD;
 				api_key?: string;
 				webhook_secret?: string;
+		  }
+		| {
+				provider_type: CONNECTION_PROVIDER_TYPE.MOYASAR;
+				publishable_key?: string;
+				secret_key?: string;
+				webhook_secret?: string;
 		  };
 	sync_config?: {
 		plan?: {
