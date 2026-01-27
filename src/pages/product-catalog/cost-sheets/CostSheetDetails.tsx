@@ -153,6 +153,7 @@ const CostSheetDetails = () => {
 
 	return (
 		<Page
+			documentTitle={costSheetData?.name}
 			heading={costSheetData?.name}
 			headingCTA={
 				<>

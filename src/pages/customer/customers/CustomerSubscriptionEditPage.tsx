@@ -283,7 +283,7 @@ const CustomerSubscriptionEditPage: React.FC = () => {
 	];
 
 	return (
-		<Page heading={`Edit Subscription`}>
+		<Page documentTitle='Edit Subscription' heading={`Edit Subscription`}>
 			<div className='space-y-6'>
 				<DetailsCard variant='stacked' title='Subscription Details' data={subscriptionDetailsData} />
 

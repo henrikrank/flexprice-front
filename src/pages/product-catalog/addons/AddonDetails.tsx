@@ -229,6 +229,7 @@ const AddonDetails = () => {
 
 	return (
 		<Page
+			documentTitle={addonData?.name}
 			heading={addonData?.name}
 			headingCTA={
 				<>
