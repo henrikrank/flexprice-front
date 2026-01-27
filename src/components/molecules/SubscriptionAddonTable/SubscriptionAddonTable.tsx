@@ -18,6 +18,8 @@ interface Props {
 	getEmptyAddon: () => Partial<AddAddonToSubscriptionRequest>;
 	priceOverrides?: Record<string, ExtendedPriceOverride>;
 	coupons?: Coupon[];
+	billingPeriod?: string;
+	currency?: string;
 }
 const getAddonTypeChip = (type: string) => {
 	switch (type.toLowerCase()) {
@@ -60,7 +62,16 @@ interface ExtendedAddon extends AddAddonToSubscriptionRequest {
 	internal_id: number;
 }
 
-const SubscriptionAddonTable: React.FC<Props> = ({ data, onChange, disabled, getEmptyAddon, priceOverrides = {}, coupons = [] }) => {
+const SubscriptionAddonTable: React.FC<Props> = ({
+	data,
+	onChange,
+	disabled,
+	getEmptyAddon,
+	priceOverrides = {},
+	coupons = [],
+	billingPeriod,
+	currency,
+}) => {
 	const [isOpen, setIsOpen] = useState(false);
 	const [selectedAddon, setSelectedAddon] = useState<ExtendedAddon | null>(null);
 	const extendedData = useMemo(() => {
@@ -201,6 +212,8 @@ const SubscriptionAddonTable: React.FC<Props> = ({ data, onChange, disabled, get
 					setIsOpen(false);
 					setSelectedAddon(null);
 				}}
+				billingPeriod={billingPeriod}
+				currency={currency}
 			/>
 			<div className='space-y-4'>
 				<div className='flex items-center justify-between'>

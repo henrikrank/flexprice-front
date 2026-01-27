@@ -1,7 +1,4 @@
-'use client';
-
-import { Loader } from '@/components/atoms';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription, Skeleton } from '@/components/ui';
 import { AlertCircle, CheckCircle, Clock, RefreshCw } from 'lucide-react';
 import { getTypographyClass } from '@/lib/typography';
 
@@ -22,8 +19,9 @@ interface InvoicesByStatus {
 interface InvoiceIssuesCardProps {
 	invoicesByStatus: InvoicesByStatus;
 	isLoading: boolean;
+	error?: boolean;
 }
-export const InvoiceIssuesCard: React.FC<InvoiceIssuesCardProps> = ({ invoicesByStatus, isLoading }) => {
+export const InvoiceIssuesCard: React.FC<InvoiceIssuesCardProps> = ({ invoicesByStatus, isLoading, error }) => {
 	return (
 		<Card className='shadow-sm'>
 			<CardHeader className='pb-8'>
@@ -36,8 +34,17 @@ export const InvoiceIssuesCard: React.FC<InvoiceIssuesCardProps> = ({ invoicesBy
 			</CardHeader>
 			<CardContent className='pt-0'>
 				{isLoading ? (
-					<div className='flex items-center justify-center py-8'>
-						<Loader />
+					<div className='space-y-3 py-4'>
+						<Skeleton className='h-16 w-full' />
+						<Skeleton className='h-16 w-full' />
+						<Skeleton className='h-16 w-full' />
+					</div>
+				) : error ? (
+					<div className='flex flex-col items-center justify-center py-8'>
+						<AlertCircle className='h-8 w-8 text-red-500 mb-3' />
+						<p className={getTypographyClass('body-small', 'text-center text-zinc-600')}>
+							Failed to load invoice data. Please try again later.
+						</p>
 					</div>
 				) : (
 					<div className='space-y-3'>

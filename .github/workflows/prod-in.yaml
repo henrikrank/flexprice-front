@@ -1,8 +1,8 @@
-name: Flexprice.io Production Deployment
+name: Flexprice.io IN Production Deployment
 
 env:
   VERCEL_ORG_ID: ${{secrets.VERCEL_ORG_ID}}
-  VERCEL_PROJECT_ID: ${{secrets.VERCEL_PROJECT_ID}}
+  VERCEL_PROJECT_ID: ${{secrets.VERCEL_PROJECT_ID_IN}}
   SENTRY_AUTH_TOKEN: ${{secrets.SENTRY_AUTH_TOKEN}}
 
 on:
@@ -11,7 +11,7 @@ on:
       - main
 
 jobs:
-  deploy-production:
+  deploy-in-production:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3

@@ -1,5 +1,12 @@
 export { default as formatNumber } from './format_number';
-export { getCurrencySymbol, getCurrencyName, formatDateShort, formatBillingPeriodForPrice, getPriceTypeLabel } from './helper_functions';
+export {
+	getCurrencySymbol,
+	getCurrencyName,
+	formatDateShort,
+	formatBillingPeriodForPrice,
+	getPriceTypeLabel,
+	copyToClipboard,
+} from './helper_functions';
 export { formatDateTime, formatDateTimeWithSecondsAndTimezone } from './format_date';
 export {
 	getPriceTableCharge,

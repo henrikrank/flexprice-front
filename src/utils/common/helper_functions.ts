@@ -2,6 +2,7 @@ import { BILLING_PERIOD } from '@/constants/constants';
 import { BILLING_MODEL, Price, PRICE_TYPE } from '@/models/Price';
 import { getAllISOCodes } from 'iso-country-currency';
 import { v4 as uuidv4 } from 'uuid';
+import toast from 'react-hot-toast';
 
 export function getCurrencySymbol(currency: string): string {
 	try {
@@ -273,4 +274,20 @@ export const getCouponBreakdownText = (
  */
 export const generateUniqueId = (): string => {
 	return uuidv4().replace(/-/g, '');
+};
+
+/**
+ * Copies text to clipboard and shows a success toast message
+ * @param textToCopy - The text string to copy to clipboard
+ * @param toastMessage - The message to display in the success toast
+ * @returns Promise that resolves when copy is complete, or rejects on error
+ */
+export const copyToClipboard = async (textToCopy: string, toastMessage: string): Promise<void> => {
+	try {
+		await navigator.clipboard.writeText(textToCopy);
+		toast.success(toastMessage);
+	} catch (error) {
+		toast.error('Failed to copy to clipboard. Please try again.');
+		throw error;
+	}
 };
