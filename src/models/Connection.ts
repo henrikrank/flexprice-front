@@ -16,7 +16,6 @@ export enum CONNECTION_PROVIDER_TYPE {
 	HUBSPOT = 'hubspot',
 	QUICKBOOKS = 'quickbooks',
 	NOMOD = 'nomod',
-	MOYASAR = 'moyasar',
 	// Add more providers as needed
 }
 
