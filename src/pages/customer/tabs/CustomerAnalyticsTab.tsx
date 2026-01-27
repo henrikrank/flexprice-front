@@ -25,7 +25,10 @@ const CustomerAnalyticsTab = () => {
 
 	// Filter states
 	const [selectedFeatures, setSelectedFeatures] = useState<Feature[]>([]);
-	const [startDate, setStartDate] = useState<Date | undefined>(new Date(new Date().setDate(new Date().getDate() - 7)));
+	const [startDate, setStartDate] = useState<Date | undefined>(() => {
+		const now = new Date();
+		return new Date(now.getFullYear(), now.getMonth(), 1);
+	});
 	const [endDate, setEndDate] = useState<Date | undefined>(new Date());
 
 	const { data: customer, error: customerError } = useQuery({
