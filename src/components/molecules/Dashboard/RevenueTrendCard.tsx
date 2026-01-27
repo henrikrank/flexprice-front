@@ -90,7 +90,13 @@ export const RevenueTrendCard: React.FC<RevenueTrendCardProps> = ({ revenueData,
 				<CardDescription className={getTypographyClass('helper-text', 'mt-1')}>Last 3 months</CardDescription>
 			</CardHeader>
 			<CardContent className='pt-0 pb-5'>
-				{error ? (
+				{isLoading ? (
+					<div className='space-y-3 px-6 py-4'>
+						<Skeleton className='h-12 w-full' />
+						<Skeleton className='h-12 w-full' />
+						<Skeleton className='h-12 w-full' />
+					</div>
+				) : error ? (
 					<div className='flex flex-col items-center justify-center py-8 px-6'>
 						<AlertCircle className='h-8 w-8 text-red-500 mb-3' />
 						<p className={getTypographyClass('body-small', 'text-center text-zinc-600')}>
@@ -99,12 +105,6 @@ export const RevenueTrendCard: React.FC<RevenueTrendCardProps> = ({ revenueData,
 					</div>
 				) : revenueData.length === 0 ? (
 					<p className={getTypographyClass('body-small', 'text-center text-zinc-500 py-6 px-6')}>No revenue data available</p>
-				) : isLoading ? (
-					<div className='space-y-3 px-6 py-4'>
-						<Skeleton className='h-12 w-full' />
-						<Skeleton className='h-12 w-full' />
-						<Skeleton className='h-12 w-full' />
-					</div>
 				) : !selectedCurrency ? (
 					<p className={getTypographyClass('body-small', 'text-center text-zinc-500 py-6 px-6')}>Please select a currency</p>
 				) : filteredRevenueData && filteredRevenueData.length > 0 ? (

@@ -17,7 +17,6 @@ import { ENVIRONMENT_TYPE } from '@/models/Environment';
 interface Props {
 	disabled?: boolean;
 	className?: string;
-	noOptionsText?: string;
 }
 const SelectTrigger = React.forwardRef<
 	React.ElementRef<typeof SelectPrimitive.Trigger>,
@@ -82,15 +81,13 @@ const EnvironmentSelector: React.FC<Props> = ({ disabled = false, className }) =
 		return <div className='p-2 text-sm text-muted-foreground'>No environments available</div>;
 	}
 
-	const options: SelectOption[] =
-		environments.map((env) => ({
-			value: env.id,
-			label: env.name,
-			prefixIcon: getEnvironmentIcon(env.type),
-			onSelect: () => handleChange(env.id),
-		})) || [];
+	const options: SelectOption[] = environments.map((env) => ({
+		value: env.id,
+		label: env.name,
+		prefixIcon: getEnvironmentIcon(env.type),
+	}));
 
-	const handleEnvironmentChange = async (environmentId: string) => {
+	const handleChange = async (environmentId: string) => {
 		setLoading(true);
 		try {
 			changeActiveEnvironment(environmentId);
@@ -100,10 +97,6 @@ const EnvironmentSelector: React.FC<Props> = ({ disabled = false, className }) =
 		} finally {
 			setLoading(false);
 		}
-	};
-
-	const handleChange = async (newValue: string) => {
-		await handleEnvironmentChange(newValue);
 	};
 
 	// If activeEnvironment is null, use the first environment as a fallback
@@ -129,7 +122,7 @@ const EnvironmentSelector: React.FC<Props> = ({ disabled = false, className }) =
 			</div>
 
 			{/* Environment picker (colored box) */}
-			<Select open={isOpen} onOpenChange={setIsOpen} value={currentEnvironment?.id} onValueChange={handleChange} disabled={disabled}>
+			<Select open={isOpen} onOpenChange={setIsOpen} value={activeEnvironment?.id} onValueChange={handleChange} disabled={disabled}>
 				<SelectTrigger className={cn(sidebarOpen ? '' : 'hidden')}>
 					<div
 						className={cn(
@@ -187,7 +180,7 @@ const EnvironmentSelector: React.FC<Props> = ({ disabled = false, className }) =
 				onEnvironmentCreated={async (environmentId) => {
 					await refetchEnvironments();
 					if (environmentId) {
-						handleEnvironmentChange(environmentId);
+						handleChange(environmentId);
 					}
 				}}
 			/>
