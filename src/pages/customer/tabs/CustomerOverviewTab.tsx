@@ -1,15 +1,17 @@
 import { useNavigate, useParams, useOutletContext } from 'react-router';
 import { AddButton, Card, CardHeader, NoDataCard } from '@/components/atoms';
 import CustomerApi from '@/api/CustomerApi';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueries } from '@tanstack/react-query';
 import { SubscriptionTable } from '@/components/organisms';
-import { Subscription, SUBSCRIPTION_STATUS } from '@/models';
+import { Subscription, SUBSCRIPTION_STATUS, PRICE_ENTITY_TYPE } from '@/models';
 import { Loader } from '@/components/atoms';
 import toast from 'react-hot-toast';
 import { RouteNames } from '@/core/routes/Routes';
 import CustomerUsageTable from '@/components/molecules/CustomerUsageTable';
 import { UpcomingCreditGrantApplicationsTable } from '@/components/molecules';
 import SubscriptionApi from '@/api/SubscriptionApi';
+import { PriceApi } from '@/api';
+import { useMemo } from 'react';
 
 type ContextType = {
 	isArchived: boolean;
@@ -67,11 +69,54 @@ const CustomerOverviewTab = () => {
 		enabled: !!customerId,
 	});
 
-	if (subscriptionsLoading || usageLoading || upcomingGrantsLoading) {
+	const {
+		data: customer,
+		isLoading: customerLoading,
+		error: customerError,
+	} = useQuery({
+		queryKey: ['fetchCustomerDetails', customerId],
+		queryFn: () => CustomerApi.getCustomerById(customerId!),
+		enabled: !!customerId,
+	});
+
+	// Check for subscription overrides
+	const overrideQueries = useQueries({
+		queries:
+			subscriptions?.map((sub) => ({
+				queryKey: ['subscriptionOverride', sub.id],
+				queryFn: async () => {
+					const result = await PriceApi.ListPrices({
+						entity_type: PRICE_ENTITY_TYPE.SUBSCRIPTION,
+						entity_ids: [sub.id],
+						limit: 1,
+					});
+					return {
+						subscriptionId: sub.id,
+						hasOverride: (result.items?.length || 0) > 0,
+					};
+				},
+				enabled: !!sub.id,
+			})) || [],
+	});
+
+	// Create a map of subscription IDs to override status
+	const subscriptionOverrides = useMemo(() => {
+		const overrideMap = new Map<string, boolean>();
+		overrideQueries.forEach((query) => {
+			if (query.data) {
+				overrideMap.set(query.data.subscriptionId, query.data.hasOverride);
+			}
+		});
+		return overrideMap;
+	}, [overrideQueries]);
+
+	const isOverridesLoading = overrideQueries.some((query) => query.isLoading);
+
+	if (subscriptionsLoading || usageLoading || upcomingGrantsLoading || customerLoading || isOverridesLoading) {
 		return <Loader />;
 	}
 
-	if (subscriptionsError || usageError || upcomingGrantsError) {
+	if (subscriptionsError || usageError || upcomingGrantsError || customerError) {
 		toast.error('Something went wrong');
 	}
 
@@ -85,6 +130,8 @@ const CustomerOverviewTab = () => {
 							navigate(`${RouteNames.customers}/${customerId}/subscription/${row.id}`);
 						}}
 						data={subscriptions as Subscription[]}
+						subscriptionOverrides={subscriptionOverrides}
+						customerName={customer?.name}
 					/>
 				</Card>
 			);
