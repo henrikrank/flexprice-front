@@ -256,6 +256,39 @@ export const integrations: Integration[] = [
 			},
 		],
 	},
+	{
+		name: 'Moyasar',
+		description: 'Send invoices and collect payments using Moyasar payment gateway integration.',
+		logo: '/moyasarlogo.svg',
+		tags: ['Payments', 'Invoices'],
+		type: 'available',
+		info: [
+			{
+				title: 'Overview',
+				description: [
+					'The Flexprice Moyasar app enables invoicing and payment collection through Moyasar payment gateway. Integrate it seamlessly with Flexprice to streamline your payment workflows.',
+				],
+			},
+			{
+				title: 'Invoice Sync',
+				description: [
+					'Create and send invoices through Moyasar directly from Flexprice. Payment collection can be automated through Moyasar payment gateway.',
+				],
+			},
+			{
+				title: 'Secure Payments',
+				description: [
+					'Collect payments quickly and securely via Moyasar payment gateway. Your customers can choose from various payment methods to improve the overall customer experience and speed up cash flow.',
+				],
+			},
+			{
+				title: 'Webhook Integration',
+				description: [
+					'Receive real-time notifications about payment events through webhooks. Subscribe to payment_paid event to stay updated on payment status.',
+				],
+			},
+		],
+	},
 ];
 
 export const installedIntegrations = integrations.filter((integration) => integration.type === 'installed');
