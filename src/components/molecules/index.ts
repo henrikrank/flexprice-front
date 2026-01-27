@@ -153,6 +153,7 @@ export { default as UpdateTenantDrawer } from './Tenant/UpdateTenantDrawer';
 // Integrations & Connections
 export { default as HubSpotConnectionDrawer } from './HubSpotConnectionDrawer';
 export { default as NomodConnectionDrawer } from './NomodConnectionDrawer';
+export { default as MoyasarConnectionDrawer } from './MoyasarConnectionDrawer';
 
 // Import & Export
 export { default as ImportFileDrawer } from './ImportFileDrawer';
