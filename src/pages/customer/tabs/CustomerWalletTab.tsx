@@ -52,7 +52,9 @@ const filterStringMetadata = (meta: Record<string, unknown> | undefined): Record
 
 const CustomerWalletTab = () => {
 	const { id: customerId } = useParams();
+
 	const { limit, offset } = usePagination();
+
 	const {
 		queryParams: { activeWalletId },
 		setQueryParam,
