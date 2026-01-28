@@ -29,6 +29,7 @@ import { formatAmount } from '@/components/atoms/Input/Input';
 import { refetchQueries } from '@/core/services/tanstack/ReactQueryProvider';
 import { logger } from '@/utils/common/Logger';
 import { ServerError } from '@/core/axios/types';
+import { PremiumFeatureIcon } from '@/components/molecules/PremiumFeature/PremiumFeature';
 
 const formatWalletStatus = (status?: string) => {
 	const statusMap: Record<string, string> = {
@@ -386,7 +387,7 @@ const CustomerWalletTab = () => {
 													</TooltipProvider>
 												</div>
 												<div className='opacity-50 group-hover:opacity-100 transition-opacity'>
-													<WalletIcon className='size-5 text-gray-500' />
+													{type === WALLET_BALANCE_TYPE.CURRENT ? <WalletIcon className='size-5 text-gray-500' /> : <PremiumFeatureIcon />}
 												</div>
 											</div>
 

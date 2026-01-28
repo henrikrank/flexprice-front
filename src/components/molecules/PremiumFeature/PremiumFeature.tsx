@@ -1,18 +1,24 @@
 import { Button, Dialog, Tooltip } from '@/components/atoms';
 import { cn } from '@/lib/utils';
-import { Sparkles, Star } from 'lucide-react';
+import { Sparkles } from 'lucide-react';
 import { useState } from 'react';
 
-const PREMIUM_FEATURE_TOOLTIP_MESSAGE = 'This is a premium feature.';
+const PREMIUM_FEATURE_TOOLTIP_CONTENT = (
+	<div className='flex items-start gap-2'>
+		<div className='flex flex-col gap-0.5'>
+			<span className='text-sm font-medium text-popover-foreground'>Premium feature</span>
+		</div>
+	</div>
+);
+
+const PREMIUM_TOOLTIP_CLASSNAME =
+	'max-w-[200px] border-l-2 border-amber-400 bg-amber-50 dark:bg-amber-950 dark:border-amber-500 opacity-100';
 
 export const PremiumFeatureIcon: React.FC<{ className?: string }> = ({ className }) => (
-	<Tooltip content={PREMIUM_FEATURE_TOOLTIP_MESSAGE} delayDuration={0} sideOffset={6}>
-		<button
-			type='button'
-			className='inline-flex shrink-0 focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-1 rounded'
-			aria-label={PREMIUM_FEATURE_TOOLTIP_MESSAGE}>
-			<Star className={cn('size-4 text-[#ffbf76] fill-[#ffbf76]', className)} aria-hidden />
-		</button>
+	<Tooltip content={PREMIUM_FEATURE_TOOLTIP_CONTENT} delayDuration={0} align='end' className={PREMIUM_TOOLTIP_CLASSNAME}>
+		<span className={cn('inline-flex items-center justify-center', className)}>
+			<Sparkles className='size-4 text-amber-500' fill='currentColor' />
+		</span>
 	</Tooltip>
 );
 
