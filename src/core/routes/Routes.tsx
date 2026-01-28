@@ -37,6 +37,10 @@ import {
 	// Product catalog pages
 	Plans as PricingPlans,
 	PlanDetailsPage,
+	PlanOverviewTab as PlanOverview,
+	PlanEntitlementsTab as PlanEntitlements,
+	PlanCreditGrantsTab as PlanCreditGrants,
+	PlanInformationTab as PlanInformation,
 	AddFeature as AddFeaturePage,
 	Features as FeaturesPage,
 	FeatureDetails,
@@ -242,6 +246,25 @@ export const MainRouter = createBrowserRouter([
 					{
 						path: `${RouteNames.plan}/:planId`,
 						element: <PlanDetailsPage />,
+						children: [
+							{
+								path: '',
+								element: <PlanOverview />,
+								index: true,
+							},
+							{
+								path: 'entitlements',
+								element: <PlanEntitlements />,
+							},
+							{
+								path: 'credit-grants',
+								element: <PlanCreditGrants />,
+							},
+							{
+								path: 'information',
+								element: <PlanInformation />,
+							},
+						],
 					},
 					{
 						path: RouteNames.addCharges,

@@ -74,6 +74,7 @@ export { default as TerminateWalletModal } from './TerminateWalletModal';
 // Plans & Pricing
 export { default as PlansTable } from './PlansTable';
 export { default as PlanDrawer } from './PlanDrawer';
+export { default as PlanHeader } from './Plan/PlanHeader';
 export { default as PricingCard, type PricingCardProps } from './PricingCard';
 export { default as TierBreakdown } from './TierBreakdown';
 export { default as PriceOverrideDialog } from './PriceOverrideDialog';
@@ -153,6 +154,7 @@ export { default as UpdateTenantDrawer } from './Tenant/UpdateTenantDrawer';
 // Integrations & Connections
 export { default as HubSpotConnectionDrawer } from './HubSpotConnectionDrawer';
 export { default as NomodConnectionDrawer } from './NomodConnectionDrawer';
+export { default as MoyasarConnectionDrawer } from './MoyasarConnectionDrawer';
 
 // Import & Export
 export { default as ImportFileDrawer } from './ImportFileDrawer';
