@@ -93,9 +93,9 @@ const EventPropertiesDrawer: FC<Props> = ({ isOpen, onOpenChange, event }) => {
 	if (!displayEvent) return null;
 
 	return (
-		<Sheet isOpen={isOpen} onOpenChange={onOpenChange} title='Event Details' size='2xl'>
+		<Sheet isOpen={isOpen} onOpenChange={onOpenChange} title={showProcessedOnly ? 'Processed Events' : 'Event Details'} size='2xl'>
 			<div className='flex flex-col h-full'>
-				<div className='space-y-6 px-6 pb-6 pt-4'>
+				<div className='space-y-6 px-6 pb-6 pt-0'>
 					{/* Tracker / processed section should appear before the JSON */}
 					{loading ? (
 						<div className='space-y-3'>

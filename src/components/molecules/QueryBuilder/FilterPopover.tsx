@@ -323,7 +323,7 @@ const FilterPopover: React.FC<Props> = ({ fields, value = [], onChange, classNam
 														onChange={(value) => handleFieldChange(filter.id, value)}
 														placeholder='Select field'
 														width='100%'
-														triggerClassName='h-9 text-sm'
+														triggerClassName='h-9 text-sm overflow-hidden'
 														searchPlaceholder='Search fields...'
 														contentClassName='!z-[110]'
 													/>
