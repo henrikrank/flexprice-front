@@ -1,0 +1,305 @@
+import { FC } from 'react';
+import { BILLING_MODEL, Price, PRICE_TYPE, CreatePriceTier } from '@/models';
+import { PriceUnit } from '@/models/PriceUnit';
+import { normalizePriceDisplay, calculateDiscountedPrice, formatPriceDisplay, NormalizedPriceDisplay } from '@/utils';
+import { Info } from 'lucide-react';
+import { formatAmount } from '@/components/atoms/Input/Input';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui';
+import { Coupon } from '@/models';
+import { formatCouponName } from '@/utils';
+import { ExtendedPriceOverride } from '@/utils';
+import { cn } from '@/lib/utils';
+
+interface Props {
+	data: Price & { pricing_unit?: PriceUnit };
+	appliedCoupon?: Coupon | null;
+	priceOverride?: ExtendedPriceOverride;
+}
+
+// ===== SUB-COMPONENTS =====
+
+/**
+ * Display tier breakdown in tooltip (simplified - no headers or tier mode labels)
+ */
+const TierBreakdown: FC<{
+	normalized: NormalizedPriceDisplay;
+}> = ({ normalized }) => {
+	const { tiers, symbol } = normalized;
+
+	if (!tiers || tiers.length === 0) return null;
+
+	const formatRange = (tier: CreatePriceTier, index: number, allTiers: CreatePriceTier[]) => {
+		// For the first tier, start from 0
+		const from = index === 0 ? 0 : allTiers[index - 1]?.up_to || 0;
+
+		// If up_to is null or this is the last tier, show infinity
+		if (tier.up_to === null || tier.up_to === undefined || index === allTiers.length - 1) {
+			return `${from} - ∞`;
+		}
+
+		// Otherwise show the actual range
+		return `${from} - ${tier.up_to}`;
+	};
+
+	return (
+		<div className='space-y-2'>
+			{tiers.map((tier, index) => (
+				<div key={index} className='flex flex-col gap-1'>
+					<div className='flex items-center justify-between gap-6'>
+						<div className='text-sm text-gray-600'>{formatRange(tier, index, tiers)} units</div>
+						<div className='text-right'>
+							<div className='text-sm text-gray-900'>
+								{symbol}
+								{formatAmount(tier.unit_amount)} per unit
+							</div>
+							{Number(tier.flat_amount) > 0 && (
+								<div className='text-xs text-gray-500'>
+									+ {symbol}
+									{formatAmount(tier.flat_amount || '0')} flat fee
+								</div>
+							)}
+						</div>
+					</div>
+					{index < tiers.length - 1 && <div className='h-px bg-gray-100' />}
+				</div>
+			))}
+		</div>
+	);
+};
+
+/**
+ * Display price-only override changes (exclude billing model and tier mode)
+ */
+const OverrideChanges: FC<{
+	original: NormalizedPriceDisplay;
+	overridden: NormalizedPriceDisplay;
+	originalPrice: Price;
+}> = ({ original, overridden, originalPrice }) => {
+	const changes: string[] = [];
+
+	// Check for amount changes
+	if (overridden.amount !== original.amount) {
+		changes.push(`Amount: ${original.symbol}${formatAmount(original.amount)} → ${overridden.symbol}${formatAmount(overridden.amount)}`);
+	}
+
+	// Check for quantity changes - only show if original price was usage-based
+	const quantityOverride = (overridden as any).quantity;
+	if (quantityOverride && quantityOverride !== 1 && originalPrice.type === PRICE_TYPE.USAGE) {
+		changes.push(`Quantity: 1 → ${quantityOverride}`);
+	}
+
+	// Check for transform quantity changes
+	if (
+		overridden.transformQuantity &&
+		(original.billingModel === BILLING_MODEL.PACKAGE || overridden.billingModel === BILLING_MODEL.PACKAGE)
+	) {
+		const originalDivideBy = original.transformQuantity?.divide_by || 1;
+		const newDivideBy = overridden.transformQuantity.divide_by;
+		if (originalDivideBy !== newDivideBy) {
+			changes.push(`Package Size: ${originalDivideBy} units → ${newDivideBy} units`);
+		}
+	}
+
+	// Check for tier changes (price-related only)
+	if (overridden.tiers && overridden.tiers.length > 0) {
+		const originalTiers = original.tiers || [];
+		const newTiers = overridden.tiers;
+
+		// If tier count changed, show the change
+		if (originalTiers.length !== newTiers.length) {
+			changes.push(`Tiers: ${originalTiers.length} tiers → ${newTiers.length} tiers`);
+		} else {
+			// Show detailed tier changes (price-related only)
+			const tierChanges: string[] = [];
+			newTiers.forEach((newTier: CreatePriceTier, index: number) => {
+				const originalTier = originalTiers[index];
+				if (originalTier) {
+					const tierChangesForThisTier: string[] = [];
+
+					// Check unit amount changes
+					if (originalTier.unit_amount !== newTier.unit_amount) {
+						tierChangesForThisTier.push(
+							`Per unit price: ${overridden.symbol}${formatAmount(originalTier.unit_amount)} → ${overridden.symbol}${formatAmount(newTier.unit_amount)}`,
+						);
+					}
+
+					// Check flat amount changes
+					if ((originalTier.flat_amount || '0') !== (newTier.flat_amount || '0')) {
+						tierChangesForThisTier.push(
+							`Flat fee: ${overridden.symbol}${formatAmount(originalTier.flat_amount || '0')} → ${overridden.symbol}${formatAmount(newTier.flat_amount || '0')}`,
+						);
+					}
+
+					if (tierChangesForThisTier.length > 0) {
+						tierChanges.push(`Tier ${index + 1}: ${tierChangesForThisTier.join(', ')}`);
+					}
+				} else {
+					// New tier added
+					const newFrom = index === 0 ? 0 : newTiers[index - 1]?.up_to || 0;
+					const newUpToDisplay = newTier.up_to === null || newTier.up_to === undefined ? '∞' : newTier.up_to.toString();
+					tierChanges.push(
+						`Tier ${index + 1} added: ${newFrom} - ${newUpToDisplay} units, Per unit: ${overridden.symbol}${formatAmount(newTier.unit_amount)}, Flat fee: ${overridden.symbol}${formatAmount(newTier.flat_amount || '0')}`,
+					);
+				}
+			});
+
+			if (tierChanges.length > 0) {
+				changes.push(...tierChanges);
+			} else {
+				changes.push('Tier pricing modified');
+			}
+		}
+	}
+
+	// If no specific changes detected, show generic message
+	if (changes.length === 0) {
+		changes.push('Price modified');
+	}
+
+	return (
+		<div className='space-y-2'>
+			{changes.map((change, index) => {
+				// Check if this is a tier change that should be formatted
+				if (change.startsWith('Tier ') && change.includes(':')) {
+					const tierInfo = change.split(': ');
+					const tierHeader = tierInfo[0];
+					const tierDetails = tierInfo[1];
+
+					return (
+						<div key={index} className='text-sm text-gray-600 space-y-1'>
+							<div className='font-medium'>{tierHeader}:</div>
+							<div className='ml-2 space-y-1'>
+								{tierDetails.split(', ').map((detail, detailIndex) => (
+									<div key={detailIndex} className='text-xs'>
+										• {detail}
+									</div>
+								))}
+							</div>
+						</div>
+					);
+				}
+
+				// Regular change format
+				return (
+					<div key={index} className='text-sm text-gray-600'>
+						• {change}
+					</div>
+				);
+			})}
+		</div>
+	);
+};
+
+/**
+ * Main tooltip content component
+ */
+const PriceTooltipContent: FC<{
+	normalized: NormalizedPriceDisplay;
+	hasOverrides: boolean;
+	hasDiscount: boolean;
+	discountInfo: ReturnType<typeof calculateDiscountedPrice> | null;
+	couponName?: string;
+	originalNormalized?: NormalizedPriceDisplay;
+	originalPrice?: Price;
+}> = ({ normalized, hasOverrides, hasDiscount, discountInfo, couponName, originalNormalized, originalPrice }) => {
+	const isTiered =
+		(normalized.billingModel === BILLING_MODEL.TIERED || normalized.billingModel === 'SLAB_TIERED') &&
+		Array.isArray(normalized.tiers) &&
+		normalized.tiers.length > 0;
+
+	return (
+		<TooltipContent
+			sideOffset={5}
+			className='bg-white border border-gray-200 shadow-lg text-sm text-gray-900 px-4 py-3 rounded-lg max-w-[320px]'>
+			<div className='space-y-3'>
+				{/* Discount Information */}
+				{hasDiscount && discountInfo && (
+					<div className='space-y-2'>
+						<div className='font-medium text-gray-900'>Price</div>
+						<div className='space-y-1'>
+							<div className='line-through text-gray-400 text-sm'>
+								{normalized.symbol}
+								{formatAmount(discountInfo.originalAmount.toString())}
+							</div>
+							<div className='text-gray-900 font-medium'>
+								{normalized.symbol}
+								{formatAmount(discountInfo.discountedAmount.toString())}
+							</div>
+							{couponName && <div className='text-xs text-gray-500 mt-1'>{couponName}</div>}
+						</div>
+					</div>
+				)}
+
+				{/* Override Changes */}
+				{hasOverrides && !isTiered && originalNormalized && originalPrice && (
+					<div className='space-y-2'>
+						<div className='font-medium text-gray-900'>Price Override</div>
+						<OverrideChanges original={originalNormalized} overridden={normalized} originalPrice={originalPrice} />
+					</div>
+				)}
+
+				{/* Tier Breakdown */}
+				{isTiered && (
+					<div className='space-y-2'>
+						<div className='font-medium text-gray-900'>
+							Pricing Tiers
+							{hasOverrides && <span className='text-xs text-orange-600 ml-2'>(Overridden)</span>}
+						</div>
+						<TierBreakdown normalized={normalized} />
+					</div>
+				)}
+
+				{/* Simple Price Display (if no discount, override, or tiers) */}
+				{!hasDiscount && !hasOverrides && !isTiered && (
+					<div className='space-y-1'>
+						<div className='font-medium text-gray-900'>Price</div>
+						<div className='text-sm text-gray-900'>{formatPriceDisplay(normalized)}</div>
+					</div>
+				)}
+			</div>
+		</TooltipContent>
+	);
+};
+
+// ===== MAIN COMPONENT =====
+
+const PriceTooltip: FC<Props> = ({ data, appliedCoupon, priceOverride }) => {
+	// Step 1: Normalize the data
+	const originalNormalized = normalizePriceDisplay(data);
+	const overriddenNormalized = priceOverride ? normalizePriceDisplay(data, priceOverride) : null;
+
+	// Step 2: Determine what to display
+	const displayData = overriddenNormalized || originalNormalized;
+	const hasOverrides = !!overriddenNormalized;
+
+	// Step 3: Handle coupon discount
+	// Coupons and overrides are mutually exclusive - only apply coupon if no override exists
+	const discountInfo = appliedCoupon && !priceOverride ? calculateDiscountedPrice(data, appliedCoupon) : null;
+	const hasDiscount = !!discountInfo;
+	const couponName = appliedCoupon ? formatCouponName(appliedCoupon) : undefined;
+
+	// Step 4: Determine icon color
+	const iconColor = hasOverrides ? 'text-orange-600' : hasDiscount ? 'text-blue-500' : 'text-gray-500';
+
+	// Step 5: Render
+	return (
+		<TooltipProvider delayDuration={0}>
+			<Tooltip>
+				<TooltipTrigger>
+					<Info className={cn(iconColor, 'h-4 w-4 hover:opacity-80 transition-colors duration-150')} />
+				</TooltipTrigger>
+				<PriceTooltipContent
+					normalized={displayData}
+					hasOverrides={hasOverrides}
+					hasDiscount={hasDiscount}
+					discountInfo={discountInfo}
+					couponName={couponName}
+					originalNormalized={hasOverrides ? originalNormalized : undefined}
+					originalPrice={hasOverrides ? data : undefined}
+				/>
+			</Tooltip>
+		</TooltipProvider>
+	);
+};
+
+export default PriceTooltip;
