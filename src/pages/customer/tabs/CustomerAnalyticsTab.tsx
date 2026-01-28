@@ -16,6 +16,7 @@ import { UsageAnalyticItem } from '@/models';
 import { formatNumber } from '@/utils';
 import { MetricCard, CostDataTable } from '@/components/molecules';
 import { getCurrencySymbol } from '@/utils';
+import { PriceTooltip } from '@/components/molecules/PriceTooltip';
 import { Skeleton } from '@/components/ui';
 import { ENTITY_STATUS } from '@/models/base';
 import { RouteNames } from '@/core/routes/Routes';
@@ -431,10 +432,13 @@ const UsageDataTable: React.FC<{ items: UsageAnalyticItem[] }> = ({ items }) => 
 				if (row.total_cost === 0 || !row.currency) return '-';
 				const currency = getCurrencySymbol(row.currency);
 				return (
-					<span>
-						{currency}
-						{formatNumber(row.total_cost, 2)}
-					</span>
+					<div className='flex items-center gap-2'>
+						<span>
+							{currency}
+							{formatNumber(row.total_cost, 2)}
+						</span>
+						{row.price && <PriceTooltip data={row.price} />}
+					</div>
 				);
 			},
 		},
