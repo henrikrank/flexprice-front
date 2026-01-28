@@ -39,6 +39,11 @@ const formatWalletStatus = (status?: string) => {
 	return status ? statusMap[status.toLowerCase()] || 'Unknown' : 'Unknown';
 };
 
+enum WALLET_BALANCE_TYPE {
+	CURRENT = 'current',
+	ONGOING = 'ongoing',
+}
+
 const filterStringMetadata = (meta: Record<string, unknown> | undefined): Record<string, string> => {
 	if (!meta) return {};
 	return Object.fromEntries(Object.entries(meta).filter(([_, v]) => typeof v === 'string') as [string, string][]);
@@ -362,18 +367,20 @@ const CustomerWalletTab = () => {
 								<Skeleton className='w-full h-[200px]' />
 							) : (
 								<div className='w-full grid grid-cols-2 gap-4'>
-									{['Current', 'Ongoing'].map((type, index) => (
+									{[WALLET_BALANCE_TYPE.CURRENT, WALLET_BALANCE_TYPE.ONGOING].map((type, index) => (
 										<Card key={index}>
 											<div className='flex justify-between items-center mb-4'>
 												<div className='flex items-center space-x-2'>
-													<span className='text-gray-600 text-sm font-medium'>{type} Balance</span>
+													<span className='text-gray-600 text-sm font-medium'>
+														{type === WALLET_BALANCE_TYPE.CURRENT ? 'Current' : 'Ongoing'} Balance
+													</span>
 													<TooltipProvider delayDuration={0}>
 														<Tooltip>
 															<TooltipTrigger>
 																<Info className='size-4 text-gray-400 hover:text-gray-600 transition-colors' />
 															</TooltipTrigger>
 															<TooltipContent>
-																<p>{type === 'Current' ? 'Balance as per latest invoice' : 'Includes real-time usage'}</p>
+																<p>{type === WALLET_BALANCE_TYPE.CURRENT ? 'Balance as per latest invoice' : 'Includes real-time usage'}</p>
 															</TooltipContent>
 														</Tooltip>
 													</TooltipProvider>
@@ -386,7 +393,7 @@ const CustomerWalletTab = () => {
 											<div className='flex items-baseline space-x-2'>
 												<span className='text-gray-500 text-2xl font-medium'>{getCurrencySymbol(walletBalance?.currency ?? '')}</span>
 												<span className='text-4xl font-medium text-gray-900 leading-tight'>
-													{type === 'Current'
+													{type === WALLET_BALANCE_TYPE.CURRENT
 														? formatAmount(walletBalance?.balance.toString() ?? '0')
 														: formatAmount(walletBalance?.real_time_balance.toString() ?? '0')}
 												</span>
@@ -394,7 +401,7 @@ const CustomerWalletTab = () => {
 
 											<div className='flex justify-between items-center'>
 												<span className='text-sm text-gray-500'>
-													{type === 'Current'
+													{type === WALLET_BALANCE_TYPE.CURRENT
 														? formatAmount(walletBalance?.credit_balance.toString() ?? '0')
 														: formatAmount(walletBalance?.real_time_credit_balance.toString() ?? '0')}
 													{'  credits'}

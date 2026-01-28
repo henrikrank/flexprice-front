@@ -1,7 +1,20 @@
-import { Button, Dialog } from '@/components/atoms';
+import { Button, Dialog, Tooltip } from '@/components/atoms';
 import { cn } from '@/lib/utils';
-import { Sparkles } from 'lucide-react';
+import { Sparkles, Star } from 'lucide-react';
 import { useState } from 'react';
+
+const PREMIUM_FEATURE_TOOLTIP_MESSAGE = 'This is a premium feature.';
+
+export const PremiumFeatureIcon: React.FC<{ className?: string }> = ({ className }) => (
+	<Tooltip content={PREMIUM_FEATURE_TOOLTIP_MESSAGE} delayDuration={0} sideOffset={6}>
+		<button
+			type='button'
+			className='inline-flex shrink-0 focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-1 rounded'
+			aria-label={PREMIUM_FEATURE_TOOLTIP_MESSAGE}>
+			<Star className={cn('size-4 text-[#ffbf76] fill-[#ffbf76]', className)} aria-hidden />
+		</button>
+	</Tooltip>
+);
 
 export const PremiumFeatureTag = () => {
 	return (

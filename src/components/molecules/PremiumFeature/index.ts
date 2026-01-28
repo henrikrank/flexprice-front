@@ -1,1 +1,1 @@
-export { default, PremiumFeatureTag } from './PremiumFeature';
+export { default, PremiumFeatureIcon, PremiumFeatureTag } from './PremiumFeature';
