@@ -126,7 +126,7 @@ const EventPropertiesDrawer: FC<Props> = ({ isOpen, onOpenChange, event }) => {
 
 					{/* Event details JSON */}
 					<div className='space-y-3'>
-						<JsonCodeBlock value={displayEvent} onCopy={handleCopyCode} />
+						<JsonCodeBlock value={displayEvent} title='Event Details' onCopy={handleCopyCode} />
 					</div>
 				</div>
 			</div>
