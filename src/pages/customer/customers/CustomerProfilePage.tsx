@@ -18,6 +18,7 @@ const tabs = [
 	{ id: 'information', label: 'Information' },
 	{ id: 'tax-association', label: 'Tax' },
 	{ id: 'analytics', label: 'Analytics' },
+	{ id: 'usage-events', label: 'Usage Events' },
 ] as const;
 
 type TabId = (typeof tabs)[number]['id'];

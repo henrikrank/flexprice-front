@@ -24,15 +24,17 @@ const JsonCodeBlock: FC<JsonCodeBlockProps> = ({ value, title, onCopy, className
 
 	return (
 		<div className={cn('rounded-lg overflow-hidden border border-gray-200 bg-gray-50', className)}>
-			{title && (
-				<div className='px-4 py-2 border-b border-gray-200 bg-white flex items-center justify-between'>
+			<div className='px-4 py-2 border-b border-gray-200 bg-white flex items-center justify-between'>
+				{title ? (
 					<p className='text-xs font-medium text-foreground'>{title}</p>
-					<Button onClick={handleCopy} variant='ghost' size='sm' className='h-7'>
-						<Copy size={12} className='mr-1' />
-						<span className='text-xs'>Copy</span>
-					</Button>
-				</div>
-			)}
+				) : (
+					<p className='text-xs font-medium text-foreground'>Payload</p>
+				)}
+				<Button onClick={handleCopy} variant='ghost' size='sm' className='h-7'>
+					<Copy size={12} className='mr-1' />
+					<span className='text-xs'>Copy</span>
+				</Button>
+			</div>
 			<div className='relative'>
 				<Highlight theme={themes.nightOwl} code={JSON.stringify(value ?? {}, null, 2)} language='json'>
 					{({ className, style, tokens, getLineProps, getTokenProps }) => (

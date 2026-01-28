@@ -29,6 +29,7 @@ import {
 	ImportExport,
 	CustomerInvoiceDetailsPage,
 	CustomerInformationTab as CustomerInformation,
+	CustomerUsageEventsTab as CustomerUsageEvents,
 	PaymentPage,
 	CreateInvoice as CreateInvoicePage,
 	TaxRatesPage as TaxPage,
@@ -382,6 +383,10 @@ export const MainRouter = createBrowserRouter([
 								element: <CustomerInformation />,
 							},
 							{
+								path: 'usage-events',
+								element: <CustomerUsageEvents />,
+							},
+							{
 								path: 'wallet',
 								element: <WalletTab />,
 							},
@@ -417,6 +422,10 @@ export const MainRouter = createBrowserRouter([
 							{
 								path: 'subscription/:subscription_id/edit',
 								element: <CustomerSubscriptionEditPage />,
+							},
+							{
+								path: 'usage-events',
+								element: <CustomerUsageEvents />,
 							},
 						],
 					},

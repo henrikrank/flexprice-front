@@ -45,7 +45,7 @@ export interface CostAnalyticItem {
 	// Metadata
 	currency: string;
 	price_id?: string;
-	costsheet_v2_id?: string;
+	costsheet_id?: string;
 
 	// Expanded data (populated when expand options are specified)
 	meter?: Meter;
@@ -55,7 +55,7 @@ export interface CostAnalyticItem {
 export interface GetCostAnalyticsResponse {
 	customer_id?: string;
 	external_customer_id?: string;
-	costsheet_v2_id?: string;
+	costsheet_id?: string;
 	start_time: string;
 	end_time: string;
 	currency: string;
@@ -83,8 +83,6 @@ export interface GetDetailedCostAnalyticsResponse {
 	// Derived metrics
 	total_revenue: string; // decimal.Decimal represented as string
 	total_cost: string; // decimal.Decimal represented as string
-	total_quantity?: string; // decimal.Decimal represented as string (optional - may not always be available)
-	total_events?: number; // optional - may not always be available
 	margin: string; // decimal.Decimal represented as string (Revenue - Cost)
 	margin_percent: string; // decimal.Decimal represented as string ((Margin / Revenue) * 100)
 	roi: string; // decimal.Decimal represented as string ((Revenue - Cost) / Cost)

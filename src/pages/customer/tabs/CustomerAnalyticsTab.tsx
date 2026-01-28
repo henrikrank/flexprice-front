@@ -11,13 +11,14 @@ import FeatureApi from '@/api/FeatureApi';
 import { Feature } from '@/models';
 import { GetUsageAnalyticsRequest, GetCostAnalyticsRequest } from '@/types';
 import { WindowSize } from '@/models';
-import { CustomerUsageChart, FlexpriceTable, type ColumnData } from '@/components/molecules';
+import { CustomerUsageChart, FlexpriceTable, RedirectCell, type ColumnData } from '@/components/molecules';
 import { UsageAnalyticItem } from '@/models';
 import { formatNumber } from '@/utils';
 import { MetricCard, CostDataTable } from '@/components/molecules';
 import { getCurrencySymbol } from '@/utils';
 import { Skeleton } from '@/components/ui';
 import { ENTITY_STATUS } from '@/models/base';
+import { RouteNames } from '@/core/routes/Routes';
 
 const CustomerAnalyticsTab = () => {
 	const { id: customerId } = useParams();
@@ -129,7 +130,12 @@ const CustomerAnalyticsTab = () => {
 			if (!debouncedUsageParams) {
 				throw new Error('API parameters not available');
 			}
-			return await EventsApi.getUsageAnalytics(debouncedUsageParams);
+
+			const sanitizedParams = {
+				...debouncedUsageParams,
+				expand: ['meter', 'price'],
+			};
+			return await EventsApi.getUsageAnalytics(sanitizedParams);
 		},
 		enabled: !!debouncedUsageParams,
 	});
@@ -141,7 +147,11 @@ const CustomerAnalyticsTab = () => {
 	} = useQuery({
 		queryKey: ['cost-analytics', customerId, debouncedCostParams],
 		queryFn: async () => {
-			return await CostSheetApi.GetCostAnalytics(debouncedCostParams ?? {});
+			const sanitizedParams = {
+				...debouncedCostParams,
+				expand: ['meter', 'price'],
+			};
+			return await CostSheetApi.GetCostAnalytics(sanitizedParams);
 		},
 		enabled: !!debouncedCostParams,
 	});
@@ -397,6 +407,9 @@ const UsageDataTable: React.FC<{ items: UsageAnalyticItem[] }> = ({ items }) => 
 		{
 			title: 'Feature',
 			render: (row: UsageAnalyticItem) => {
+				if (row.feature_id) {
+					return <RedirectCell redirectUrl={`${RouteNames.featureDetails}/${row.feature_id}`}>{row.name}</RedirectCell>;
+				}
 				return <span>{row.name || row.name || 'Unknown'}</span>;
 			},
 		},
