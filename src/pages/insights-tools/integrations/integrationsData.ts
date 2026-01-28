@@ -259,7 +259,7 @@ export const integrations: Integration[] = [
 	{
 		name: 'Moyasar',
 		description: 'Send invoices and collect payments using Moyasar payment gateway integration.',
-		logo: '/moyasarlogo.svg',
+		logo: '/assets/logo/moyasarlogo.svg',
 		tags: ['Payments', 'Invoices'],
 		type: 'available',
 		info: [
