@@ -409,7 +409,11 @@ const UsageDataTable: React.FC<{ items: UsageAnalyticItem[] }> = ({ items }) => 
 			title: 'Feature',
 			render: (row: UsageAnalyticItem) => {
 				if (row.feature_id) {
-					return <RedirectCell redirectUrl={`${RouteNames.featureDetails}/${row.feature_id}`}>{row.name}</RedirectCell>;
+					return (
+						<RedirectCell target='_blank' redirectUrl={`${RouteNames.featureDetails}/${row.feature_id}`}>
+							{row.name}
+						</RedirectCell>
+					);
 				}
 				return <span>{row.name || row.name || 'Unknown'}</span>;
 			},

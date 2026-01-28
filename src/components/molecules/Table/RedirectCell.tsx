@@ -1,4 +1,4 @@
-import { FC, ReactNode } from 'react';
+import { FC, HTMLAttributeAnchorTarget, ReactNode } from 'react';
 import { Link } from 'react-router';
 import { ExternalLink } from 'lucide-react';
 
@@ -6,16 +6,19 @@ interface Props {
 	redirectUrl: string;
 	children: ReactNode;
 	allowRedirect?: boolean;
+	target?: HTMLAttributeAnchorTarget;
+	className?: string;
 }
 
-const RedirectCell: FC<Props> = ({ redirectUrl, children, allowRedirect = true }) => {
+const RedirectCell: FC<Props> = ({ redirectUrl, children, allowRedirect = true, target = '_self', className }) => {
 	if (!allowRedirect) {
 		return <div>{children}</div>;
 	}
 
 	return (
-		<div>
+		<div className={className}>
 			<Link
+				target={target}
 				to={redirectUrl}
 				aria-hidden='true'
 				className='flex items-center gap-2 max-w-fit group underline decoration-dashed decoration-[1px] decoration-gray-500/50 underline-offset-4'>
