@@ -20,6 +20,7 @@ import { PriceTooltip } from '@/components/molecules/PriceTooltip';
 import { Skeleton } from '@/components/ui';
 import { ENTITY_STATUS } from '@/models/base';
 import { RouteNames } from '@/core/routes/Routes';
+import { PremiumFeatureIcon } from '@/components/molecules/PremiumFeature/PremiumFeature';
 
 const CustomerAnalyticsTab = () => {
 	const { id: customerId } = useParams();
@@ -273,7 +274,10 @@ const CustomerAnalyticsTab = () => {
 
 	return (
 		<div className='space-y-6'>
-			<h3 className='text-lg font-medium text-gray-900 mb-8 mt-1'>Analytics</h3>
+			<h3 className='text-lg font-medium flex items-center gap-2 text-gray-900 mb-8 mt-1'>
+				<span>Analytics</span>
+				<PremiumFeatureIcon />
+			</h3>
 
 			<div className='flex flex-wrap items-end gap-8'>
 				{featuresLoading ? (
@@ -409,7 +413,11 @@ const UsageDataTable: React.FC<{ items: UsageAnalyticItem[] }> = ({ items }) => 
 			title: 'Feature',
 			render: (row: UsageAnalyticItem) => {
 				if (row.feature_id) {
-					return <RedirectCell redirectUrl={`${RouteNames.featureDetails}/${row.feature_id}`}>{row.name}</RedirectCell>;
+					return (
+						<RedirectCell target='_blank' redirectUrl={`${RouteNames.featureDetails}/${row.feature_id}`}>
+							{row.name}
+						</RedirectCell>
+					);
 				}
 				return <span>{row.name || row.name || 'Unknown'}</span>;
 			},

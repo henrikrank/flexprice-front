@@ -1,7 +1,39 @@
-import { Button, Dialog } from '@/components/atoms';
+import { Button, Dialog, Tooltip } from '@/components/atoms';
 import { cn } from '@/lib/utils';
 import { Sparkles } from 'lucide-react';
 import { useState } from 'react';
+
+const PREMIUM_FEATURE_TOOLTIP_CONTENT = (
+	<div className='flex items-start gap-2'>
+		<div className='flex flex-col gap-0.5'>
+			<span className='text-sm  text-popover-foreground'>Premium feature</span>
+		</div>
+	</div>
+);
+
+const PREMIUM_TOOLTIP_CLASSNAME =
+	'max-w-[200px] border border-amber-300 bg-amber-50 dark:bg-amber-950 dark:border-amber-500 opacity-100 z-[190] py-1 px-2';
+
+interface PremiumFeatureIconProps {
+	className?: string;
+	align?: 'start' | 'center' | 'end';
+	sideOffset?: number;
+	side?: 'top' | 'right' | 'bottom' | 'left';
+}
+
+export const PremiumFeatureIcon: React.FC<PremiumFeatureIconProps> = ({ className, align = 'center', sideOffset, side = 'top' }) => (
+	<Tooltip
+		content={PREMIUM_FEATURE_TOOLTIP_CONTENT}
+		delayDuration={0}
+		side={side}
+		align={align}
+		sideOffset={sideOffset ?? 4}
+		className={cn(PREMIUM_TOOLTIP_CLASSNAME, className)}>
+		<span className={cn('inline-flex items-center justify-center', className)}>
+			<Sparkles className='size-4 text-amber-500' fill='currentColor' />
+		</span>
+	</Tooltip>
+);
 
 export const PremiumFeatureTag = () => {
 	return (

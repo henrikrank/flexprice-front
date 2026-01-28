@@ -12,6 +12,7 @@ import { PAYMENT_STATUS, formatCurrency, getCurrencySymbol, toSentenceCase } fro
 import toast from 'react-hot-toast';
 import { RouteNames } from '@/core/routes/Routes';
 import { AddChargesButton } from '@/components/organisms/PlanForm/SetupChargesSection';
+import { PremiumFeatureIcon } from '@/components/molecules/PremiumFeature/PremiumFeature';
 
 interface LineItemForm {
 	id: string;
@@ -240,6 +241,7 @@ const AddCreditNotePage = () => {
 			<div className='space-y-6'>
 				{/* Header */}
 				<div className='flex items-center gap-2'>
+					<PremiumFeatureIcon />
 					<h1 className='text-xl font-medium'>Issue Credit Note</h1>
 					<Chip
 						label={toSentenceCase(creditNotePreview.type)}
