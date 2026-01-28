@@ -1,7 +1,7 @@
 import { useState, useCallback, useRef, useEffect, useMemo } from 'react';
 import { useParams } from 'react-router';
 import { useQuery } from '@tanstack/react-query';
-import { Button } from '@/components/atoms';
+import { Button, Card } from '@/components/atoms';
 import { EventsTable, QueryBuilder } from '@/components/molecules';
 import { Event } from '@/models/Event';
 import EventsApi from '@/api/EventsApi';
@@ -23,7 +23,6 @@ import { TypedBackendFilter } from '@/types/formatters/QueryBuilder';
 import { GetEventsPayload } from '@/types/dto/Events';
 import { logger } from '@/utils/common/Logger';
 import EmptyState from '@/components/customer-portal/EmptyState';
-import { Card } from '@/components/atoms';
 
 // Helper function to convert sanitized filters to Events API parameters
 const convertFiltersToEventParams = (filters: TypedBackendFilter[]): Partial<GetEventsPayload> => {
