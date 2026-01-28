@@ -80,7 +80,7 @@ const OnboardingTenant = () => {
 				},
 			}),
 		onSuccess: async () => {
-			await refetchQueries(['user']);
+			await refetchQueries(['user', 'tenant']);
 			toast.success('Tenant details updated successfully');
 			handleStepComplete(0);
 		},
@@ -114,7 +114,7 @@ const OnboardingTenant = () => {
 	} = useMutation({
 		mutationFn: () =>
 			TenantApi.updateTenant({
-				name: tenant?.name || orgName,
+				name: orgName || tenant?.name,
 				metadata: {
 					...tenant?.metadata,
 					onboarding_role: role,
@@ -124,7 +124,7 @@ const OnboardingTenant = () => {
 				},
 			}),
 		onSuccess: async () => {
-			await refetchQueries(['user']);
+			await refetchQueries(['user', 'tenant']);
 			toast.success('Onboarding information saved successfully');
 
 			// Record onboarding data to Google Sheets (non-blocking)
