@@ -92,7 +92,7 @@ const OnboardingTenant = () => {
 	const { mutate: recordOnboardingData } = useMutation({
 		mutationFn: () =>
 			OnboardingApi.recordOnboardingData({
-				orgName: tenant?.name || orgName,
+				orgName: orgName || tenant?.name || '',
 				role: role || '',
 				teamSize: teamSize || '',
 				referralSource: referralSource || '',
