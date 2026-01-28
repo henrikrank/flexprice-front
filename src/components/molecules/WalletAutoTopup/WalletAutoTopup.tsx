@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Dialog, Button, Input, Toggle } from '@/components/atoms';
 import { toast } from 'react-hot-toast';
+import { PremiumFeatureIcon } from '../PremiumFeature/PremiumFeature';
 
 export interface AutoTopupConfig {
 	enabled: boolean;
@@ -73,7 +74,12 @@ const WalletAutoTopup: React.FC<WalletAutoTopupProps> = ({ open, autoTopupConfig
 			onOpenChange={(isOpen) => {
 				if (!isOpen) handleClose();
 			}}
-			title='Auto Top-Up Settings'
+			title={
+				<div className='flex items-center gap-2'>
+					<span className='text-lg font-medium'>Auto Top-Up Settings</span>
+					<PremiumFeatureIcon />
+				</div>
+			}
 			showCloseButton>
 			<div className='flex flex-col gap-6 min-w-[500px]'>
 				{/* Enable Auto Top-Up Toggle */}

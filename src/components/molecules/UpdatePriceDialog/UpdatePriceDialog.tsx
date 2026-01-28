@@ -15,6 +15,7 @@ import { UpdatePriceRequest } from '@/types/dto';
 import { cn } from '@/lib/utils';
 import { SyncOption } from '../TerminatePriceModal';
 import { formatDateTimeWithSecondsAndTimezone } from '@/utils/common/format_date';
+import { PremiumFeatureIcon } from '../PremiumFeature/PremiumFeature';
 
 interface UpdatePriceDialogProps {
 	isOpen: boolean;
@@ -341,7 +342,12 @@ const UpdatePriceDialog: FC<UpdatePriceDialogProps> = ({ isOpen, onOpenChange, p
 		<Dialog
 			isOpen={isOpen}
 			onOpenChange={onOpenChange}
-			title='Update Price'
+			title={
+				<div className='flex items-center gap-2'>
+					<span>Update Price</span>
+					<PremiumFeatureIcon side='right' align='center' sideOffset={10} />
+				</div>
+			}
 			description={`Update the pricing configuration (amount, billing model, tiers) for ${price.meter?.name || price.description || 'this charge'}`}
 			className='w-auto min-w-[32rem] max-w-[90vw]'>
 			<div className='space-y-6 max-h-[80vh] overflow-y-auto'>

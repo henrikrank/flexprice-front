@@ -6,6 +6,7 @@ import { formatAmount, removeFormatting } from '@/components/atoms/Input/Input';
 import { getCurrencySymbol } from '@/utils/common/helper_functions';
 import { ExtendedPriceOverride } from '@/utils/common/price_override_helpers';
 import VolumeTieredPricingForm from '@/components/organisms/PlanForm/VolumeTieredPricingForm';
+import { PremiumFeatureIcon } from '../PremiumFeature/PremiumFeature';
 
 interface Props {
 	isOpen: boolean;
@@ -426,7 +427,12 @@ const PriceOverrideDialog: FC<Props> = ({
 		<Dialog
 			isOpen={isOpen}
 			onOpenChange={onOpenChange}
-			title='Override Price Configuration'
+			title={
+				<div className='flex items-center gap-2'>
+					<span>Override Price Configuration</span>
+					<PremiumFeatureIcon side='right' align='center' sideOffset={10} />
+				</div>
+			}
 			description={`Modify the pricing configuration for ${price.meter?.name || price.description || 'this charge'}`}
 			className='w-auto min-w-[32rem] max-w-[90vw]'>
 			<div className='space-y-6 max-h-[80vh] overflow-y-auto'>

@@ -5,7 +5,7 @@ import { FC, ReactNode } from 'react';
 interface Props {
 	isOpen: boolean;
 	onOpenChange: (isOpen: boolean) => void;
-	title: string;
+	title: string | ReactNode;
 	description?: string;
 	children?: ReactNode;
 	className?: string;
@@ -29,7 +29,9 @@ const Dialog: FC<Props> = ({
 		<ShadcnDialog open={isOpen} onOpenChange={onOpenChange}>
 			<DialogContent className={cn('bg-white !rounded-2xl max-h-[80vh] overflow-y-auto', className)} showCloseButton={showCloseButton}>
 				<DialogHeader className=''>
-					<DialogTitle className={cn('font-medium text-xl', titleClassName)}>{title}</DialogTitle>
+					<DialogTitle className={cn('font-medium text-xl', titleClassName)}>
+						{typeof title === 'string' ? title : <>{title}</>}
+					</DialogTitle>
 					{description && <DialogDescription className={cn('mt-6', descriptionClassName)}>{description}</DialogDescription>}
 				</DialogHeader>
 				<div className='mt-4'>{children}</div>
