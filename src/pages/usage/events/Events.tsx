@@ -168,6 +168,13 @@ const EventsPage: React.FC = () => {
 				dataType: DataType.STRING,
 				id: 'initial-source',
 			},
+			{
+				field: 'start_time',
+				operator: FilterOperator.AFTER,
+				valueDate: new Date(new Date().setDate(new Date().getDate() - 30)),
+				dataType: DataType.DATE,
+				id: 'initial-start-time',
+			},
 		];
 	}, []);
 
