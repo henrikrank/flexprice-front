@@ -192,9 +192,9 @@ const ExportDetails = () => {
 									<label className='text-sm font-medium text-gray-900'>Region</label>
 									<p className='text-sm text-gray-600 mt-1'>{exportTask.job_config.region}</p>
 								</div>
-								<div>
+								<div className='min-w-0'>
 									<label className='text-sm font-medium text-gray-900'>Key Prefix</label>
-									<p className='text-sm text-gray-600 mt-1'>{exportTask.job_config.key_prefix}</p>
+									<p className='text-sm text-gray-600 mt-1 break-all min-w-0'>{exportTask.job_config?.key_prefix ?? '—'}</p>
 								</div>
 								<div>
 									<label className='text-sm font-medium text-gray-900'>Compression</label>
