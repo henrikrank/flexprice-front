@@ -74,8 +74,10 @@ const getSampleFileUrl = (tab: string): string => {
 		case 'events':
 			return '/assets/csv/sample.csv';
 		case 'customer':
+		case 'customers':
 			return '/assets/csv/sample_customer.csv';
 		case 'feature':
+		case 'features':
 			return '/assets/csv/sample_feature.csv';
 		case 'feature_mapping':
 			return '/assets/csv/sample_feature_mapping.csv';
