@@ -1,10 +1,15 @@
 import { Customer, CustomerEntitlement, CustomerUsage, Pagination, Metadata } from '@/models';
 import { TypedBackendFilter, TypedBackendSort } from '../formatters/QueryBuilder';
 import { SubscriptionResponse } from './Subscription';
-export interface GetCustomerResponse {
-	items: Customer[];
-	pagination: Pagination;
+
+/** Integration entity mapping for external provider systems (e.g. stripe, razorpay) */
+export interface IntegrationEntityMapping {
+	/** Integration provider name (e.g. "stripe", "razorpay", "paypal") */
+	provider: string;
+	/** External entity ID from the provider */
+	id: string;
 }
+
 export interface GetCustomerSubscriptionsResponse {
 	items: SubscriptionResponse[];
 	pagination: Pagination;
@@ -33,25 +38,45 @@ export interface GetUsageSummaryResponse {
 	period?: BillingPeriodInfo;
 }
 
-// Subscription
-export interface GetCustomerByFiltersPayload extends Pagination {
-	filters: TypedBackendFilter[];
-	sort: TypedBackendSort[];
+/**
+ * Customer filter for list/search queries (matches backend CustomerFilter).
+ * Supports filters, sort, pagination, and direct ID/email filters.
+ */
+export interface CustomerFilter extends Pagination {
+	filters?: TypedBackendFilter[];
+	sort?: TypedBackendSort[];
 	expand?: string;
+	/** Filter by customer IDs */
+	customer_ids?: string[];
+	/** Filter by external IDs */
+	external_ids?: string[];
+	/** Filter by single external ID */
+	external_id?: string;
+	/** Filter by email */
+	email?: string;
+	/** Filter by parent customer IDs */
+	parent_customer_ids?: string[];
+	/** Time range (if supported by backend) */
+	start_time?: string;
+	end_time?: string;
 }
 
-// Tax Rate Override interface (if needed for create request)
+/** Payload for POST /customers/search (extends CustomerFilter with required filters/sort for backward compatibility) */
+export interface GetCustomerByFiltersPayload extends CustomerFilter {
+	filters?: TypedBackendFilter[];
+	sort?: TypedBackendSort[];
+}
+
 export interface TaxRateOverride {
 	id?: string;
 	tax_rate_id: string;
 	description?: string;
 }
 
-// Create Customer Request DTO
 export interface CreateCustomerRequest {
 	external_id: string;
-	name: string;
-	email: string;
+	name?: string;
+	email?: string;
 	address_line1?: string;
 	address_line2?: string;
 	address_city?: string;
@@ -60,11 +85,14 @@ export interface CreateCustomerRequest {
 	address_country?: string;
 	metadata?: Metadata;
 	tax_rate_overrides?: TaxRateOverride[];
+	/** When true, prevents the customer onboarding workflow from being triggered (internal use) */
+	skip_onboarding_workflow?: boolean;
+	/** Provider integration mappings for this customer */
+	integration_entity_mapping?: IntegrationEntityMapping[];
 	parent_customer_id?: string;
 	parent_customer_external_id?: string;
 }
 
-// Update Customer Request DTO
 export interface UpdateCustomerRequest {
 	external_id?: string;
 	name?: string;
@@ -76,6 +104,26 @@ export interface UpdateCustomerRequest {
 	address_postal_code?: string;
 	address_country?: string;
 	metadata?: Metadata;
+	/** Provider integration mappings for this customer */
+	integration_entity_mapping?: IntegrationEntityMapping[];
 	parent_customer_id?: string;
 	parent_customer_external_id?: string;
+}
+
+/** Customer response with optional nested parent (matches backend CustomerResponse) */
+export interface CustomerResponse extends Customer {
+	parent_customer?: CustomerResponse;
+}
+
+/** List response for customers (matches backend ListCustomersResponse) */
+export interface ListCustomersResponse {
+	items: CustomerResponse[];
+	pagination: Pagination;
+}
+
+/** Portal session response containing URL, token, and expiration */
+export interface PortalSessionResponse {
+	url: string;
+	token: string;
+	expires_at: string;
 }
