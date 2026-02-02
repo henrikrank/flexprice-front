@@ -8,6 +8,8 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { RouteNames } from '@/core/routes/Routes';
 import { useNavigate } from 'react-router';
 import SubscriptionApi from '@/api/SubscriptionApi';
+import CustomerApi from '@/api/CustomerApi';
+import FeatureApi from '@/api/FeatureApi';
 import JsonCodeBlock from './JsonCodeBlock';
 import ProcessedEventsSection from './ProcessedEventsSection';
 import EventTrackerSection from './EventTrackerSection';
@@ -24,6 +26,8 @@ const EventPropertiesDrawer: FC<Props> = ({ isOpen, onOpenChange, event }) => {
 	const [loading, setLoading] = useState(false);
 	const [debugResponse, setDebugResponse] = useState<GetEventDebugResponse | null>(null);
 	const [loadError, setLoadError] = useState<string | null>(null);
+	const [customerNames, setCustomerNames] = useState<Record<string, string>>({});
+	const [featureNames, setFeatureNames] = useState<Record<string, string>>({});
 
 	useEffect(() => {
 		let isMounted = true;
@@ -59,6 +63,52 @@ const EventPropertiesDrawer: FC<Props> = ({ isOpen, onOpenChange, event }) => {
 		processedEvents?.[0]?.customer_id ??
 		(displayEvent?.customer_id && displayEvent.customer_id.trim().length > 0 ? displayEvent.customer_id : undefined) ??
 		debugResponse?.debug_tracker?.customer_lookup?.customer?.id;
+
+	// Fetch customer and feature names for processed events so we can show names instead of IDs
+	useEffect(() => {
+		if (!processedEvents.length) return;
+
+		const fetchNames = async () => {
+			const customerIds = [...new Set(processedEvents.map((pe) => pe.customer_id).filter(Boolean))] as string[];
+			const featureIds = [...new Set(processedEvents.map((pe) => pe.feature_id).filter(Boolean))] as string[];
+
+			const [customerResults, featureResults] = await Promise.all([
+				Promise.all(
+					customerIds.map(async (id) => {
+						try {
+							const customer = await CustomerApi.getCustomerById(id);
+							return { id, name: customer.name };
+						} catch {
+							return { id, name: null };
+						}
+					}),
+				),
+				Promise.all(
+					featureIds.map(async (id) => {
+						try {
+							const feature = await FeatureApi.getFeatureById(id);
+							return { id, name: feature.name };
+						} catch {
+							return { id, name: null };
+						}
+					}),
+				),
+			]);
+
+			const customerMap: Record<string, string> = {};
+			const featureMap: Record<string, string> = {};
+			customerResults.forEach(({ id, name }) => {
+				if (name) customerMap[id] = name;
+			});
+			featureResults.forEach(({ id, name }) => {
+				if (name) featureMap[id] = name;
+			});
+			setCustomerNames(customerMap);
+			setFeatureNames(featureMap);
+		};
+
+		fetchNames();
+	}, [processedEvents]);
 
 	const openSubscription = async (subscriptionId: string) => {
 		try {
@@ -115,7 +165,12 @@ const EventPropertiesDrawer: FC<Props> = ({ isOpen, onOpenChange, event }) => {
 
 							{/* Processed: show processed events only. Failed: show tracker waterfall. */}
 							{showProcessedOnly ? (
-								<ProcessedEventsSection events={processedEvents} onOpenSubscription={openSubscription} />
+								<ProcessedEventsSection
+									events={processedEvents}
+									onOpenSubscription={openSubscription}
+									customerNames={customerNames}
+									featureNames={featureNames}
+								/>
 							) : debugResponse.debug_tracker ? (
 								<EventTrackerSection debugResponse={debugResponse} displayEventTimestamp={displayEvent?.timestamp} />
 							) : (
