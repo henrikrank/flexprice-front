@@ -1,9 +1,9 @@
-import { FC, useEffect, useMemo, useState } from 'react';
+import { FC, useMemo } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { Sheet } from '@/components/atoms';
 import { Event } from '@/models/Event';
 import toast from 'react-hot-toast';
 import EventsApi from '@/api/EventsApi';
-import { GetEventDebugResponse } from '@/types/dto';
 import { Skeleton } from '@/components/ui/skeleton';
 import { RouteNames } from '@/core/routes/Routes';
 import { useNavigate } from 'react-router';
@@ -23,40 +23,17 @@ interface Props {
 
 const EventPropertiesDrawer: FC<Props> = ({ isOpen, onOpenChange, event }) => {
 	const navigate = useNavigate();
-	const [loading, setLoading] = useState(false);
-	const [debugResponse, setDebugResponse] = useState<GetEventDebugResponse | null>(null);
-	const [loadError, setLoadError] = useState<string | null>(null);
-	const [customerNames, setCustomerNames] = useState<Record<string, string>>({});
-	const [featureNames, setFeatureNames] = useState<Record<string, string>>({});
 
-	useEffect(() => {
-		let isMounted = true;
+	const {
+		data: debugResponse,
+		isLoading: loading,
+		error: loadError,
+	} = useQuery({
+		queryKey: ['eventDebug', event?.id],
+		queryFn: () => EventsApi.getEventDebug(event!.id),
+		enabled: isOpen && !!event?.id,
+	});
 
-		const run = async () => {
-			if (!isOpen || !event?.id) return;
-			setLoading(true);
-			setLoadError(null);
-			try {
-				const res = await EventsApi.getEventDebug(event.id);
-				if (!isMounted) return;
-				setDebugResponse(res);
-			} catch (e: any) {
-				if (!isMounted) return;
-				setDebugResponse(null);
-				setLoadError(e?.message || 'Failed to load event debug details');
-			} finally {
-				if (isMounted) setLoading(false);
-			}
-		};
-
-		run();
-
-		return () => {
-			isMounted = false;
-		};
-	}, [isOpen, event?.id]);
-
-	// Fallback to the table event while the debug payload loads
 	const displayEvent = debugResponse?.event ?? event;
 	const processedEvents = debugResponse?.processed_events ?? [];
 	const resolvedCustomerId =
@@ -64,51 +41,45 @@ const EventPropertiesDrawer: FC<Props> = ({ isOpen, onOpenChange, event }) => {
 		(displayEvent?.customer_id && displayEvent.customer_id.trim().length > 0 ? displayEvent.customer_id : undefined) ??
 		debugResponse?.debug_tracker?.customer_lookup?.customer?.id;
 
-	// Fetch customer and feature names for processed events so we can show names instead of IDs
-	useEffect(() => {
-		if (!processedEvents.length) return;
+	const customerIds = useMemo(
+		() => [...new Set(processedEvents.map((pe) => pe.customer_id).filter(Boolean))] as string[],
+		[processedEvents],
+	);
+	const featureIds = useMemo(() => [...new Set(processedEvents.map((pe) => pe.feature_id).filter(Boolean))] as string[], [processedEvents]);
 
-		const fetchNames = async () => {
-			const customerIds = [...new Set(processedEvents.map((pe) => pe.customer_id).filter(Boolean))] as string[];
-			const featureIds = [...new Set(processedEvents.map((pe) => pe.feature_id).filter(Boolean))] as string[];
-
-			const [customerResults, featureResults] = await Promise.all([
-				Promise.all(
-					customerIds.map(async (id) => {
-						try {
-							const customer = await CustomerApi.getCustomerById(id);
-							return { id, name: customer.name };
-						} catch {
-							return { id, name: null };
-						}
-					}),
-				),
-				Promise.all(
-					featureIds.map(async (id) => {
-						try {
-							const feature = await FeatureApi.getFeatureById(id);
-							return { id, name: feature.name };
-						} catch {
-							return { id, name: null };
-						}
-					}),
-				),
-			]);
-
-			const customerMap: Record<string, string> = {};
-			const featureMap: Record<string, string> = {};
-			customerResults.forEach(({ id, name }) => {
-				if (name) customerMap[id] = name;
+	const { data: customerNames = {} } = useQuery({
+		queryKey: ['eventCustomerNames', customerIds.slice().sort().join(',')],
+		queryFn: async () => {
+			const res = await CustomerApi.getCustomersByFilters({
+				customer_ids: customerIds,
+				filters: [],
+				sort: [],
 			});
-			featureResults.forEach(({ id, name }) => {
-				if (name) featureMap[id] = name;
+			const map: Record<string, string> = {};
+			res.items.forEach((c) => {
+				map[c.id] = c.name;
 			});
-			setCustomerNames(customerMap);
-			setFeatureNames(featureMap);
-		};
+			return map;
+		},
+		enabled: customerIds.length > 0,
+	});
 
-		fetchNames();
-	}, [processedEvents]);
+	const { data: featureNames = {} } = useQuery({
+		queryKey: ['eventFeatureNames', featureIds.slice().sort().join(',')],
+		queryFn: async () => {
+			const res = await FeatureApi.listFeatures({
+				feature_ids: featureIds,
+				limit: featureIds.length,
+				offset: 0,
+			});
+			const map: Record<string, string> = {};
+			res.items.forEach((f) => {
+				map[f.id] = f.name;
+			});
+			return map;
+		},
+		enabled: featureIds.length > 0,
+	});
 
 	const openSubscription = async (subscriptionId: string) => {
 		try {
@@ -156,7 +127,7 @@ const EventPropertiesDrawer: FC<Props> = ({ isOpen, onOpenChange, event }) => {
 					) : loadError ? (
 						<div className='rounded-lg border border-red-200 bg-red-50 px-4 py-3'>
 							<p className='text-sm font-medium text-red-700'>Failed to load event debug details</p>
-							<p className='text-xs text-red-600 mt-1'>{loadError}</p>
+							<p className='text-xs text-red-600 mt-1'>{loadError instanceof Error ? loadError.message : String(loadError)}</p>
 						</div>
 					) : debugResponse ? (
 						<div className='space-y-6'>

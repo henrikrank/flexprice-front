@@ -1,7 +1,9 @@
 import { AxiosClient } from '@/core/axios/verbs';
-import { Customer, Pagination, Subscription } from '@/models';
+import { Pagination, Subscription } from '@/models';
 import {
-	GetCustomerResponse,
+	ListCustomersResponse,
+	CustomerResponse,
+	CustomerFilter,
 	GetCustomerByFiltersPayload,
 	GetCustomerSubscriptionsResponse,
 	GetCustomerEntitlementPayload,
@@ -19,24 +21,49 @@ import { DataType, FilterOperator } from '@/types/common/QueryBuilder';
 class CustomerApi {
 	private static baseUrl = '/customers';
 
-	public static async getCustomerById(id: string): Promise<Customer> {
-		return await AxiosClient.get(`${this.baseUrl}/${id}`);
+	public static async getCustomerById(id: string): Promise<CustomerResponse> {
+		return await AxiosClient.get<CustomerResponse>(`${this.baseUrl}/${id}`);
 	}
 
-	public static async getCustomerByLookupKey(lookupKey: string): Promise<Customer> {
-		return await AxiosClient.get<Customer>(`${this.baseUrl}/lookup/${lookupKey}`);
+	public static async getCustomerByLookupKey(lookupKey: string): Promise<CustomerResponse> {
+		return await AxiosClient.get<CustomerResponse>(`${this.baseUrl}/lookup/${lookupKey}`);
 	}
 
-	public static async getCustomerByExternalId(externalId: string): Promise<Customer> {
-		return await AxiosClient.get<Customer>(`${this.baseUrl}/external/${externalId}`);
-	}
-	public static async getAllCustomers({ limit = 10, offset = 0 }: Pagination): Promise<GetCustomerResponse> {
-		const url = generateQueryParams(this.baseUrl, { limit, offset });
-		return await AxiosClient.get(url);
+	public static async getCustomerByExternalId(externalId: string): Promise<CustomerResponse> {
+		return await AxiosClient.get<CustomerResponse>(`${this.baseUrl}/external/${externalId}`);
 	}
 
-	public static async getCustomersByFilters(payload: GetCustomerByFiltersPayload): Promise<GetCustomerResponse> {
-		return await AxiosClient.post(`${this.baseUrl}/search`, payload);
+	/**
+	 * Get customers (GET /customers) with optional filter as query params.
+	 * Use for list with customer_ids, external_ids, email, etc.
+	 */
+	public static async getCustomers(filter: CustomerFilter = {}): Promise<ListCustomersResponse> {
+		const params: Record<string, string | number | undefined> = {};
+		if (filter.limit != null) params.limit = filter.limit;
+		if (filter.offset != null) params.offset = filter.offset;
+		if (filter.expand != null) params.expand = filter.expand;
+		if (filter.external_id != null) params.external_id = filter.external_id;
+		if (filter.email != null) params.email = filter.email;
+		if (filter.start_time != null) params.start_time = filter.start_time;
+		if (filter.end_time != null) params.end_time = filter.end_time;
+		if (filter.customer_ids?.length) params.customer_ids = filter.customer_ids.join(',');
+		if (filter.external_ids?.length) params.external_ids = filter.external_ids.join(',');
+		if (filter.parent_customer_ids?.length) params.parent_customer_ids = filter.parent_customer_ids.join(',');
+		const url = generateQueryParams(this.baseUrl, params);
+		return await AxiosClient.get<ListCustomersResponse>(url);
+	}
+
+	/** @deprecated Use getCustomers for GET /customers. Kept for backward compatibility. */
+	public static async getAllCustomers({ limit = 10, offset = 0 }: Pagination): Promise<ListCustomersResponse> {
+		return await this.getCustomers({ limit, offset });
+	}
+
+	/**
+	 * List customers by filter (POST /customers/search) with JSON body.
+	 * Use for complex filter with filters/sort arrays.
+	 */
+	public static async getCustomersByFilters(payload: GetCustomerByFiltersPayload): Promise<ListCustomersResponse> {
+		return await AxiosClient.post<ListCustomersResponse>(`${this.baseUrl}/search`, payload);
 	}
 
 	public static async deleteCustomerById(id: string): Promise<void> {
@@ -51,12 +78,12 @@ class CustomerApi {
 		return await AxiosClient.get(`/subscriptions/${id}`);
 	}
 
-	public static async createCustomer(customer: CreateCustomerRequest): Promise<Customer> {
-		return await AxiosClient.post(`${this.baseUrl}`, customer);
+	public static async createCustomer(customer: CreateCustomerRequest): Promise<CustomerResponse> {
+		return await AxiosClient.post<CustomerResponse>(`${this.baseUrl}`, customer);
 	}
 
-	public static async updateCustomer(customer: UpdateCustomerRequest, id: string): Promise<Customer> {
-		return await AxiosClient.put(`${this.baseUrl}/${id}`, customer);
+	public static async updateCustomer(customer: UpdateCustomerRequest, id: string): Promise<CustomerResponse> {
+		return await AxiosClient.put<CustomerResponse>(`${this.baseUrl}/${id}`, customer);
 	}
 
 	public static async getEntitlements(payload: GetCustomerEntitlementPayload): Promise<GetCustomerEntitlementsResponse> {
@@ -110,7 +137,7 @@ class CustomerApi {
 	 * @param limit - Maximum number of results (default: 20)
 	 * @returns Promise with customer search results
 	 */
-	public static async searchCustomers(query: string, limit: number = 50): Promise<GetCustomerResponse> {
+	public static async searchCustomers(query: string, limit: number = 50): Promise<ListCustomersResponse> {
 		// If query is empty, return all customers without filters
 		if (!query || query.trim() === '') {
 			return await this.getCustomersByFilters({
