@@ -76,7 +76,7 @@ const AddCreditNotePage = () => {
 					id: item.id,
 					amount: 0, // Initialize with 0 as requested
 					max_amount: item.amount, // Use original line item amount as max
-					display_name: item.display_name,
+					display_name: item.display_name || 'Unnamed Item',
 					quantity: item.quantity,
 					unit_price: unit_price,
 				};

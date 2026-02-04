@@ -8,6 +8,7 @@ export interface Wallet extends BaseModel {
 	readonly customer_id: string;
 	readonly metadata: Metadata;
 	readonly wallet_status: WALLET_STATUS;
+	readonly wallet_type: WALLET_TYPE;
 	readonly conversion_rate: number;
 	readonly topup_conversion_rate?: number;
 	readonly meter: Meter;
@@ -58,8 +59,8 @@ export enum WALLET_TRANSACTION_TYPE {
 }
 
 export enum WALLET_TYPE {
-	PROMOTIONAL = 'PROMOTIONAL',
 	PRE_PAID = 'PRE_PAID',
+	POST_PAID = 'POST_PAID',
 }
 
 export enum WALLET_AUTO_TOPUP_TRIGGER {

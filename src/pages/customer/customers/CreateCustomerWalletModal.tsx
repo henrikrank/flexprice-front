@@ -1,7 +1,7 @@
-import { Button, DatePicker, Input } from '@/components/atoms';
+import { Button, DatePicker, Input, Select } from '@/components/atoms';
 import { refetchQueries } from '@/core/services/tanstack/ReactQueryProvider';
 import { cn } from '@/lib/utils';
-import { Wallet } from '@/models';
+import { Wallet, WALLET_TYPE } from '@/models';
 import WalletApi from '@/api/WalletApi';
 import { getCurrencySymbol } from '@/utils';
 import { useMutation } from '@tanstack/react-query';
@@ -33,7 +33,7 @@ interface Props {
 	onOpenChange: (open: boolean) => void;
 }
 
-const CreateCustomerWalletModal: FC<Props> = ({ customerId, onSuccess = () => {}, open, onOpenChange }) => {
+const CreateCustomerWalletModal: FC<Props> = ({ customerId, onSuccess = () => { }, open, onOpenChange }) => {
 	const [errors, setErrors] = useState({
 		currency: '',
 		conversion_rate: '',
@@ -50,6 +50,7 @@ const CreateCustomerWalletModal: FC<Props> = ({ customerId, onSuccess = () => {}
 		conversion_rate: 1,
 		topup_conversion_rate: undefined,
 		price_unit: undefined,
+		wallet_type: WALLET_TYPE.PRE_PAID,
 		customer_id: customerId,
 	});
 
@@ -64,6 +65,7 @@ const CreateCustomerWalletModal: FC<Props> = ({ customerId, onSuccess = () => {}
 			conversion_rate: 1,
 			topup_conversion_rate: undefined,
 			price_unit: undefined,
+			wallet_type: WALLET_TYPE.PRE_PAID,
 			customer_id: customerId,
 		});
 		setSelectedPriceUnitOrCurrency(null);
@@ -120,6 +122,7 @@ const CreateCustomerWalletModal: FC<Props> = ({ customerId, onSuccess = () => {}
 				topup_conversion_rate: walletPayload.topup_conversion_rate || walletPayload.conversion_rate || 1,
 				initial_credits_expiry_date_utc: walletPayload.initial_credits_expiry_date_utc,
 				...(walletPayload.price_unit && { price_unit: walletPayload.price_unit }),
+				wallet_type: walletPayload.wallet_type,
 			};
 
 			return await WalletApi.createWallet(payload);
@@ -162,7 +165,31 @@ const CreateCustomerWalletModal: FC<Props> = ({ customerId, onSuccess = () => {}
 					<DialogTitle>Create Wallet</DialogTitle>
 					<DialogDescription>Define the wallet details and the currency it will operate in.</DialogDescription>
 				</DialogHeader>
-				<div className='grid gap-5 py-4'>
+				<div className='grid gap-4 py-4'>
+					<Select
+						value={walletPayload.wallet_type || WALLET_TYPE.PRE_PAID}
+						options={[
+							{
+								label: 'Pre-Paid',
+								value: WALLET_TYPE.PRE_PAID,
+								description: 'Credits reduce invoice amounts.',
+							},
+							{
+								label: 'Post-Paid',
+								value: WALLET_TYPE.POST_PAID,
+								description: 'Credits pay invoices when due.',
+							},
+						]}
+						label='Wallet Type'
+						onChange={(value) =>
+							setwalletPayload({
+								...walletPayload,
+								wallet_type: value as WALLET_TYPE,
+							})
+						}
+						placeholder='Select Wallet Type'
+					/>
+
 					<CurrencyPriceUnitSelector
 						value={selectedPriceUnitOrCurrency?.data.value || walletPayload.currency || walletPayload.price_unit}
 						onChange={handlePriceUnitOrCurrencyChange}
@@ -246,9 +273,9 @@ const CreateCustomerWalletModal: FC<Props> = ({ customerId, onSuccess = () => {}
 									popoverTriggerClassName='w-full'
 									className='w-full'
 									placeholder='Select Expiry Date'
-									date={walletPayload.initial_credits_expiry_date_utc}
+									date={walletPayload.initial_credits_expiry_date_utc ? new Date(walletPayload.initial_credits_expiry_date_utc) : undefined}
 									setDate={(e) => {
-										setwalletPayload({ ...walletPayload, initial_credits_expiry_date_utc: e as unknown as Date });
+										setwalletPayload({ ...walletPayload, initial_credits_expiry_date_utc: e ? e.toISOString() : undefined });
 									}}
 								/>
 							</div>
