@@ -573,7 +573,6 @@ const PriceOverrideDialog: FC<Props> = ({
 								placeholder='Select date for scheduled update'
 								date={effectiveFrom}
 								setDate={setEffectiveFrom}
-								minDate={new Date()}
 								className='w-full'
 							/>
 							<p className='text-xs text-gray-500'>Schedule this price change to take effect on a future date</p>

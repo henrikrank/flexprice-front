@@ -112,7 +112,6 @@ const TerminatePriceModal: FC<TerminatePriceModalProps> = ({
 						placeholder='Select termination date'
 						date={endDate}
 						setDate={setEndDate}
-						minDate={new Date()}
 						className='w-full'
 					/>
 					<p className='text-xs text-gray-500'>Leave empty to terminate immediately. Select a future date to schedule termination.</p>
