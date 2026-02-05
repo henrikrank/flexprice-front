@@ -1,5 +1,5 @@
-import { Loader, Page, Spacer, Card, FormHeader } from '@/components/atoms';
-import { DetailsCard, SubscriptionEntitlementsSection, CreditGrantsTable, SubscriptionAddonsSection } from '@/components/molecules';
+import { Loader, Page, Spacer, Card, FormHeader, AddButton } from '@/components/atoms';
+import { DetailsCard, SubscriptionEntitlementsSection, SubscriptionAddonsSection } from '@/components/molecules';
 import { useBreadcrumbsStore } from '@/store/useBreadcrumbsStore';
 import CustomerApi from '@/api/CustomerApi';
 import SubscriptionApi from '@/api/SubscriptionApi';
@@ -19,7 +19,14 @@ import { Price, BILLING_MODEL, TIER_MODE } from '@/models/Price';
 import { ExtendedPriceOverride } from '@/utils/common/price_override_helpers';
 import { RouteNames } from '@/core/routes/Routes';
 import { refetchQueries } from '@/core/services/tanstack/ReactQueryProvider';
-import { ENTITY_STATUS } from '@/models';
+import { ENTITY_STATUS, CreditGrant } from '@/models';
+import EditSubscriptionCreditGrantModal from '@/components/molecules/CreditGrant/EditSubscriptionCreditGrantModal';
+import CancelCreditGrantModal from '@/components/molecules/CreditGrant/CancelCreditGrantModal';
+import FlexpriceTable, { ColumnData } from '@/components/molecules/Table';
+import { formatExpirationPeriod } from '@/utils/common/credit_grant_helpers';
+import { formatBillingPeriodForPrice } from '@/utils/common/helper_functions';
+import { formatAmount } from '@/components/atoms/Input/Input';
+import { ActionButton } from '@/components/atoms';
 
 type Params = {
 	id: string;
@@ -30,6 +37,11 @@ const CustomerSubscriptionEditPage: React.FC = () => {
 	const [editingLineItem, setEditingLineItem] = useState<LineItem | null>(null);
 	const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
 	const [overriddenPrices, setOverriddenPrices] = useState<Record<string, ExtendedPriceOverride>>({});
+
+	// Credit grant modals state
+	const [isAddCreditGrantModalOpen, setIsAddCreditGrantModalOpen] = useState(false);
+	const [isCancelCreditGrantModalOpen, setIsCancelCreditGrantModalOpen] = useState(false);
+	const [selectedCreditGrantToCancel, setSelectedCreditGrantToCancel] = useState<CreditGrant | null>(null);
 
 	const { updateBreadcrumb } = useBreadcrumbsStore();
 
@@ -95,6 +107,41 @@ const CustomerSubscriptionEditPage: React.FC = () => {
 		},
 		onError: (error: { error?: { message?: string } }) => {
 			toast.error(error?.error?.message || 'Failed to terminate line item');
+		},
+	});
+
+	const { mutate: createCreditGrant } = useMutation({
+		mutationFn: async (data: any) => {
+			return await CreditGrantApi.Create(data);
+		},
+		onSuccess: () => {
+			toast.success('Credit grant created successfully');
+			refetchQueries(['creditGrants', subscriptionId!]);
+			refetchQueries(['subscriptionDetails', subscriptionId!]);
+			setIsAddCreditGrantModalOpen(false);
+		},
+		onError: (error: { error?: { message?: string } }) => {
+			toast.error(error?.error?.message || 'Failed to create credit grant');
+		},
+	});
+
+	const { mutate: cancelCreditGrant } = useMutation({
+		mutationFn: async ({ creditGrantId, effectiveDate }: { creditGrantId: string; effectiveDate: string }) => {
+			return await CreditGrantApi.CancelFuture({
+				subscription_id: subscriptionId!,
+				credit_grant_ids: [creditGrantId],
+				effective_date: effectiveDate,
+			});
+		},
+		onSuccess: () => {
+			toast.success('Credit grant cancelled successfully');
+			refetchQueries(['creditGrants', subscriptionId!]);
+			refetchQueries(['subscriptionDetails', subscriptionId!]);
+			setIsCancelCreditGrantModalOpen(false);
+			setSelectedCreditGrantToCancel(null);
+		},
+		onError: (error: { error?: { message?: string } }) => {
+			toast.error(error?.error?.message || 'Failed to cancel credit grant');
 		},
 	});
 
@@ -206,6 +253,87 @@ const CustomerSubscriptionEditPage: React.FC = () => {
 			return newOverrides;
 		});
 	};
+
+	const handleCreateCreditGrant = (data: any) => {
+		createCreditGrant(data);
+	};
+
+	const handleCancelCreditGrant = (grant: CreditGrant) => {
+		setSelectedCreditGrantToCancel(grant);
+		setIsCancelCreditGrantModalOpen(true);
+	};
+
+	const handleConfirmCancelCreditGrant = (effectiveDate: string) => {
+		if (selectedCreditGrantToCancel) {
+			cancelCreditGrant({
+				creditGrantId: selectedCreditGrantToCancel.id,
+				effectiveDate,
+			});
+		}
+	};
+
+	// Credit grants table columns
+	const creditGrantColumns: ColumnData<CreditGrant>[] = useMemo(() => {
+		return [
+			{
+				title: 'Name',
+				render: (row) => <span>{row.name}</span>,
+			},
+			{
+				title: 'Credits',
+				render: (row) => <span>{formatAmount(row.credits.toString())}</span>,
+			},
+			{
+				title: 'Priority',
+				render: (row) => <span>{row.priority ?? '--'}</span>,
+			},
+			{
+				title: 'Cadence',
+				render: (row) => {
+					const cadence = row.cadence.toLowerCase().replace('_', ' ');
+					return cadence.charAt(0).toUpperCase() + cadence.slice(1);
+				},
+			},
+			{
+				title: 'Period',
+				render: (row) => (row.period ? `${row.period_count || 1} ${formatBillingPeriodForPrice(row.period)}` : '--'),
+			},
+			{
+				title: 'Expiration Config',
+				render: (row) => <span>{formatExpirationPeriod(row)}</span>,
+			},
+			{
+				fieldVariant: 'interactive' as const,
+				width: '30px',
+				hideOnEmpty: true,
+				render: (row) => {
+					return (
+						<ActionButton
+							id={row.id}
+							deleteMutationFn={async () => {
+								// Empty function - not used
+							}}
+							refetchQueryKey='creditGrants'
+							entityName={row.name}
+							edit={{
+								enabled: false,
+							}}
+							archive={{
+								enabled: false,
+							}}
+							customActions={[
+								{
+									text: 'Delete',
+									onClick: () => handleCancelCreditGrant(row),
+									enabled: true,
+								},
+							]}
+						/>
+					);
+				},
+			},
+		];
+	}, []);
 
 	// Convert LineItem to Price object for PriceOverrideDialog
 	const convertLineItemToPrice = (lineItem: LineItem): Price => {
@@ -356,21 +484,21 @@ const CustomerSubscriptionEditPage: React.FC = () => {
 				)}
 
 				{/* Credit Grants Section */}
-				{creditGrants?.items && creditGrants.items.length > 0 && (
-					<Card variant='notched'>
-						<FormHeader title='Credit Grants' variant='sub-header' titleClassName='font-semibold' />
-						<div className='mt-4'>
-							<CreditGrantsTable
-								data={creditGrants.items}
-								onDelete={async () => {
-									refetchQueries(['creditGrants', subscriptionId!]);
-									refetchQueries(['subscriptionDetails', subscriptionId!]);
-								}}
-								showEmptyRow={false}
-							/>
-						</div>
-					</Card>
-				)}
+				<Card variant='notched'>
+					<div className='flex items-center justify-between mb-4'>
+						<FormHeader title='Credit Grants' variant='sub-header' titleClassName='font-semibold' className='mb-0' />
+						<AddButton
+							onClick={() => setIsAddCreditGrantModalOpen(true)}
+							disabled={
+								subscriptionDetails?.subscription_status === SUBSCRIPTION_STATUS.CANCELLED ||
+								subscriptionDetails?.subscription_status === SUBSCRIPTION_STATUS.TRIALING
+							}
+						/>
+					</div>
+					<div className='mt-4'>
+						<FlexpriceTable showEmptyRow={true} data={creditGrants?.items || []} columns={creditGrantColumns} />
+					</div>
+				</Card>
 
 				{/* Subscription Entitlements Section */}
 				{subscriptionId && <SubscriptionEntitlementsSection subscriptionId={subscriptionId} />}
@@ -390,6 +518,30 @@ const CustomerSubscriptionEditPage: React.FC = () => {
 						showEffectiveFrom={true}
 					/>
 				)}
+
+				{/* Add Credit Grant Modal */}
+				{subscriptionId && (
+					<EditSubscriptionCreditGrantModal
+						isOpen={isAddCreditGrantModalOpen}
+						onOpenChange={setIsAddCreditGrantModalOpen}
+						onSave={handleCreateCreditGrant}
+						onCancel={() => setIsAddCreditGrantModalOpen(false)}
+						subscriptionId={subscriptionId}
+						subscriptionStartDate={subscriptionDetails?.start_date}
+					/>
+				)}
+
+				{/* Cancel Credit Grant Modal */}
+				<CancelCreditGrantModal
+					isOpen={isCancelCreditGrantModalOpen}
+					onOpenChange={setIsCancelCreditGrantModalOpen}
+					onConfirm={handleConfirmCancelCreditGrant}
+					onCancel={() => {
+						setIsCancelCreditGrantModalOpen(false);
+						setSelectedCreditGrantToCancel(null);
+					}}
+					creditGrant={selectedCreditGrantToCancel}
+				/>
 
 				<Spacer className='!h-20' />
 			</div>

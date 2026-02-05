@@ -82,6 +82,7 @@ export type SubscriptionFormState = {
 	creditGrants: InternalCreditGrantRequest[];
 	enable_true_up: boolean;
 	invoiceBillingConfig?: INVOICE_BILLING;
+	hasModifiedPlanCreditGrants?: boolean;
 };
 
 const usePlans = () => {
@@ -251,6 +252,7 @@ const CreateCustomerSubscriptionPage: React.FC = () => {
 		creditGrants: [],
 		enable_true_up: false,
 		invoiceBillingConfig: undefined,
+		hasModifiedPlanCreditGrants: false,
 	});
 
 	const { data: plans, isLoading: plansLoading, isError: plansError } = usePlans();
@@ -577,7 +579,14 @@ const CreateCustomerSubscriptionPage: React.FC = () => {
 			tax_rate_overrides: sanitized.tax_rate_overrides.length > 0 ? sanitized.tax_rate_overrides : undefined,
 			override_entitlements:
 				Object.keys(sanitized.entitlementOverrides).length > 0 ? Object.values(sanitized.entitlementOverrides) : undefined,
-			credit_grants: sanitized.creditGrants.length > 0 ? sanitized.creditGrants.map(internalToCreateRequest) : undefined,
+			credit_grants:
+				// If plan-level grants were modified, send the array (even if empty to override)
+				subscriptionState.hasModifiedPlanCreditGrants
+					? sanitized.creditGrants.map(internalToCreateRequest)
+					: // Otherwise, only send if there are subscription-level grants
+						sanitized.creditGrants.length > 0
+						? sanitized.creditGrants.map(internalToCreateRequest)
+						: undefined,
 			enable_true_up: subscriptionState.enable_true_up,
 			subscription_status: isDraftParam ? SUBSCRIPTION_STATUS.DRAFT : undefined,
 			invoice_billing: sanitized.invoiceBillingConfig,

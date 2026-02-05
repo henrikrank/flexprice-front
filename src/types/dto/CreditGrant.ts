@@ -30,6 +30,7 @@ export interface CreateCreditGrantRequest {
 	metadata?: Metadata;
 	conversion_rate?: number;
 	topup_conversion_rate?: number;
+	start_date?: string;
 }
 
 export interface UpdateCreditGrantRequest {
@@ -108,4 +109,10 @@ export interface ProcessScheduledCreditGrantApplicationsResponse {
 	success_applications_count: number;
 	failed_applications_count: number;
 	total_applications_count: number;
+}
+
+export interface CancelFutureCreditGrantRequest {
+	subscription_id: string;
+	credit_grant_ids: string[];
+	effective_date: string;
 }

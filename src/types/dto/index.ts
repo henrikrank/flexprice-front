@@ -249,6 +249,7 @@ export type {
 	GetCreditGrantsRequest,
 	GetCreditGrantsResponse,
 	ProcessScheduledCreditGrantApplicationsResponse,
+	CancelFutureCreditGrantRequest,
 } from './CreditGrant';
 
 export type {
