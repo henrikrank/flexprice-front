@@ -39,6 +39,9 @@ const CommandPaletteDialog = ({ children, value, onValueChange, filter, open, ..
 					)}
 				/>
 				<DialogPrimitive.Content
+					aria-label='Search and run commands'
+					role='dialog'
+					aria-modal='true'
 					className={cn(
 						'fixed left-[50%] top-[18%] z-50 w-full max-w-[720px] translate-x-[-50%]',
 						'bg-white dark:bg-background/90 backdrop-blur-xl',

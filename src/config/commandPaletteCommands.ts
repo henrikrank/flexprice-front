@@ -22,6 +22,7 @@ import {
 	MessageCircle,
 	BotMessageSquare,
 	LogOut,
+	Keyboard,
 } from 'lucide-react';
 import { CommandPaletteActionId } from '@/core/actions';
 
@@ -117,6 +118,14 @@ export const commandPaletteCommands: CommandPaletteCommand[] = [
 		actionId: CommandPaletteActionId.OpenDocumentation,
 		keywords: ['docs', 'help', 'api', 'developer', 'readme'],
 		icon: BookOpen,
+	},
+	{
+		id: 'action-keyboard-shortcuts',
+		label: 'Keyboard shortcuts',
+		group: CommandPaletteGroup.Help,
+		actionId: CommandPaletteActionId.ShowKeyboardShortcutsHint,
+		keywords: ['shortcuts', 'keys', '⌘K', 'Ctrl+K', 'command palette'],
+		icon: Keyboard,
 	},
 	{
 		id: 'action-contact-us',

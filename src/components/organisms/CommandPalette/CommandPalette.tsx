@@ -6,8 +6,14 @@ import { defaultFilter } from 'cmdk';
 import { CommandPaletteDialog, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command-palette';
 
 import { commandPaletteCommands, COMMAND_PALETTE_INITIAL_SUGGESTED_IDS, CommandPaletteGroup } from '@/config/commandPaletteCommands';
-import { dispatchCommandPaletteAction, isCommandPaletteActionDevOnly } from '@/core/actions';
+import {
+	dispatchCommandPaletteAction,
+	getCommandPaletteActionEventName,
+	CommandPaletteActionId,
+	isCommandPaletteActionDevOnly,
+} from '@/core/actions';
 import useEnvironment from '@/hooks/useEnvironment';
+import { toast } from 'react-hot-toast';
 
 const GROUPS_ORDER = [CommandPaletteGroup.Actions, CommandPaletteGroup.GoTo, CommandPaletteGroup.Help] as const;
 
@@ -31,6 +37,18 @@ const CommandPalette = () => {
 			document.removeEventListener('keydown', handleKeyDown);
 			window.removeEventListener('open-command-palette', handleOpenPalette);
 		};
+	}, []);
+
+	// Show toast when user selects "Keyboard shortcuts" from the palette
+	useEffect(() => {
+		const isMac = typeof navigator !== 'undefined' && /Mac|iPod|iPhone|iPad/.test(navigator.platform);
+		const shortcut = isMac ? '⌘K' : 'Ctrl+K';
+		const eventName = getCommandPaletteActionEventName(CommandPaletteActionId.ShowKeyboardShortcutsHint);
+		const handler = () => {
+			toast.success(`Press ${shortcut} to open the command palette anytime`);
+		};
+		window.addEventListener(eventName, handler);
+		return () => window.removeEventListener(eventName, handler);
 	}, []);
 
 	const handleOpenChange = (next: boolean) => {
@@ -98,9 +116,12 @@ const CommandPalette = () => {
 		setOpen(false);
 	};
 
+	const isMac = typeof navigator !== 'undefined' && /Mac|iPod|iPhone|iPad/.test(navigator.platform);
+	const shortcutHint = isMac ? '⌘K' : 'Ctrl+K';
+
 	return (
 		<CommandPaletteDialog open={open} onOpenChange={handleOpenChange} value={search} onValueChange={setSearch} filter={filter}>
-			<CommandInput placeholder='Search features, plans, customers...' />
+			<CommandInput placeholder='Search features, plans, customers...' aria-label='Search commands' />
 			<CommandList>
 				<CommandEmpty>No results found.</CommandEmpty>
 				{GROUPS_ORDER.map((groupName) => {
@@ -126,6 +147,10 @@ const CommandPalette = () => {
 					);
 				})}
 			</CommandList>
+			<p className='px-3 py-2 text-[11px] text-muted-foreground/80 border-t border-border/80 bg-muted/30'>
+				<span className='sr-only'>Keyboard: </span>
+				↑↓ Navigate · Enter Select · Esc Close · {shortcutHint} to open anytime
+			</p>
 		</CommandPaletteDialog>
 	);
 };

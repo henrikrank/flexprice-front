@@ -28,6 +28,8 @@ export const CommandPaletteActionId = {
 	OpenIntercom: 'open-intercom',
 	/** Log out (SidebarFooter subscribes). */
 	Logout: 'logout',
+	/** Show keyboard shortcuts hint toast (CommandPalette subscribes). */
+	ShowKeyboardShortcutsHint: 'show-keyboard-shortcuts-hint',
 	// Debug / tools (subscribers handle these)
 	DebugSimulateIngestEvents: 'debug-simulate-ingest-events',
 	EventsConsumer: 'events-consumer',
@@ -49,6 +51,7 @@ export const COMMAND_PALETTE_ACTION_META: Record<
 	[CommandPaletteActionId.JoinSlackCommunity]: {},
 	[CommandPaletteActionId.OpenIntercom]: {},
 	[CommandPaletteActionId.Logout]: {},
+	[CommandPaletteActionId.ShowKeyboardShortcutsHint]: {},
 	[CommandPaletteActionId.DebugSimulateIngestEvents]: { devOnly: true },
 	[CommandPaletteActionId.EventsConsumer]: { devOnly: true },
 };
