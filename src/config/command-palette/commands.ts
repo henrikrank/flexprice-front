@@ -24,86 +24,37 @@ import {
 	LogOut,
 	Keyboard,
 } from 'lucide-react';
+import type { CommandPaletteActionIdType } from '@/core/actions';
 import { CommandPaletteActionId } from '@/core/actions';
 
-// Paths match RouteNames in @/core/routes/Routes - duplicated here to avoid circular dependency
-// (Routes -> MainLayout -> CommandPalette -> commandPaletteCommands -> Routes)
-const R = {
-	homeDashboard: '/home',
-	createFeature: '/product-catalog/features/create-feature',
-	features: '/product-catalog/features',
-	plan: '/product-catalog/plan',
-	coupons: '/product-catalog/coupons',
-	addons: '/product-catalog/addons',
-	costSheets: '/product-catalog/cost-sheets',
-	priceUnits: '/product-catalog/price-units',
-	groups: '/product-catalog/groups',
-	customers: '/billing/customers',
-	subscriptions: '/billing/subscriptions',
-	taxes: '/billing/taxes',
-	invoices: '/billing/invoices',
-	creditNotes: '/billing/credit-notes',
-	payments: '/billing/payments',
-	customerBilling: '/settings/billing',
-	bulkImports: '/tools/bulk-imports',
-	exports: '/tools/exports',
-	s3Exports: '/tools/exports/s3',
-	events: '/usage-tracking/events',
-	queryPage: '/usage-tracking/query',
-	apiKeys: '/developers/api-keys',
-	serviceAccounts: '/developers/service-accounts',
-	webhooks: '/developers/webhooks',
-	integrations: '/tools/integrations',
-	// Individual integration detail routes (path = /tools/integrations/:id, id = name.toLowerCase())
-	integrationStripe: '/tools/integrations/stripe',
-	integrationRazorpay: '/tools/integrations/razorpay',
-	integrationChargebee: '/tools/integrations/chargebee',
-	integrationHubspot: '/tools/integrations/hubspot',
-	integrationQuickbooks: '/tools/integrations/quickbooks',
-	integrationNomod: '/tools/integrations/nomod',
-	integrationMoyasar: '/tools/integrations/moyasar',
-	pricing: '/product-catalog/pricing-widget',
-} as const;
+import { CommandPaletteCommandId, type CommandPaletteCommandIdType, CommandPaletteGroup, type CommandPaletteGroupType } from './ids';
+import { commandPalettePaths } from './paths';
 
 export interface CommandPaletteCommand {
-	id: string;
+	id: CommandPaletteCommandIdType;
 	label: string;
-	group: string;
+	group: CommandPaletteGroupType;
 	path?: string;
 	/** When set, the organism will look up and run a handler for this id (in addition to optional path). */
-	actionId?: string;
+	actionId?: CommandPaletteActionIdType;
 	keywords?: string[];
 	icon?: LucideIcon;
 }
 
-export enum CommandPaletteGroup {
-	Actions = 'Actions',
-	Help = 'Help',
-	GoTo = 'Go to',
-}
-
-/** Command IDs shown when the palette is first opened (before user types). */
-export const COMMAND_PALETTE_INITIAL_SUGGESTED_IDS: string[] = [
-	'action-create-feature',
-	'action-open-documentation',
-	'nav-home',
-	'nav-product-catalog-features',
-	'nav-product-catalog-plans',
-	'nav-billing-customers',
-];
+const P = commandPalettePaths;
 
 export const commandPaletteCommands: CommandPaletteCommand[] = [
 	// Actions (quick create / entry points)
 	{
-		id: 'action-create-feature',
+		id: CommandPaletteCommandId.actionCreateFeature,
 		label: 'Create Feature',
 		group: CommandPaletteGroup.Actions,
-		path: R.createFeature,
+		path: P['create-feature'],
 		keywords: ['new', 'add', 'feature', 'product'],
 		icon: Plus,
 	},
 	{
-		id: 'action-simulate-ingest-events',
+		id: CommandPaletteCommandId.actionSimulateIngestEvents,
 		label: 'Simulate ingest events',
 		group: CommandPaletteGroup.Actions,
 		actionId: CommandPaletteActionId.DebugSimulateIngestEvents,
@@ -112,7 +63,7 @@ export const commandPaletteCommands: CommandPaletteCommand[] = [
 	},
 	// Help (documentation, contact, community)
 	{
-		id: 'action-open-documentation',
+		id: CommandPaletteCommandId.actionOpenDocumentation,
 		label: 'Open documentation',
 		group: CommandPaletteGroup.Help,
 		actionId: CommandPaletteActionId.OpenDocumentation,
@@ -120,7 +71,7 @@ export const commandPaletteCommands: CommandPaletteCommand[] = [
 		icon: BookOpen,
 	},
 	{
-		id: 'action-keyboard-shortcuts',
+		id: CommandPaletteCommandId.actionKeyboardShortcuts,
 		label: 'Keyboard shortcuts',
 		group: CommandPaletteGroup.Help,
 		actionId: CommandPaletteActionId.ShowKeyboardShortcutsHint,
@@ -128,7 +79,7 @@ export const commandPaletteCommands: CommandPaletteCommand[] = [
 		icon: Keyboard,
 	},
 	{
-		id: 'action-contact-us',
+		id: CommandPaletteCommandId.actionContactUs,
 		label: 'Contact us',
 		group: CommandPaletteGroup.Help,
 		actionId: CommandPaletteActionId.ContactUs,
@@ -136,7 +87,7 @@ export const commandPaletteCommands: CommandPaletteCommand[] = [
 		icon: Mail,
 	},
 	{
-		id: 'action-book-call',
+		id: CommandPaletteCommandId.actionBookCall,
 		label: 'Book a call',
 		group: CommandPaletteGroup.Help,
 		actionId: CommandPaletteActionId.BookCall,
@@ -144,7 +95,7 @@ export const commandPaletteCommands: CommandPaletteCommand[] = [
 		icon: CalendarDays,
 	},
 	{
-		id: 'action-join-slack',
+		id: CommandPaletteCommandId.actionJoinSlack,
 		label: 'Join Slack community',
 		group: CommandPaletteGroup.Help,
 		actionId: CommandPaletteActionId.JoinSlackCommunity,
@@ -152,7 +103,7 @@ export const commandPaletteCommands: CommandPaletteCommand[] = [
 		icon: MessageCircle,
 	},
 	{
-		id: 'action-open-intercom',
+		id: CommandPaletteCommandId.actionOpenIntercom,
 		label: 'Open Intercom',
 		group: CommandPaletteGroup.Help,
 		actionId: CommandPaletteActionId.OpenIntercom,
@@ -160,7 +111,7 @@ export const commandPaletteCommands: CommandPaletteCommand[] = [
 		icon: BotMessageSquare,
 	},
 	{
-		id: 'action-logout',
+		id: CommandPaletteCommandId.actionLogout,
 		label: 'Log out',
 		group: CommandPaletteGroup.Help,
 		actionId: CommandPaletteActionId.Logout,
@@ -169,270 +120,264 @@ export const commandPaletteCommands: CommandPaletteCommand[] = [
 	},
 	// Go to - Home
 	{
-		id: 'nav-home',
+		id: CommandPaletteCommandId.navHome,
 		label: 'Home',
 		group: CommandPaletteGroup.GoTo,
-		path: R.homeDashboard,
+		path: P['home-dashboard'],
 		keywords: ['dashboard', 'overview'],
 		icon: Home,
 	},
-
 	// Go to - Product Catalog
 	{
-		id: 'nav-product-catalog-features',
+		id: CommandPaletteCommandId.navProductCatalogFeatures,
 		label: 'Product Catalog → Features',
 		group: CommandPaletteGroup.GoTo,
-		path: R.features,
+		path: P['product-catalog-features'],
 		keywords: ['features', 'product', 'catalog'],
 		icon: Layers2,
 	},
 	{
-		id: 'nav-product-catalog-plans',
+		id: CommandPaletteCommandId.navProductCatalogPlans,
 		label: 'Product Catalog → Plans',
 		group: CommandPaletteGroup.GoTo,
-		path: R.plan,
+		path: P['product-catalog-plan'],
 		keywords: ['plans', 'pricing', 'product', 'catalog'],
 		icon: Layers2,
 	},
 	{
-		id: 'nav-product-catalog-coupons',
+		id: CommandPaletteCommandId.navProductCatalogCoupons,
 		label: 'Product Catalog → Coupons',
 		group: CommandPaletteGroup.GoTo,
-		path: R.coupons,
+		path: P['product-catalog-coupons'],
 		keywords: ['coupons', 'discounts', 'product', 'catalog'],
 		icon: Layers2,
 	},
 	{
-		id: 'nav-product-catalog-addons',
+		id: CommandPaletteCommandId.navProductCatalogAddons,
 		label: 'Product Catalog → Addons',
 		group: CommandPaletteGroup.GoTo,
-		path: R.addons,
+		path: P['product-catalog-addons'],
 		keywords: ['addons', 'add-ons', 'product', 'catalog'],
 		icon: Layers2,
 	},
 	{
-		id: 'nav-product-catalog-cost-sheets',
+		id: CommandPaletteCommandId.navProductCatalogCostSheets,
 		label: 'Product Catalog → Cost Sheets',
 		group: CommandPaletteGroup.GoTo,
-		path: R.costSheets,
+		path: P['product-catalog-cost-sheets'],
 		keywords: ['cost sheets', 'costs', 'product', 'catalog'],
 		icon: Layers2,
 	},
 	{
-		id: 'nav-product-catalog-price-units',
+		id: CommandPaletteCommandId.navProductCatalogPriceUnits,
 		label: 'Product Catalog → Price Units',
 		group: CommandPaletteGroup.GoTo,
-		path: R.priceUnits,
+		path: P['product-catalog-price-units'],
 		keywords: ['price units', 'units', 'product', 'catalog'],
 		icon: Layers2,
 	},
 	{
-		id: 'nav-product-catalog-groups',
+		id: CommandPaletteCommandId.navProductCatalogGroups,
 		label: 'Product Catalog → Groups',
 		group: CommandPaletteGroup.GoTo,
-		path: R.groups,
+		path: P['product-catalog-groups'],
 		keywords: ['groups', 'product', 'catalog'],
 		icon: Layers2,
 	},
-
 	// Go to - Billing
 	{
-		id: 'nav-billing-customers',
+		id: CommandPaletteCommandId.navBillingCustomers,
 		label: 'Billing → Customers',
 		group: CommandPaletteGroup.GoTo,
-		path: R.customers,
+		path: P['billing-customers'],
 		keywords: ['customers', 'billing', 'accounts'],
 		icon: Landmark,
 	},
 	{
-		id: 'nav-billing-subscriptions',
+		id: CommandPaletteCommandId.navBillingSubscriptions,
 		label: 'Billing → Subscriptions',
 		group: CommandPaletteGroup.GoTo,
-		path: R.subscriptions,
+		path: P['billing-subscriptions'],
 		keywords: ['subscriptions', 'billing'],
 		icon: CreditCard,
 	},
 	{
-		id: 'nav-billing-taxes',
+		id: CommandPaletteCommandId.navBillingTaxes,
 		label: 'Billing → Taxes',
 		group: CommandPaletteGroup.GoTo,
-		path: R.taxes,
+		path: P['billing-taxes'],
 		keywords: ['taxes', 'tax rates', 'billing'],
 		icon: Landmark,
 	},
 	{
-		id: 'nav-billing-invoices',
+		id: CommandPaletteCommandId.navBillingInvoices,
 		label: 'Billing → Invoices',
 		group: CommandPaletteGroup.GoTo,
-		path: R.invoices,
+		path: P['billing-invoices'],
 		keywords: ['invoices', 'billing'],
 		icon: Receipt,
 	},
 	{
-		id: 'nav-billing-credit-notes',
+		id: CommandPaletteCommandId.navBillingCreditNotes,
 		label: 'Billing → Credit Notes',
 		group: CommandPaletteGroup.GoTo,
-		path: R.creditNotes,
+		path: P['billing-credit-notes'],
 		keywords: ['credit notes', 'credits', 'billing'],
 		icon: FileText,
 	},
 	{
-		id: 'nav-billing-payments',
+		id: CommandPaletteCommandId.navBillingPayments,
 		label: 'Billing → Payments',
 		group: CommandPaletteGroup.GoTo,
-		path: R.payments,
+		path: P['billing-payments'],
 		keywords: ['payments', 'billing', 'wallet'],
 		icon: Wallet,
 	},
-
 	// Go to - Settings
 	{
-		id: 'nav-settings-billing',
+		id: CommandPaletteCommandId.navSettingsBilling,
 		label: 'Settings → Billing',
 		group: CommandPaletteGroup.GoTo,
-		path: R.customerBilling,
+		path: P['settings-billing'],
 		keywords: ['settings', 'billing', 'payment'],
 		icon: Landmark,
 	},
-
 	// Go to - Tools
 	{
-		id: 'nav-tools-imports',
+		id: CommandPaletteCommandId.navToolsImports,
 		label: 'Tools → Imports',
 		group: CommandPaletteGroup.GoTo,
-		path: R.bulkImports,
+		path: P['tools-bulk-imports'],
 		keywords: ['imports', 'bulk import', 'tools'],
 		icon: Settings,
 	},
 	{
-		id: 'nav-tools-exports',
+		id: CommandPaletteCommandId.navToolsExports,
 		label: 'Tools → Exports',
 		group: CommandPaletteGroup.GoTo,
-		path: R.exports,
+		path: P['tools-exports'],
 		keywords: ['exports', 'tools'],
 		icon: Settings,
 	},
 	{
-		id: 'nav-tools-s3-exports',
+		id: CommandPaletteCommandId.navToolsS3Exports,
 		label: 'Tools → S3 Exports',
 		group: CommandPaletteGroup.GoTo,
-		path: R.s3Exports,
+		path: P['tools-exports-s3'],
 		keywords: ['s3', 'exports', 'tools'],
 		icon: Settings,
 	},
-
-	// Go to - Developers
+	// Go to - Developers / Usage
 	{
-		id: 'nav-developers-events',
+		id: CommandPaletteCommandId.navDevelopersEvents,
 		label: 'Usage Tracking → Events Debugger',
 		group: CommandPaletteGroup.GoTo,
-		path: R.events,
+		path: P['usage-tracking-events'],
 		keywords: ['events', 'debugger', 'usage', 'developers'],
 		icon: CodeXml,
 	},
 	{
-		id: 'nav-usage-tracking-query',
+		id: CommandPaletteCommandId.navUsageTrackingQuery,
 		label: 'Usage Tracking → Query',
 		group: CommandPaletteGroup.GoTo,
-		path: R.queryPage,
+		path: P['usage-tracking-query'],
 		keywords: ['query', 'usage', 'tracking', 'metrics'],
 		icon: CodeXml,
 	},
 	{
-		id: 'nav-developers-api-keys',
+		id: CommandPaletteCommandId.navDevelopersApiKeys,
 		label: 'Developers → API Keys',
 		group: CommandPaletteGroup.GoTo,
-		path: R.apiKeys,
+		path: P['developers-api-keys'],
 		keywords: ['api keys', 'keys', 'developers'],
 		icon: Key,
 	},
 	{
-		id: 'nav-developers-service-accounts',
+		id: CommandPaletteCommandId.navDevelopersServiceAccounts,
 		label: 'Developers → Service Accounts',
 		group: CommandPaletteGroup.GoTo,
-		path: R.serviceAccounts,
+		path: P['developers-service-accounts'],
 		keywords: ['service accounts', 'developers'],
 		icon: UserCog,
 	},
 	{
-		id: 'nav-developers-webhooks',
+		id: CommandPaletteCommandId.navDevelopersWebhooks,
 		label: 'Developers → Webhooks',
 		group: CommandPaletteGroup.GoTo,
-		path: R.webhooks,
+		path: P['developers-webhooks'],
 		keywords: ['webhooks', 'developers'],
 		icon: Webhook,
 	},
-
 	// Go to - Integrations & Pricing Widget
 	{
-		id: 'nav-integrations',
+		id: CommandPaletteCommandId.navIntegrations,
 		label: 'Integrations',
 		group: CommandPaletteGroup.GoTo,
-		path: R.integrations,
+		path: P['tools-integrations'],
 		keywords: ['integrations', 'tools', 'quickbooks'],
 		icon: Puzzle,
 	},
 	{
-		id: 'nav-integration-stripe',
+		id: CommandPaletteCommandId.navIntegrationStripe,
 		label: 'Integrations → Stripe',
 		group: CommandPaletteGroup.GoTo,
-		path: R.integrationStripe,
+		path: P['tools-integrations-stripe'],
 		keywords: ['stripe', 'payments', 'invoices', 'integrations'],
 		icon: Puzzle,
 	},
 	{
-		id: 'nav-integration-razorpay',
+		id: CommandPaletteCommandId.navIntegrationRazorpay,
 		label: 'Integrations → Razorpay',
 		group: CommandPaletteGroup.GoTo,
-		path: R.integrationRazorpay,
+		path: P['tools-integrations-razorpay'],
 		keywords: ['razorpay', 'payments', 'invoices', 'integrations'],
 		icon: Puzzle,
 	},
 	{
-		id: 'nav-integration-chargebee',
+		id: CommandPaletteCommandId.navIntegrationChargebee,
 		label: 'Integrations → Chargebee',
 		group: CommandPaletteGroup.GoTo,
-		path: R.integrationChargebee,
+		path: P['tools-integrations-chargebee'],
 		keywords: ['chargebee', 'payments', 'invoices', 'integrations'],
 		icon: Puzzle,
 	},
 	{
-		id: 'nav-integration-hubspot',
+		id: CommandPaletteCommandId.navIntegrationHubspot,
 		label: 'Integrations → Hubspot',
 		group: CommandPaletteGroup.GoTo,
-		path: R.integrationHubspot,
+		path: P['tools-integrations-hubspot'],
 		keywords: ['hubspot', 'crm', 'sales', 'marketing', 'integrations'],
 		icon: Puzzle,
 	},
 	{
-		id: 'nav-integration-quickbooks',
+		id: CommandPaletteCommandId.navIntegrationQuickbooks,
 		label: 'Integrations → QuickBooks',
 		group: CommandPaletteGroup.GoTo,
-		path: R.integrationQuickbooks,
+		path: P['tools-integrations-quickbooks'],
 		keywords: ['quickbooks', 'accounting', 'invoices', 'integrations'],
 		icon: Puzzle,
 	},
 	{
-		id: 'nav-integration-nomod',
+		id: CommandPaletteCommandId.navIntegrationNomod,
 		label: 'Integrations → Nomod',
 		group: CommandPaletteGroup.GoTo,
-		path: R.integrationNomod,
+		path: P['tools-integrations-nomod'],
 		keywords: ['nomod', 'payments', 'invoices', 'integrations'],
 		icon: Puzzle,
 	},
 	{
-		id: 'nav-integration-moyasar',
+		id: CommandPaletteCommandId.navIntegrationMoyasar,
 		label: 'Integrations → Moyasar',
 		group: CommandPaletteGroup.GoTo,
-		path: R.integrationMoyasar,
+		path: P['tools-integrations-moyasar'],
 		keywords: ['moyasar', 'payments', 'invoices', 'integrations'],
 		icon: Puzzle,
 	},
 	{
-		id: 'nav-pricing-widget',
+		id: CommandPaletteCommandId.navPricingWidget,
 		label: 'Pricing Widget',
 		group: CommandPaletteGroup.GoTo,
-		path: R.pricing,
+		path: P['product-catalog-pricing-widget'],
 		keywords: ['pricing', 'widget', 'embed'],
 		icon: GalleryHorizontalEnd,
 	},

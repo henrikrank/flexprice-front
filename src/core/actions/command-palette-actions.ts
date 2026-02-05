@@ -2,7 +2,7 @@
  * Centralized system for command-palette executable actions.
  * Use this for actions that run logic (fire events, open consumers, docs, contact, etc.) instead of or in addition to navigation.
  *
- * - Add new action IDs here and in commandPaletteCommands.ts.
+ * - Add new action IDs here and in @/config/command-palette.
  * - Consumers (e.g. DebugMenu) subscribe to the event bus for the action IDs they handle.
  * - Built-in handlers (e.g. open URL) run immediately when dispatching; no subscriber needed.
  */

@@ -5,7 +5,7 @@ import { useNavigate } from 'react-router';
 import { defaultFilter } from 'cmdk';
 import { CommandPaletteDialog, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command-palette';
 
-import { commandPaletteCommands, COMMAND_PALETTE_INITIAL_SUGGESTED_IDS, CommandPaletteGroup } from '@/config/commandPaletteCommands';
+import { commandPaletteCommands, COMMAND_PALETTE_INITIAL_SUGGESTED_IDS, CommandPaletteGroup } from '@/config/command-palette';
 import {
 	dispatchCommandPaletteAction,
 	getCommandPaletteActionEventName,
