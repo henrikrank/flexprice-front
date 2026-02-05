@@ -15,7 +15,12 @@ import {
 import useEnvironment from '@/hooks/useEnvironment';
 import { toast } from 'react-hot-toast';
 
-const GROUPS_ORDER = [CommandPaletteGroup.Actions, CommandPaletteGroup.GoTo, CommandPaletteGroup.Help] as const;
+const GROUPS_ORDER = [
+	CommandPaletteGroup.Actions,
+	CommandPaletteGroup.GoTo,
+	CommandPaletteGroup.Help,
+	CommandPaletteGroup.Documentation,
+] as const;
 
 const CommandPalette = () => {
 	const [open, setOpen] = useState(false);
@@ -107,6 +112,9 @@ const CommandPalette = () => {
 	// }, [search, suggestedIdsSet]);
 
 	const handleSelect = (command: (typeof visibleCommands)[number]) => {
+		if (command.externalUrl) {
+			window.open(command.externalUrl, '_blank', 'noopener,noreferrer');
+		}
 		if (command.actionId) {
 			dispatchCommandPaletteAction(command.actionId);
 		}

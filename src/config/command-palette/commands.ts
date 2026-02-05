@@ -30,11 +30,15 @@ import { CommandPaletteActionId } from '@/core/actions';
 import { CommandPaletteCommandId, type CommandPaletteCommandIdType, CommandPaletteGroup, type CommandPaletteGroupType } from './ids';
 import { commandPalettePaths } from './paths';
 
+const DOCS_BASE = 'https://docs.flexprice.io';
+
 export interface CommandPaletteCommand {
 	id: CommandPaletteCommandIdType;
 	label: string;
 	group: CommandPaletteGroupType;
 	path?: string;
+	/** Open this URL in a new tab (for documentation links). */
+	externalUrl?: string;
 	/** When set, the organism will look up and run a handler for this id (in addition to optional path). */
 	actionId?: CommandPaletteActionIdType;
 	keywords?: string[];
@@ -117,6 +121,103 @@ export const commandPaletteCommands: CommandPaletteCommand[] = [
 		actionId: CommandPaletteActionId.Logout,
 		keywords: ['sign out', 'signout', 'account', 'exit'],
 		icon: LogOut,
+	},
+	// Documentation (product‑helpful doc links; open in new tab)
+	{
+		id: CommandPaletteCommandId.docWelcome,
+		label: 'Docs: Welcome & overview',
+		group: CommandPaletteGroup.Documentation,
+		externalUrl: `${DOCS_BASE}/docs/welcome-to-flexprice`,
+		keywords: ['docs', 'welcome', 'intro', 'overview', 'getting started'],
+		icon: BookOpen,
+	},
+	{
+		id: CommandPaletteCommandId.docCreatingMeteredFeature,
+		label: 'Docs: Creating a metered feature',
+		group: CommandPaletteGroup.Documentation,
+		externalUrl: `${DOCS_BASE}/docs/event-ingestion/creating-a-metered-feature`,
+		keywords: ['docs', 'metered', 'feature', 'events', 'usage'],
+		icon: BookOpen,
+	},
+	{
+		id: CommandPaletteCommandId.docSendingEvents,
+		label: 'Docs: Sending events',
+		group: CommandPaletteGroup.Documentation,
+		externalUrl: `${DOCS_BASE}/docs/event-ingestion/sending-events`,
+		keywords: ['docs', 'events', 'ingest', 'usage', 'api'],
+		icon: BookOpen,
+	},
+	{
+		id: CommandPaletteCommandId.docCreatingPlan,
+		label: 'Docs: Creating a plan',
+		group: CommandPaletteGroup.Documentation,
+		externalUrl: `${DOCS_BASE}/docs/product-catalogue/plans/create`,
+		keywords: ['docs', 'plan', 'pricing', 'product catalog'],
+		icon: BookOpen,
+	},
+	{
+		id: CommandPaletteCommandId.docCreatingFeature,
+		label: 'Docs: Creating a feature',
+		group: CommandPaletteGroup.Documentation,
+		externalUrl: `${DOCS_BASE}/docs/product-catalogue/features/create`,
+		keywords: ['docs', 'feature', 'product catalog'],
+		icon: BookOpen,
+	},
+	{
+		id: CommandPaletteCommandId.docCreatingCustomer,
+		label: 'Docs: Creating a customer',
+		group: CommandPaletteGroup.Documentation,
+		externalUrl: `${DOCS_BASE}/docs/customers/create`,
+		keywords: ['docs', 'customer', 'billing'],
+		icon: BookOpen,
+	},
+	{
+		id: CommandPaletteCommandId.docCreateSubscription,
+		label: 'Docs: Create subscription for customer',
+		group: CommandPaletteGroup.Documentation,
+		externalUrl: `${DOCS_BASE}/docs/subscriptions/customers-create-subscription`,
+		keywords: ['docs', 'subscription', 'billing', 'customer'],
+		icon: BookOpen,
+	},
+	{
+		id: CommandPaletteCommandId.docCreatingWallet,
+		label: 'Docs: Creating a wallet',
+		group: CommandPaletteGroup.Documentation,
+		externalUrl: `${DOCS_BASE}/docs/wallet/create`,
+		keywords: ['docs', 'wallet', 'credits', 'prepaid'],
+		icon: BookOpen,
+	},
+	{
+		id: CommandPaletteCommandId.docInvoicesOverview,
+		label: 'Docs: Invoices overview',
+		group: CommandPaletteGroup.Documentation,
+		externalUrl: `${DOCS_BASE}/docs/invoices/overview`,
+		keywords: ['docs', 'invoices', 'billing'],
+		icon: BookOpen,
+	},
+	{
+		id: CommandPaletteCommandId.docApiReference,
+		label: 'Docs: API Reference',
+		group: CommandPaletteGroup.Documentation,
+		externalUrl: `${DOCS_BASE}/api-reference/introduction`,
+		keywords: ['docs', 'api', 'reference', 'developer'],
+		icon: CodeXml,
+	},
+	{
+		id: CommandPaletteCommandId.docWebhooks,
+		label: 'Docs: Webhooks',
+		group: CommandPaletteGroup.Documentation,
+		externalUrl: `${DOCS_BASE}/docs/webhook/webhooks`,
+		keywords: ['docs', 'webhooks', 'developer'],
+		icon: BookOpen,
+	},
+	{
+		id: CommandPaletteCommandId.docApiKeys,
+		label: 'Docs: Manage API Keys',
+		group: CommandPaletteGroup.Documentation,
+		externalUrl: `${DOCS_BASE}/docs/rbac/api`,
+		keywords: ['docs', 'api keys', 'rbac', 'developer'],
+		icon: BookOpen,
 	},
 	// Go to - Home
 	{

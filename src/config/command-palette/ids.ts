@@ -5,6 +5,19 @@ export const CommandPaletteCommandId = {
 	actionSimulateIngestEvents: 'action-simulate-ingest-events',
 	// Help
 	actionOpenDocumentation: 'action-open-documentation',
+	// Documentation (external doc links - product‑helpful only)
+	docWelcome: 'doc-welcome',
+	docCreatingMeteredFeature: 'doc-creating-metered-feature',
+	docSendingEvents: 'doc-sending-events',
+	docCreatingPlan: 'doc-creating-plan',
+	docCreatingFeature: 'doc-creating-feature',
+	docCreatingCustomer: 'doc-creating-customer',
+	docCreateSubscription: 'doc-create-subscription',
+	docCreatingWallet: 'doc-creating-wallet',
+	docInvoicesOverview: 'doc-invoices-overview',
+	docApiReference: 'doc-api-reference',
+	docWebhooks: 'doc-webhooks',
+	docApiKeys: 'doc-api-keys',
 	actionKeyboardShortcuts: 'action-keyboard-shortcuts',
 	actionContactUs: 'action-contact-us',
 	actionBookCall: 'action-book-call',
@@ -56,8 +69,9 @@ export type CommandPaletteCommandIdType = (typeof CommandPaletteCommandId)[keyof
 
 export const CommandPaletteGroup = {
 	Actions: 'Actions',
-	Help: 'Help',
 	GoTo: 'Go to',
+	Documentation: 'Documentation',
+	Help: 'Help',
 } as const;
 
 export type CommandPaletteGroupType = (typeof CommandPaletteGroup)[keyof typeof CommandPaletteGroup];
