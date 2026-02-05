@@ -6,17 +6,10 @@ import { defaultFilter } from 'cmdk';
 import { CommandPaletteDialog, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command-palette';
 
 import { commandPaletteCommands, COMMAND_PALETTE_INITIAL_SUGGESTED_IDS, CommandPaletteGroup } from '@/config/commandPaletteCommands';
+import { dispatchCommandPaletteAction, isCommandPaletteActionDevOnly } from '@/core/actions';
 import useEnvironment from '@/hooks/useEnvironment';
 
-const GROUPS_ORDER = [CommandPaletteGroup.Actions, CommandPaletteGroup.GoTo];
-
-const COMMAND_PALETTE_DEBUG_SIMULATE_EVENT = 'command-palette:debug-simulate-ingest-events';
-
-const ACTION_HANDLERS: Record<string, () => void> = {
-	'debug-simulate-ingest-events': () => {
-		window.dispatchEvent(new CustomEvent(COMMAND_PALETTE_DEBUG_SIMULATE_EVENT));
-	},
-};
+const GROUPS_ORDER = [CommandPaletteGroup.Actions, CommandPaletteGroup.GoTo, CommandPaletteGroup.Help] as const;
 
 const CommandPalette = () => {
 	const [open, setOpen] = useState(false);
@@ -47,7 +40,7 @@ const CommandPalette = () => {
 
 	const visibleCommands = useMemo(() => {
 		return commandPaletteCommands.filter((cmd) => {
-			if (cmd.id === 'action-simulate-ingest-events') return isDevelopment;
+			if (cmd.actionId && isCommandPaletteActionDevOnly(cmd.actionId)) return isDevelopment;
 			return true;
 		});
 	}, [isDevelopment]);
@@ -68,7 +61,7 @@ const CommandPalette = () => {
 		const set = new Set<string>();
 		for (const cmd of visibleCommands) {
 			if (suggestedIdsSet.has(cmd.id)) {
-				const value = [cmd.label, ...(cmd.keywords ?? [])].join(' ');
+				const value = [cmd.label, cmd.group, ...(cmd.keywords ?? [])].join(' ');
 				set.add(value);
 			}
 		}
@@ -96,8 +89,8 @@ const CommandPalette = () => {
 	// }, [search, suggestedIdsSet]);
 
 	const handleSelect = (command: (typeof visibleCommands)[number]) => {
-		if (command.actionId && ACTION_HANDLERS[command.actionId]) {
-			ACTION_HANDLERS[command.actionId]();
+		if (command.actionId) {
+			dispatchCommandPaletteAction(command.actionId);
 		}
 		if (command.path) {
 			navigate(command.path);
@@ -117,7 +110,7 @@ const CommandPalette = () => {
 						<CommandGroup className='!font-normal' key={groupName} heading={groupName}>
 							{items.map((command) => {
 								const Icon = command.icon;
-								const searchValue = [command.label, ...(command.keywords ?? [])].join(' ');
+								const searchValue = [command.label, command.group, ...(command.keywords ?? [])].join(' ');
 								return (
 									<CommandItem
 										key={command.id}

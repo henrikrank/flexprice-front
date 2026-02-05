@@ -16,7 +16,13 @@ import {
 	UserCog,
 	Webhook,
 	Rocket,
+	Radio,
+	BookOpen,
+	Mail,
+	CalendarDays,
+	MessageCircle,
 } from 'lucide-react';
+import { CommandPaletteActionId } from '@/core/actions';
 
 // Paths match RouteNames in @/core/routes/Routes - duplicated here to avoid circular dependency
 // (Routes -> MainLayout -> CommandPalette -> commandPaletteCommands -> Routes)
@@ -70,12 +76,14 @@ export interface CommandPaletteCommand {
 
 export enum CommandPaletteGroup {
 	Actions = 'Actions',
+	Help = 'Help',
 	GoTo = 'Go to',
 }
 
 /** Command IDs shown when the palette is first opened (before user types). */
 export const COMMAND_PALETTE_INITIAL_SUGGESTED_IDS: string[] = [
 	'action-create-feature',
+	'action-open-documentation',
 	'nav-home',
 	'nav-product-catalog-features',
 	'nav-product-catalog-plans',
@@ -96,9 +104,50 @@ export const commandPaletteCommands: CommandPaletteCommand[] = [
 		id: 'action-simulate-ingest-events',
 		label: 'Simulate ingest events',
 		group: CommandPaletteGroup.Actions,
-		actionId: 'debug-simulate-ingest-events',
+		actionId: CommandPaletteActionId.DebugSimulateIngestEvents,
 		keywords: ['debug', 'events', 'stream', 'ingest'],
 		icon: Rocket,
+	},
+	{
+		id: 'action-events-consumer',
+		label: 'Events consumer',
+		group: CommandPaletteGroup.Actions,
+		actionId: CommandPaletteActionId.EventsConsumer,
+		keywords: ['debug', 'consumer', 'lag', 'events', 'monitoring'],
+		icon: Radio,
+	},
+	// Help (documentation, contact, community)
+	{
+		id: 'action-open-documentation',
+		label: 'Open documentation',
+		group: CommandPaletteGroup.Help,
+		actionId: CommandPaletteActionId.OpenDocumentation,
+		keywords: ['docs', 'help', 'api', 'developer', 'readme'],
+		icon: BookOpen,
+	},
+	{
+		id: 'action-contact-us',
+		label: 'Contact us',
+		group: CommandPaletteGroup.Help,
+		actionId: CommandPaletteActionId.ContactUs,
+		keywords: ['support', 'email', 'help', 'contact'],
+		icon: Mail,
+	},
+	{
+		id: 'action-book-call',
+		label: 'Book a call',
+		group: CommandPaletteGroup.Help,
+		actionId: CommandPaletteActionId.BookCall,
+		keywords: ['demo', 'calendly', 'schedule', 'meeting'],
+		icon: CalendarDays,
+	},
+	{
+		id: 'action-join-slack',
+		label: 'Join Slack community',
+		group: CommandPaletteGroup.Help,
+		actionId: CommandPaletteActionId.JoinSlackCommunity,
+		keywords: ['slack', 'community', 'chat', 'support'],
+		icon: MessageCircle,
 	},
 	// Go to - Home
 	{

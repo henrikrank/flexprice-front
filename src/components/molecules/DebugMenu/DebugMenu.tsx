@@ -9,6 +9,7 @@ import { Link, useNavigate } from 'react-router';
 import { Progress } from '@/components/ui';
 import { RouteNames } from '@/core/routes/Routes';
 import EventsApi from '@/api/EventsApi';
+import { getCommandPaletteActionEventName, CommandPaletteActionId } from '@/core/actions';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui';
 import { AddButton } from '@/components/atoms';
 
@@ -98,12 +99,13 @@ const DebugMenu = () => {
 	handleStartStreamingRef.current = handleStartStreaming;
 
 	useEffect(() => {
+		const eventName = getCommandPaletteActionEventName(CommandPaletteActionId.DebugSimulateIngestEvents);
 		const handler = () => {
 			handleStartStreamingRef.current();
 			setIsOpen(true);
 		};
-		window.addEventListener('command-palette:debug-simulate-ingest-events', handler);
-		return () => window.removeEventListener('command-palette:debug-simulate-ingest-events', handler);
+		window.addEventListener(eventName, handler);
+		return () => window.removeEventListener(eventName, handler);
 	}, []);
 
 	const handleClose = () => {
