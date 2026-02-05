@@ -28,19 +28,31 @@ const R = {
 	addons: '/product-catalog/addons',
 	costSheets: '/product-catalog/cost-sheets',
 	priceUnits: '/product-catalog/price-units',
+	groups: '/product-catalog/groups',
 	customers: '/billing/customers',
 	subscriptions: '/billing/subscriptions',
 	taxes: '/billing/taxes',
 	invoices: '/billing/invoices',
 	creditNotes: '/billing/credit-notes',
 	payments: '/billing/payments',
+	customerBilling: '/settings/billing',
 	bulkImports: '/tools/bulk-imports',
 	exports: '/tools/exports',
+	s3Exports: '/tools/exports/s3',
 	events: '/usage-tracking/events',
+	queryPage: '/usage-tracking/query',
 	apiKeys: '/developers/api-keys',
 	serviceAccounts: '/developers/service-accounts',
 	webhooks: '/developers/webhooks',
 	integrations: '/tools/integrations',
+	// Individual integration detail routes (path = /tools/integrations/:id, id = name.toLowerCase())
+	integrationStripe: '/tools/integrations/stripe',
+	integrationRazorpay: '/tools/integrations/razorpay',
+	integrationChargebee: '/tools/integrations/chargebee',
+	integrationHubspot: '/tools/integrations/hubspot',
+	integrationQuickbooks: '/tools/integrations/quickbooks',
+	integrationNomod: '/tools/integrations/nomod',
+	integrationMoyasar: '/tools/integrations/moyasar',
 	pricing: '/product-catalog/pricing-widget',
 } as const;
 
@@ -77,7 +89,6 @@ export const commandPaletteCommands: CommandPaletteCommand[] = [
 		keywords: ['new', 'add', 'feature', 'product'],
 		icon: Plus,
 	},
-
 	// Go to - Home
 	{
 		id: 'nav-home',
@@ -137,6 +148,14 @@ export const commandPaletteCommands: CommandPaletteCommand[] = [
 		keywords: ['price units', 'units', 'product', 'catalog'],
 		icon: Layers2,
 	},
+	{
+		id: 'nav-product-catalog-groups',
+		label: 'Product Catalog → Groups',
+		group: CommandPaletteGroup.GoTo,
+		path: R.groups,
+		keywords: ['groups', 'product', 'catalog'],
+		icon: Layers2,
+	},
 
 	// Go to - Billing
 	{
@@ -188,6 +207,16 @@ export const commandPaletteCommands: CommandPaletteCommand[] = [
 		icon: Wallet,
 	},
 
+	// Go to - Settings
+	{
+		id: 'nav-settings-billing',
+		label: 'Settings → Billing',
+		group: CommandPaletteGroup.GoTo,
+		path: R.customerBilling,
+		keywords: ['settings', 'billing', 'payment'],
+		icon: Landmark,
+	},
+
 	// Go to - Tools
 	{
 		id: 'nav-tools-imports',
@@ -205,14 +234,30 @@ export const commandPaletteCommands: CommandPaletteCommand[] = [
 		keywords: ['exports', 'tools'],
 		icon: Settings,
 	},
+	{
+		id: 'nav-tools-s3-exports',
+		label: 'Tools → S3 Exports',
+		group: CommandPaletteGroup.GoTo,
+		path: R.s3Exports,
+		keywords: ['s3', 'exports', 'tools'],
+		icon: Settings,
+	},
 
 	// Go to - Developers
 	{
 		id: 'nav-developers-events',
-		label: 'Developers → Events Debugger',
+		label: 'Usage Tracking → Events Debugger',
 		group: CommandPaletteGroup.GoTo,
 		path: R.events,
 		keywords: ['events', 'debugger', 'usage', 'developers'],
+		icon: CodeXml,
+	},
+	{
+		id: 'nav-usage-tracking-query',
+		label: 'Usage Tracking → Query',
+		group: CommandPaletteGroup.GoTo,
+		path: R.queryPage,
+		keywords: ['query', 'usage', 'tracking', 'metrics'],
 		icon: CodeXml,
 	},
 	{
@@ -247,6 +292,62 @@ export const commandPaletteCommands: CommandPaletteCommand[] = [
 		group: CommandPaletteGroup.GoTo,
 		path: R.integrations,
 		keywords: ['integrations', 'tools', 'quickbooks'],
+		icon: Puzzle,
+	},
+	{
+		id: 'nav-integration-stripe',
+		label: 'Integrations → Stripe',
+		group: CommandPaletteGroup.GoTo,
+		path: R.integrationStripe,
+		keywords: ['stripe', 'payments', 'invoices', 'integrations'],
+		icon: Puzzle,
+	},
+	{
+		id: 'nav-integration-razorpay',
+		label: 'Integrations → Razorpay',
+		group: CommandPaletteGroup.GoTo,
+		path: R.integrationRazorpay,
+		keywords: ['razorpay', 'payments', 'invoices', 'integrations'],
+		icon: Puzzle,
+	},
+	{
+		id: 'nav-integration-chargebee',
+		label: 'Integrations → Chargebee',
+		group: CommandPaletteGroup.GoTo,
+		path: R.integrationChargebee,
+		keywords: ['chargebee', 'payments', 'invoices', 'integrations'],
+		icon: Puzzle,
+	},
+	{
+		id: 'nav-integration-hubspot',
+		label: 'Integrations → Hubspot',
+		group: CommandPaletteGroup.GoTo,
+		path: R.integrationHubspot,
+		keywords: ['hubspot', 'crm', 'sales', 'marketing', 'integrations'],
+		icon: Puzzle,
+	},
+	{
+		id: 'nav-integration-quickbooks',
+		label: 'Integrations → QuickBooks',
+		group: CommandPaletteGroup.GoTo,
+		path: R.integrationQuickbooks,
+		keywords: ['quickbooks', 'accounting', 'invoices', 'integrations'],
+		icon: Puzzle,
+	},
+	{
+		id: 'nav-integration-nomod',
+		label: 'Integrations → Nomod',
+		group: CommandPaletteGroup.GoTo,
+		path: R.integrationNomod,
+		keywords: ['nomod', 'payments', 'invoices', 'integrations'],
+		icon: Puzzle,
+	},
+	{
+		id: 'nav-integration-moyasar',
+		label: 'Integrations → Moyasar',
+		group: CommandPaletteGroup.GoTo,
+		path: R.integrationMoyasar,
+		keywords: ['moyasar', 'payments', 'invoices', 'integrations'],
 		icon: Puzzle,
 	},
 	{

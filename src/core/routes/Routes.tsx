@@ -111,7 +111,6 @@ export const RouteNames = {
 	billing: '/billing',
 	customers: '/billing/customers',
 	subscriptions: '/billing/subscriptions',
-	createSubscription: '/billing/subscriptions/create',
 	subscriptionDetails: '/billing/subscriptions/:id',
 	taxes: '/billing/taxes',
 	invoices: '/billing/invoices',

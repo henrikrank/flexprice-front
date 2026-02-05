@@ -70,13 +70,13 @@ const CommandPalette = () => {
 	);
 
 	/** When search is empty, only show the minimal suggested commands. */
-	const commandsToShow = useMemo(() => {
-		const trimmed = search?.trim() ?? '';
-		if (trimmed === '') {
-			return commandPaletteCommands.filter((cmd) => suggestedIdsSet.has(cmd.id));
-		}
-		return commandPaletteCommands;
-	}, [search, suggestedIdsSet]);
+	// const commandsToShow = useMemo(() => {
+	// 	const trimmed = search?.trim() ?? '';
+	// 	if (trimmed === '') {
+	// 		return commandPaletteCommands.filter((cmd) => suggestedIdsSet.has(cmd.id));
+	// 	}
+	// 	return commandPaletteCommands;
+	// }, [search, suggestedIdsSet]);
 
 	const handleSelect = (command: (typeof commandPaletteCommands)[number]) => {
 		if (command.path) {
