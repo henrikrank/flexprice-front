@@ -642,7 +642,6 @@ const UsagePricingForm: FC<Props> = ({
 				setDate={setStartDate}
 				label='Start Date (Optional)'
 				placeholder='Select start date'
-				minDate={new Date()}
 			/>
 			<SelectGroup
 				value={groupId}
