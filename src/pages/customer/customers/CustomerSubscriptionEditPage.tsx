@@ -127,7 +127,7 @@ const CustomerSubscriptionEditPage: React.FC = () => {
 
 	const { mutate: cancelCreditGrant } = useMutation({
 		mutationFn: async ({ creditGrantId, effectiveDate }: { creditGrantId: string; effectiveDate: string }) => {
-			return await CreditGrantApi.CancelFuture({
+			return await CreditGrantApi.CancelFutureCreditGrant({
 				subscription_id: subscriptionId!,
 				credit_grant_ids: [creditGrantId],
 				effective_date: effectiveDate,

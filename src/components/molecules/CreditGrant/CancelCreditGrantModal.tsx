@@ -1,4 +1,4 @@
-import { Button, Label, DatePicker } from '@/components/atoms';
+import { Button, DatePicker } from '@/components/atoms';
 import Dialog from '@/components/atoms/Dialog';
 import { useState, useCallback, useEffect } from 'react';
 import { CreditGrant } from '@/models';
@@ -12,10 +12,9 @@ interface Props {
 }
 
 const CancelCreditGrantModal: React.FC<Props> = ({ isOpen, onOpenChange, onConfirm, onCancel, creditGrant }) => {
-	const [effectiveDate, setEffectiveDate] = useState<Date | undefined>(new Date());
+	const [effectiveDate, setEffectiveDate] = useState<Date | undefined>(undefined);
 	const [error, setError] = useState<string>('');
 
-	// Reset to current date when modal opens
 	useEffect(() => {
 		if (isOpen) {
 			setEffectiveDate(new Date());
@@ -28,18 +27,9 @@ const CancelCreditGrantModal: React.FC<Props> = ({ isOpen, onOpenChange, onConfi
 			setError('Please select an effective date');
 			return;
 		}
-
-		setError('');
 		onConfirm(effectiveDate.toISOString());
 		onOpenChange(false);
-		setEffectiveDate(new Date());
 	}, [effectiveDate, onConfirm, onOpenChange]);
-
-	const handleCancel = useCallback(() => {
-		setError('');
-		setEffectiveDate(new Date());
-		onCancel();
-	}, [onCancel]);
 
 	return (
 		<Dialog isOpen={isOpen} showCloseButton={false} onOpenChange={onOpenChange} title='Cancel Credit Grant' className='sm:max-w-[500px]'>
@@ -50,8 +40,8 @@ const CancelCreditGrantModal: React.FC<Props> = ({ isOpen, onOpenChange, onConfi
 				</p>
 
 				<div className='space-y-2'>
-					<Label label='Effective Date *' />
 					<DatePicker
+						label='Effective Date *'
 						date={effectiveDate}
 						setDate={(date) => {
 							setEffectiveDate(date);
@@ -73,7 +63,7 @@ const CancelCreditGrantModal: React.FC<Props> = ({ isOpen, onOpenChange, onConfi
 			</div>
 
 			<div className='flex justify-end gap-2 mt-6'>
-				<Button variant='outline' onClick={handleCancel}>
+				<Button variant='outline' onClick={onCancel}>
 					Cancel
 				</Button>
 				<Button variant='destructive' onClick={handleConfirm}>

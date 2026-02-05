@@ -1,8 +1,8 @@
 import { Button, Input, Label, Select, SelectOption, DatePicker } from '@/components/atoms';
 import Dialog from '@/components/atoms/Dialog';
-import { CREDIT_GRANT_CADENCE, CREDIT_GRANT_EXPIRATION_TYPE, CREDIT_GRANT_PERIOD, CREDIT_SCOPE } from '@/models';
+import { CREDIT_GRANT_CADENCE, CREDIT_GRANT_EXPIRATION_TYPE, CREDIT_GRANT_PERIOD, CREDIT_GRANT_SCOPE } from '@/models';
 import { CreateCreditGrantRequest } from '@/types/dto/CreditGrant';
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import RectangleRadiogroup, { RectangleRadiogroupOption } from '../RectangleRadiogroup';
 import { creditGrantPeriodOptions } from '@/constants/constants';
 import { cn } from '@/lib/utils';
@@ -41,6 +41,19 @@ const expirationTypeOptions: SelectOption[] = [
 	},
 ];
 
+const billingCadenceOptions: RectangleRadiogroupOption[] = [
+	{
+		label: 'One-time',
+		value: CREDIT_GRANT_CADENCE.ONETIME,
+		description: 'This credit will be applied to the subscription once.',
+	},
+	{
+		label: 'Recurring',
+		value: CREDIT_GRANT_CADENCE.RECURRING,
+		description: 'This credit will be applied to the subscription every billing period.',
+	},
+];
+
 const EditSubscriptionCreditGrantModal: React.FC<Props> = ({
 	isOpen,
 	onOpenChange,
@@ -51,7 +64,7 @@ const EditSubscriptionCreditGrantModal: React.FC<Props> = ({
 }) => {
 	const [errors, setErrors] = useState<FormErrors>({});
 	const [formData, setFormData] = useState<Partial<CreateCreditGrantRequest>>({
-		scope: CREDIT_SCOPE.SUBSCRIPTION,
+		scope: CREDIT_GRANT_SCOPE.SUBSCRIPTION,
 		subscription_id: subscriptionId,
 		cadence: CREDIT_GRANT_CADENCE.ONETIME,
 		credits: 0,
@@ -67,7 +80,7 @@ const EditSubscriptionCreditGrantModal: React.FC<Props> = ({
 	useEffect(() => {
 		if (isOpen) {
 			setFormData({
-				scope: CREDIT_SCOPE.SUBSCRIPTION,
+				scope: CREDIT_GRANT_SCOPE.SUBSCRIPTION,
 				subscription_id: subscriptionId,
 				cadence: CREDIT_GRANT_CADENCE.ONETIME,
 				credits: 0,
@@ -88,7 +101,7 @@ const EditSubscriptionCreditGrantModal: React.FC<Props> = ({
 			// Build sanitized object with required fields explicitly set
 			const sanitized: CreateCreditGrantRequest = {
 				name: data.name?.trim() || '',
-				scope: CREDIT_SCOPE.SUBSCRIPTION,
+				scope: CREDIT_GRANT_SCOPE.SUBSCRIPTION,
 				subscription_id: subscriptionId,
 				cadence: data.cadence || CREDIT_GRANT_CADENCE.ONETIME,
 				credits: Math.max(0, Number(data.credits) || 0),
@@ -193,30 +206,11 @@ const EditSubscriptionCreditGrantModal: React.FC<Props> = ({
 			return;
 		}
 
-		// Clear errors and sanitize data before saving
-		setErrors({});
 		const sanitizedData = sanitizeData(formData);
 
 		onSave(sanitizedData);
 		onOpenChange(false);
 	}, [formData, validateForm, sanitizeData, onSave, onOpenChange]);
-
-	const handleCancel = useCallback(() => {
-		setFormData({
-			scope: CREDIT_SCOPE.SUBSCRIPTION,
-			subscription_id: subscriptionId,
-			cadence: CREDIT_GRANT_CADENCE.ONETIME,
-			credits: 0,
-			expiration_type: CREDIT_GRANT_EXPIRATION_TYPE.NEVER,
-			priority: 0,
-			conversion_rate: 1,
-			topup_conversion_rate: 1,
-			start_date: subscriptionStartDate || new Date().toISOString(),
-			period: CREDIT_GRANT_PERIOD.MONTHLY, // Default to monthly
-		});
-		setErrors({});
-		onCancel();
-	}, [subscriptionId, subscriptionStartDate, onCancel]);
 
 	const handleFieldChange = useCallback(
 		(
@@ -224,32 +218,12 @@ const EditSubscriptionCreditGrantModal: React.FC<Props> = ({
 			value: string | number | Date | CREDIT_GRANT_CADENCE | CREDIT_GRANT_EXPIRATION_TYPE | CREDIT_GRANT_PERIOD | undefined,
 		) => {
 			setFormData((prev) => ({ ...prev, [field]: value }));
-			// Clear error for this field when user starts typing
-			if (errors[field as keyof FormErrors]) {
-				setErrors((prev) => ({ ...prev, [field]: undefined }));
-			}
+			setErrors((prev) => (prev[field as keyof FormErrors] === undefined ? prev : { ...prev, [field]: undefined }));
 		},
-		[errors],
+		[],
 	);
 
-	const billingCadenceOptions: RectangleRadiogroupOption[] = useMemo(() => {
-		return [
-			{
-				label: 'One-time',
-				value: CREDIT_GRANT_CADENCE.ONETIME,
-				description: 'This credit will be applied to the subscription once.',
-			},
-			{
-				label: 'Recurring',
-				value: CREDIT_GRANT_CADENCE.RECURRING,
-				description: 'This credit will be applied to the subscription every billing period.',
-			},
-		];
-	}, []);
-
-	const selectedCadenceDescription = useMemo(() => {
-		return billingCadenceOptions.find((option) => option.value === formData.cadence)?.description;
-	}, [billingCadenceOptions, formData.cadence]);
+	const selectedCadenceDescription = billingCadenceOptions.find((o) => o.value === formData.cadence)?.description;
 
 	return (
 		<Dialog isOpen={isOpen} showCloseButton={false} onOpenChange={onOpenChange} title='Add Credit Grant' className='sm:max-w-[600px]'>
@@ -268,8 +242,8 @@ const EditSubscriptionCreditGrantModal: React.FC<Props> = ({
 				</div>
 
 				<div className='space-y-2'>
-					<Label label='Credit Name' />
 					<Input
+						label='Credit Name'
 						placeholder='e.g. Welcome Credits'
 						value={formData.name || ''}
 						onChange={(value) => handleFieldChange('name', value)}
@@ -278,8 +252,8 @@ const EditSubscriptionCreditGrantModal: React.FC<Props> = ({
 				</div>
 
 				<div className='space-y-2'>
-					<Label label='Start Date *' />
 					<DatePicker
+						label='Start Date *'
 						date={formData.start_date ? new Date(formData.start_date) : undefined}
 						setDate={(date) => {
 							if (date) {
@@ -292,8 +266,8 @@ const EditSubscriptionCreditGrantModal: React.FC<Props> = ({
 				</div>
 
 				<div className='space-y-2'>
-					<Label label='Credits' />
 					<Input
+						label='Credits'
 						error={errors.credits}
 						placeholder='e.g. 1000'
 						variant='formatted-number'
@@ -352,8 +326,8 @@ const EditSubscriptionCreditGrantModal: React.FC<Props> = ({
 
 				{formData.cadence === CREDIT_GRANT_CADENCE.RECURRING && (
 					<div className='space-y-2'>
-						<Label label='Grant Period' />
 						<Select
+							label='Grant Period'
 							error={errors.period}
 							options={creditGrantPeriodOptions}
 							value={formData.period}
@@ -363,8 +337,8 @@ const EditSubscriptionCreditGrantModal: React.FC<Props> = ({
 				)}
 
 				<div className='space-y-2'>
-					<Label label='Expiry Type' />
 					<Select
+						label='Expiry Type'
 						error={errors.expiration_type}
 						options={expirationTypeOptions}
 						value={formData.expiration_type}
@@ -374,8 +348,8 @@ const EditSubscriptionCreditGrantModal: React.FC<Props> = ({
 
 				{formData.expiration_type === CREDIT_GRANT_EXPIRATION_TYPE.DURATION && (
 					<div className='space-y-2'>
-						<Label label='Expiry (days)' />
 						<Input
+							label='Expiry (days)'
 							error={errors.expiration_duration}
 							placeholder='e.g. 30'
 							variant='formatted-number'
@@ -393,8 +367,8 @@ const EditSubscriptionCreditGrantModal: React.FC<Props> = ({
 				)}
 
 				<div className='space-y-2'>
-					<Label label='Priority' />
 					<Input
+						label='Priority'
 						error={errors.priority}
 						placeholder='e.g. 0'
 						variant='formatted-number'
@@ -411,7 +385,7 @@ const EditSubscriptionCreditGrantModal: React.FC<Props> = ({
 			</div>
 
 			<div className='flex justify-end gap-2 mt-6'>
-				<Button variant='outline' onClick={handleCancel}>
+				<Button variant='outline' onClick={onCancel}>
 					Cancel
 				</Button>
 				<Button onClick={handleSave}>Add Credit</Button>

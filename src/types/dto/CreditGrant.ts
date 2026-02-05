@@ -5,7 +5,7 @@ import {
 	CREDIT_GRANT_PERIOD,
 	CREDIT_GRANT_EXPIRATION_TYPE,
 	CREDIT_GRANT_PERIOD_UNIT,
-	CREDIT_SCOPE,
+	CREDIT_GRANT_SCOPE,
 	Metadata,
 } from '@/models';
 import { QueryFilter, TimeRangeFilter } from './base';
@@ -16,7 +16,7 @@ import { QueryFilter, TimeRangeFilter } from './base';
 
 export interface CreateCreditGrantRequest {
 	name: string;
-	scope: CREDIT_SCOPE;
+	scope: CREDIT_GRANT_SCOPE;
 	plan_id?: string;
 	subscription_id?: string;
 	credits: number;
@@ -113,6 +113,6 @@ export interface ProcessScheduledCreditGrantApplicationsResponse {
 
 export interface CancelFutureCreditGrantRequest {
 	subscription_id: string;
-	credit_grant_ids: string[];
+	credit_grant_ids?: string[];
 	effective_date: string;
 }

@@ -8,7 +8,13 @@ import { PlanApi, CreditGrantApi } from '@/api';
 import { CreditGrantsTable, CreditGrantModal } from '@/components/molecules';
 import { refetchQueries } from '@/core/services/tanstack/ReactQueryProvider';
 import toast from 'react-hot-toast';
-import { CREDIT_GRANT_PERIOD_UNIT, CREDIT_GRANT_EXPIRATION_TYPE, CREDIT_SCOPE, CREDIT_GRANT_CADENCE, CREDIT_GRANT_PERIOD } from '@/models';
+import {
+	CREDIT_GRANT_PERIOD_UNIT,
+	CREDIT_GRANT_EXPIRATION_TYPE,
+	CREDIT_GRANT_CADENCE,
+	CREDIT_GRANT_PERIOD,
+	CREDIT_GRANT_SCOPE,
+} from '@/models';
 import { InternalCreditGrantRequest, CreateCreditGrantRequest } from '@/types/dto/CreditGrant';
 import { ServerError } from '@/core/axios/types';
 
@@ -52,7 +58,7 @@ const PlanCreditGrantsTab = () => {
 			credits: 0,
 			period: CREDIT_GRANT_PERIOD.MONTHLY,
 			name: 'Free Credits',
-			scope: CREDIT_SCOPE.PLAN,
+			scope: CREDIT_GRANT_SCOPE.PLAN,
 			cadence: CREDIT_GRANT_CADENCE.ONETIME,
 			period_count: 1,
 			plan_id: planId!,

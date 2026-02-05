@@ -33,7 +33,7 @@ class CreditGrantApi {
 		return await AxiosClient.get<CreditGrantResponse>(`${this.baseUrl}/${id}`);
 	}
 
-	public static async CancelFuture(data: CancelFutureCreditGrantRequest) {
+	public static async CancelFutureCreditGrant(data: CancelFutureCreditGrantRequest) {
 		return await AxiosClient.post<void, CancelFutureCreditGrantRequest>(`${this.baseUrl}/cancel`, data);
 	}
 }

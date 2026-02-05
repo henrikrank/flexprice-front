@@ -8,8 +8,13 @@ import toast from 'react-hot-toast';
 import SubscriptionCreditGrantTable from '@/components/molecules/CreditGrant/SubscriptionCreditGrantTable';
 import SubscriptionAddonTable from '@/components/molecules/SubscriptionAddonTable/SubscriptionAddonTable';
 import { BILLING_CYCLE } from '@/models/Subscription';
-import { CREDIT_GRANT_CADENCE, CREDIT_GRANT_EXPIRATION_TYPE, CREDIT_GRANT_PERIOD, CREDIT_GRANT_PERIOD_UNIT } from '@/models/CreditGrant';
-import { CREDIT_SCOPE } from '@/models';
+import {
+	CREDIT_GRANT_CADENCE,
+	CREDIT_GRANT_EXPIRATION_TYPE,
+	CREDIT_GRANT_PERIOD,
+	CREDIT_GRANT_PERIOD_UNIT,
+	CREDIT_GRANT_SCOPE,
+} from '@/models';
 import { BILLING_PERIOD } from '@/constants/constants';
 import { SubscriptionFormState } from '@/pages';
 import { useQuery } from '@tanstack/react-query';
@@ -214,7 +219,7 @@ const SubscriptionForm = ({
 		return {
 			id: uniqueId('credit-grant-'),
 			name: 'Free Credits',
-			scope: CREDIT_SCOPE.SUBSCRIPTION,
+			scope: CREDIT_GRANT_SCOPE.SUBSCRIPTION,
 			credits: 0,
 			cadence: CREDIT_GRANT_CADENCE.ONETIME,
 			period: CREDIT_GRANT_PERIOD.MONTHLY,
@@ -629,13 +634,13 @@ const SubscriptionForm = ({
 								// Deleted: not in data anymore
 								if (!grantInData) return true;
 								// Edited: scope changed from PLAN to SUBSCRIPTION
-								if (grantInData.scope === CREDIT_SCOPE.SUBSCRIPTION) return true;
+								if (grantInData.scope === CREDIT_GRANT_SCOPE.SUBSCRIPTION) return true;
 								return false;
 							});
 
 							// Check if there are any new subscription-level grants (not from plan)
 							const hasNewSubscriptionGrants = data.some(
-								(grant) => !planLevelCreditGrantIds.has(grant.id) && grant.scope === CREDIT_SCOPE.SUBSCRIPTION,
+								(grant) => !planLevelCreditGrantIds.has(grant.id) && grant.scope === CREDIT_GRANT_SCOPE.SUBSCRIPTION,
 							);
 
 							// If plan grants were modified OR new subscription grants were added, convert all to subscription level
@@ -646,10 +651,10 @@ const SubscriptionForm = ({
 								// convert ALL remaining plan grants to subscription scope
 								const convertedGrants = data.map((grant) => {
 									// If it's an unedited plan-level grant (still has PLAN scope), convert it now
-									if (planLevelCreditGrantIds.has(grant.id) && grant.scope !== CREDIT_SCOPE.SUBSCRIPTION) {
+									if (planLevelCreditGrantIds.has(grant.id) && grant.scope !== CREDIT_GRANT_SCOPE.SUBSCRIPTION) {
 										return {
 											...grant,
-											scope: CREDIT_SCOPE.SUBSCRIPTION,
+											scope: CREDIT_GRANT_SCOPE.SUBSCRIPTION,
 											subscription_id: uniqueId('sub_'),
 											plan_id: undefined,
 										};

@@ -1,11 +1,11 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { AddButton, FormHeader, ActionButton } from '@/components/atoms';
 import FlexpriceTable, { ColumnData } from '../Table';
 import CreditGrantModal from './CreditGrantModal';
 import { formatBillingPeriodForPrice } from '@/utils/common/helper_functions';
 import { formatExpirationPeriod } from '@/utils/common/credit_grant_helpers';
 import { InternalCreditGrantRequest } from '@/types/dto/CreditGrant';
-import { CreditGrant, CREDIT_SCOPE } from '@/models';
+import { CreditGrant, CREDIT_GRANT_SCOPE } from '@/models';
 
 interface Props {
 	data: InternalCreditGrantRequest[];
@@ -29,21 +29,25 @@ const SubscriptionCreditGrantTable: React.FC<Props> = ({
 	const [isOpen, setIsOpen] = useState(false);
 	const [selectedCreditGrant, setSelectedCreditGrant] = useState<InternalCreditGrantRequest | null>(null);
 
+	useEffect(() => {
+		if (!isOpen) {
+			setSelectedCreditGrant(null);
+		}
+	}, [isOpen]);
+
 	const handleSave = (newCreditGrant: InternalCreditGrantRequest) => {
 		if (selectedCreditGrant) {
 			const isPlanLevelGrant = planLevelCreditGrantIds.has(selectedCreditGrant.id);
 
-			// Mark this grant as edited BEFORE calling onChange (so parent's state is consistent)
 			if (isPlanLevelGrant && onMarkAsEdited) {
 				onMarkAsEdited(selectedCreditGrant.id);
 			}
 
-			// If editing a plan-level credit grant, convert it to subscription scope
 			const updatedGrant = isPlanLevelGrant
 				? {
 						...newCreditGrant,
 						id: selectedCreditGrant.id,
-						scope: CREDIT_SCOPE.SUBSCRIPTION,
+						scope: CREDIT_GRANT_SCOPE.SUBSCRIPTION,
 						subscription_id: subscriptionId,
 						plan_id: undefined,
 					}
@@ -54,16 +58,12 @@ const SubscriptionCreditGrantTable: React.FC<Props> = ({
 
 			onChange(data.map((credit) => (credit.id === selectedCreditGrant.id ? updatedGrant : credit)));
 		} else {
-			// Add new credit - id should already be set by getEmptyCreditGrant
 			onChange([...data, newCreditGrant]);
 		}
-		setSelectedCreditGrant(null);
 	};
 
 	const handleDelete = async (id: string) => {
 		onChange(data.filter((grant) => grant.id !== id));
-
-		// If deleting a plan-level grant, mark it as deleted (handled by filter)
 		const isPlanLevelGrant = planLevelCreditGrantIds.has(id);
 		if (isPlanLevelGrant && onMarkAsEdited) {
 			onMarkAsEdited(id);
@@ -132,25 +132,16 @@ const SubscriptionCreditGrantTable: React.FC<Props> = ({
 		<>
 			<CreditGrantModal
 				getEmptyCreditGrant={getEmptyCreditGrant}
-				data={selectedCreditGrant || undefined}
+				data={selectedCreditGrant ?? undefined}
 				isOpen={isOpen}
 				onOpenChange={setIsOpen}
 				onSave={handleSave}
-				onCancel={() => {
-					setIsOpen(false);
-					setSelectedCreditGrant(null);
-				}}
+				onCancel={() => setIsOpen(false)}
 			/>
 			<div className='space-y-4'>
 				<div className='flex items-center justify-between'>
 					<FormHeader className='mb-0' title='Credit Grants' variant='sub-header' />
-					<AddButton
-						onClick={() => {
-							setSelectedCreditGrant(null);
-							setIsOpen(true);
-						}}
-						disabled={disabled}
-					/>
+					<AddButton onClick={() => setIsOpen(true)} disabled={disabled} />
 				</div>
 				<div className='rounded-xl border border-gray-300'>
 					<FlexpriceTable data={data} columns={columns} showEmptyRow />
