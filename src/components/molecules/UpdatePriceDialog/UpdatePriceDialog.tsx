@@ -479,7 +479,6 @@ const UpdatePriceDialog: FC<UpdatePriceDialogProps> = ({ isOpen, onOpenChange, p
 							placeholder='Select date for scheduled update'
 							date={effectiveFrom}
 							setDate={setEffectiveFrom}
-							minDate={new Date()}
 							className='w-full'
 							labelClassName=''
 							popoverTriggerClassName='w-full'
