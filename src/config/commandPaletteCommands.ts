@@ -16,11 +16,12 @@ import {
 	UserCog,
 	Webhook,
 	Rocket,
-	Radio,
 	BookOpen,
 	Mail,
 	CalendarDays,
 	MessageCircle,
+	BotMessageSquare,
+	LogOut,
 } from 'lucide-react';
 import { CommandPaletteActionId } from '@/core/actions';
 
@@ -108,14 +109,6 @@ export const commandPaletteCommands: CommandPaletteCommand[] = [
 		keywords: ['debug', 'events', 'stream', 'ingest'],
 		icon: Rocket,
 	},
-	{
-		id: 'action-events-consumer',
-		label: 'Events consumer',
-		group: CommandPaletteGroup.Actions,
-		actionId: CommandPaletteActionId.EventsConsumer,
-		keywords: ['debug', 'consumer', 'lag', 'events', 'monitoring'],
-		icon: Radio,
-	},
 	// Help (documentation, contact, community)
 	{
 		id: 'action-open-documentation',
@@ -148,6 +141,22 @@ export const commandPaletteCommands: CommandPaletteCommand[] = [
 		actionId: CommandPaletteActionId.JoinSlackCommunity,
 		keywords: ['slack', 'community', 'chat', 'support'],
 		icon: MessageCircle,
+	},
+	{
+		id: 'action-open-intercom',
+		label: 'Open Intercom',
+		group: CommandPaletteGroup.Help,
+		actionId: CommandPaletteActionId.OpenIntercom,
+		keywords: ['chat', 'support', 'messenger', 'help'],
+		icon: BotMessageSquare,
+	},
+	{
+		id: 'action-logout',
+		label: 'Log out',
+		group: CommandPaletteGroup.Help,
+		actionId: CommandPaletteActionId.Logout,
+		keywords: ['sign out', 'signout', 'account', 'exit'],
+		icon: LogOut,
 	},
 	// Go to - Home
 	{
