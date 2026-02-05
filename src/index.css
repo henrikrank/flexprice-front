@@ -181,3 +181,31 @@ div[class*='react-hot-toast'][style*='bottom'] {
 div[data-hot-toast-container] {
 	bottom: 80px !important;
 }
+
+/* Command palette popup animation (scale + fade). Keep translateX(-50%) so centering is preserved. */
+@keyframes command-palette-in {
+	from {
+		opacity: 0;
+		transform: translateX(-50%) scale(0.92);
+	}
+	to {
+		opacity: 1;
+		transform: translateX(-50%) scale(1);
+	}
+}
+@keyframes command-palette-out {
+	from {
+		opacity: 1;
+		transform: translateX(-50%) scale(1);
+	}
+	to {
+		opacity: 0;
+		transform: translateX(-50%) scale(0.92);
+	}
+}
+.animate-command-palette-in {
+	animation: command-palette-in 0.22s ease-in both;
+}
+.animate-command-palette-out {
+	animation: command-palette-out 0.18s ease-in both;
+}

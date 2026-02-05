@@ -3,6 +3,7 @@ import Intercom from '@intercom/messenger-js-sdk';
 import './index.css';
 import { BotMessageSquare } from 'lucide-react';
 import { Button } from '@/components/atoms';
+import { getCommandPaletteActionEventName, CommandPaletteActionId } from '@/core/actions';
 import useUser from '@/hooks/useUser';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import TenantApi from '@/api/TenantApi';
@@ -26,6 +27,14 @@ const IntercomMessenger = () => {
 		isIntercomOpen.current = true;
 		hideEventTriggered.current = false;
 	}, []);
+
+	// Open from command palette (Cmd+K → Open Intercom)
+	useEffect(() => {
+		const eventName = getCommandPaletteActionEventName(CommandPaletteActionId.OpenIntercom);
+		const handler = () => openIntercom();
+		window.addEventListener(eventName, handler);
+		return () => window.removeEventListener(eventName, handler);
+	}, [openIntercom]);
 
 	const { data: tenant, isLoading: isTenantLoading } = useQuery({
 		queryKey: ['tenant'],

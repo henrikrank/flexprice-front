@@ -1,8 +1,8 @@
 import { Outlet, useNavigate } from 'react-router';
 import { SidebarInset, SidebarProvider } from '@/components/ui/sidebar';
 import { Sidebar } from '@/components/molecules/Sidebar';
-import { BreadCrumbs } from '@/components/molecules';
-import { DebugMenu } from '@/components/molecules';
+import { BreadCrumbs, DebugMenu } from '@/components/molecules';
+import { CommandPalette } from '@/components/organisms';
 import useUser from '@/hooks/useUser';
 import posthog from 'posthog-js';
 import { useEffect } from 'react';
@@ -48,6 +48,7 @@ const MainLayout: React.FC = () => {
 
 	return (
 		<SidebarProvider className='flex h-screen bg-gray-100 relative font-open-sans'>
+			<CommandPalette />
 			{/* Sidebar */}
 			<Sidebar />
 			{/* Right Layout */}
