@@ -1,6 +1,6 @@
 import { Button } from '@/components/ui';
 import { Loader2, Rocket, X } from 'lucide-react';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import useEnvironment from '@/hooks/useEnvironment';
 import { useQuery } from '@tanstack/react-query';
@@ -93,6 +93,18 @@ const DebugMenu = () => {
 			duration: STREAM_DURATION / 1000,
 		});
 	};
+
+	const handleStartStreamingRef = useRef(handleStartStreaming);
+	handleStartStreamingRef.current = handleStartStreaming;
+
+	useEffect(() => {
+		const handler = () => {
+			handleStartStreamingRef.current();
+			setIsOpen(true);
+		};
+		window.addEventListener('command-palette:debug-simulate-ingest-events', handler);
+		return () => window.removeEventListener('command-palette:debug-simulate-ingest-events', handler);
+	}, []);
 
 	const handleClose = () => {
 		setIsOpen(false);

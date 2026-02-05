@@ -15,6 +15,7 @@ import {
 	Key,
 	UserCog,
 	Webhook,
+	Rocket,
 } from 'lucide-react';
 
 // Paths match RouteNames in @/core/routes/Routes - duplicated here to avoid circular dependency
@@ -61,6 +62,8 @@ export interface CommandPaletteCommand {
 	label: string;
 	group: string;
 	path?: string;
+	/** When set, the organism will look up and run a handler for this id (in addition to optional path). */
+	actionId?: string;
 	keywords?: string[];
 	icon?: LucideIcon;
 }
@@ -88,6 +91,14 @@ export const commandPaletteCommands: CommandPaletteCommand[] = [
 		path: R.createFeature,
 		keywords: ['new', 'add', 'feature', 'product'],
 		icon: Plus,
+	},
+	{
+		id: 'action-simulate-ingest-events',
+		label: 'Simulate ingest events',
+		group: CommandPaletteGroup.Actions,
+		actionId: 'debug-simulate-ingest-events',
+		keywords: ['debug', 'events', 'stream', 'ingest'],
+		icon: Rocket,
 	},
 	// Go to - Home
 	{

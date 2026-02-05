@@ -6,13 +6,23 @@ import { defaultFilter } from 'cmdk';
 import { CommandPaletteDialog, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command-palette';
 
 import { commandPaletteCommands, COMMAND_PALETTE_INITIAL_SUGGESTED_IDS, CommandPaletteGroup } from '@/config/commandPaletteCommands';
+import useEnvironment from '@/hooks/useEnvironment';
 
 const GROUPS_ORDER = [CommandPaletteGroup.Actions, CommandPaletteGroup.GoTo];
+
+const COMMAND_PALETTE_DEBUG_SIMULATE_EVENT = 'command-palette:debug-simulate-ingest-events';
+
+const ACTION_HANDLERS: Record<string, () => void> = {
+	'debug-simulate-ingest-events': () => {
+		window.dispatchEvent(new CustomEvent(COMMAND_PALETTE_DEBUG_SIMULATE_EVENT));
+	},
+};
 
 const CommandPalette = () => {
 	const [open, setOpen] = useState(false);
 	const [search, setSearch] = useState('');
 	const navigate = useNavigate();
+	const { isDevelopment } = useEnvironment();
 
 	useEffect(() => {
 		const handleKeyDown = (e: KeyboardEvent) => {
@@ -35,28 +45,35 @@ const CommandPalette = () => {
 		if (!next) setSearch('');
 	};
 
+	const visibleCommands = useMemo(() => {
+		return commandPaletteCommands.filter((cmd) => {
+			if (cmd.id === 'action-simulate-ingest-events') return isDevelopment;
+			return true;
+		});
+	}, [isDevelopment]);
+
 	const commandsByGroup = useMemo(() => {
-		const map = new Map<string, typeof commandPaletteCommands>();
-		for (const cmd of commandPaletteCommands) {
+		const map = new Map<string, typeof visibleCommands>();
+		for (const cmd of visibleCommands) {
 			const list = map.get(cmd.group) ?? [];
 			list.push(cmd);
 			map.set(cmd.group, list);
 		}
 		return map;
-	}, []);
+	}, [visibleCommands]);
 
 	const suggestedIdsSet = useMemo(() => new Set(COMMAND_PALETTE_INITIAL_SUGGESTED_IDS), []);
 
 	const suggestedValues = useMemo(() => {
 		const set = new Set<string>();
-		for (const cmd of commandPaletteCommands) {
+		for (const cmd of visibleCommands) {
 			if (suggestedIdsSet.has(cmd.id)) {
 				const value = [cmd.label, ...(cmd.keywords ?? [])].join(' ');
 				set.add(value);
 			}
 		}
 		return set;
-	}, [suggestedIdsSet]);
+	}, [suggestedIdsSet, visibleCommands]);
 
 	const filter = useMemo(
 		() => (value: string, searchTerm: string) => {
@@ -78,7 +95,10 @@ const CommandPalette = () => {
 	// 	return commandPaletteCommands;
 	// }, [search, suggestedIdsSet]);
 
-	const handleSelect = (command: (typeof commandPaletteCommands)[number]) => {
+	const handleSelect = (command: (typeof visibleCommands)[number]) => {
+		if (command.actionId && ACTION_HANDLERS[command.actionId]) {
+			ACTION_HANDLERS[command.actionId]();
+		}
 		if (command.path) {
 			navigate(command.path);
 		}
