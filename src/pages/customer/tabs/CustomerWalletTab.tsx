@@ -149,27 +149,27 @@ const CustomerWalletTab = () => {
 			},
 			...(activeWallet
 				? [
-					{
-						icon: <RefreshCw />,
-						label: 'Auto Topup',
-						onSelect: () => setShowAutoTopupModal(true),
-					},
-					{
-						icon: <Bell />,
-						label: 'Alert Settings',
-						onSelect: () => setShowAlertDialog(true),
-					},
-					{
-						icon: <Minus />,
-						label: 'Manual Debit',
-						onSelect: () => setShowDebitModal(true),
-					},
-					{
-						icon: <Trash2 />,
-						label: 'Terminate',
-						onSelect: () => setShowTerminateModal(true),
-					},
-				]
+						{
+							icon: <RefreshCw />,
+							label: 'Auto Topup',
+							onSelect: () => setShowAutoTopupModal(true),
+						},
+						{
+							icon: <Bell />,
+							label: 'Alert Settings',
+							onSelect: () => setShowAlertDialog(true),
+						},
+						{
+							icon: <Minus />,
+							label: 'Manual Debit',
+							onSelect: () => setShowDebitModal(true),
+						},
+						{
+							icon: <Trash2 />,
+							label: 'Terminate',
+							onSelect: () => setShowTerminateModal(true),
+						},
+					]
 				: []),
 		],
 		[activeWallet],
