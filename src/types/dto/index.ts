@@ -77,7 +77,11 @@ export type {
 } from './Price';
 
 export type {
-	GetCustomerResponse,
+	ListCustomersResponse,
+	CustomerResponse,
+	CustomerFilter,
+	IntegrationEntityMapping,
+	PortalSessionResponse,
 	GetCustomerSubscriptionsResponse,
 	GetCustomerEntitlementsResponse,
 	GetCustomerEntitlementPayload,

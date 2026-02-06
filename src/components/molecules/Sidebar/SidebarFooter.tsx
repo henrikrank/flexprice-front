@@ -1,3 +1,4 @@
+import { useEffect, useCallback } from 'react';
 import { BookOpen, ExternalLink, ChevronsUpDown, LogOut, ListChecks } from 'lucide-react';
 import { RouteNames } from '@/core/routes/Routes';
 import { SidebarMenuButton, useSidebar, Popover, PopoverContent, PopoverTrigger, Skeleton } from '@/components/ui';
@@ -5,13 +6,22 @@ import { cn } from '@/lib/utils';
 
 import { useNavigate } from 'react-router';
 import AuthService from '@/core/auth/AuthService';
+import { getCommandPaletteActionEventName, CommandPaletteActionId } from '@/core/actions';
 import useUser from '@/hooks/useUser';
 
 const SidebarFooter = () => {
 	const navigate = useNavigate();
-	const handleLogout = async () => {
+	const handleLogout = useCallback(async () => {
 		await AuthService.logout();
-	};
+	}, []);
+
+	// Log out from command palette (Cmd+K → Log out)
+	useEffect(() => {
+		const eventName = getCommandPaletteActionEventName(CommandPaletteActionId.Logout);
+		const handler = () => handleLogout();
+		window.addEventListener(eventName, handler);
+		return () => window.removeEventListener(eventName, handler);
+	}, [handleLogout]);
 
 	const { loading, user } = useUser();
 	const { open: sidebarOpen } = useSidebar();

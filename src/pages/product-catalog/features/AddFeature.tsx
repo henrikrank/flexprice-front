@@ -153,6 +153,10 @@ const FEATURE_SCHEMA = z.object({
 // Types
 interface FeatureFormState {
 	showDescription: boolean;
+	showLookupKey: boolean;
+	showUnitName: boolean;
+	showEventFilters: boolean;
+	showBucketSize: boolean;
 }
 
 type FeatureFormData = Omit<CreateFeatureRequest, 'name' | 'type' | 'meter'> & {
@@ -170,6 +174,10 @@ const useFeatureForm = () => {
 	const [errors, setErrors] = useState<FeatureErrors>({});
 	const [formState, setFormState] = useState<FeatureFormState>({
 		showDescription: false,
+		showLookupKey: false,
+		showUnitName: false,
+		showEventFilters: false,
+		showBucketSize: false,
 	});
 
 	const updateFeatureData = useCallback((updates: Partial<FeatureFormData>) => {
@@ -323,16 +331,6 @@ const FeatureDetailsSection = ({
 
 			<Spacer height='16px' />
 
-			<Input
-				label='Lookup Key'
-				placeholder='Enter a unique lookup key (optional)'
-				value={data.lookup_key || ''}
-				error={errors.lookup_key}
-				onChange={(lookup_key) => onUpdateFeature({ lookup_key })}
-			/>
-
-			<Spacer height='16px' />
-
 			<div className='w-full min-w-[200px] overflow-hidden'>
 				<Select
 					label='Type*'
@@ -343,35 +341,115 @@ const FeatureDetailsSection = ({
 				/>
 			</div>
 
-			{isMeteredType && (
-				<>
-					<Spacer height='16px' />
-					<FormHeader variant='form-component-title' title='Unit Name' />
-					<div className='gap-4 grid grid-cols-2'>
-						<Input placeholder='singular' value={data.unit_singular || ''} onChange={handleUnitSingularChange} />
-						<Input placeholder='plural' value={data.unit_plural || ''} onChange={(unit_plural) => onUpdateFeature({ unit_plural })} />
-					</div>
-					<FormHeader
-						variant='form-component-title'
-						subtitle='If the unit name changes when the value is plural, please provide the names of the units'
-					/>
-				</>
-			)}
-
 			<Spacer height='16px' />
 
-			{!formState.showDescription ? (
-				<AddChargesButton label='Add feature description' onClick={() => onUpdateFormState({ showDescription: true })} />
-			) : (
-				<Textarea
-					label='Feature Description'
-					placeholder='Enter description'
-					value={data.description || ''}
-					error={errors.description}
-					className='!min-h-32'
-					onChange={(description) => onUpdateFeature({ description })}
-				/>
-			)}
+			{/* Optional fields: vertical order — opening Lookup Key pushes Unit name & Feature description below */}
+			<div className='flex flex-col gap-4'>
+				{/* 1. Lookup Key — button or input */}
+				{!formState.showLookupKey ? (
+					<div className='flex flex-wrap items-center gap-2'>
+						<AddChargesButton label='Lookup Key' onClick={() => onUpdateFormState({ showLookupKey: true })} />
+						{isMeteredType && !formState.showUnitName ? (
+							<AddChargesButton label='Unit name' onClick={() => onUpdateFormState({ showUnitName: true })} />
+						) : null}
+						{!formState.showDescription ? (
+							<AddChargesButton label='Feature description' onClick={() => onUpdateFormState({ showDescription: true })} />
+						) : null}
+					</div>
+				) : (
+					<Input
+						label='Lookup Key'
+						placeholder='Enter a unique lookup key (optional)'
+						value={data.lookup_key || ''}
+						error={errors.lookup_key}
+						onChange={(lookup_key) => onUpdateFeature({ lookup_key })}
+					/>
+				)}
+
+				{/* 2. Unit name (metered) & Feature description — only below when Lookup Key is open */}
+				{formState.showLookupKey && (
+					<>
+						{isMeteredType && (
+							<>
+								{!formState.showUnitName ? (
+									<div className='flex flex-wrap items-center gap-2'>
+										<AddChargesButton label='Unit name' onClick={() => onUpdateFormState({ showUnitName: true })} />
+										{!formState.showDescription ? (
+											<AddChargesButton label='Feature description' onClick={() => onUpdateFormState({ showDescription: true })} />
+										) : null}
+									</div>
+								) : (
+									<>
+										<FormHeader variant='form-component-title' title='Unit Name' />
+										<div className='gap-4 grid grid-cols-2'>
+											<Input placeholder='singular' value={data.unit_singular || ''} onChange={handleUnitSingularChange} />
+											<Input
+												placeholder='plural'
+												value={data.unit_plural || ''}
+												onChange={(unit_plural) => onUpdateFeature({ unit_plural })}
+											/>
+										</div>
+										<FormHeader
+											variant='form-component-title'
+											subtitle='If the unit name changes when the value is plural, please provide the names of the units'
+										/>
+										{!formState.showDescription ? (
+											<div className='flex flex-wrap items-center gap-2'>
+												<AddChargesButton label='Feature description' onClick={() => onUpdateFormState({ showDescription: true })} />
+											</div>
+										) : null}
+									</>
+								)}
+							</>
+						)}
+						{!isMeteredType && !formState.showDescription && (
+							<div className='flex flex-wrap items-center gap-2'>
+								<AddChargesButton label='Feature description' onClick={() => onUpdateFormState({ showDescription: true })} />
+							</div>
+						)}
+						{(!isMeteredType || formState.showUnitName) && formState.showDescription ? (
+							<Textarea
+								label='Feature Description'
+								placeholder='Enter description'
+								value={data.description || ''}
+								error={errors.description}
+								className='!min-h-32'
+								onChange={(description) => onUpdateFeature({ description })}
+							/>
+						) : null}
+					</>
+				)}
+
+				{/* When Lookup Key not open: Unit name (metered) and Feature description in their own rows */}
+				{!formState.showLookupKey && isMeteredType && formState.showUnitName && (
+					<>
+						<FormHeader variant='form-component-title' title='Unit Name' />
+						<div className='gap-4 grid grid-cols-2'>
+							<Input placeholder='singular' value={data.unit_singular || ''} onChange={handleUnitSingularChange} />
+							<Input placeholder='plural' value={data.unit_plural || ''} onChange={(unit_plural) => onUpdateFeature({ unit_plural })} />
+						</div>
+						<FormHeader
+							variant='form-component-title'
+							subtitle='If the unit name changes when the value is plural, please provide the names of the units'
+						/>
+						{!formState.showDescription ? (
+							<div className='flex flex-wrap items-center gap-2'>
+								<AddChargesButton label='Feature description' onClick={() => onUpdateFormState({ showDescription: true })} />
+							</div>
+						) : null}
+					</>
+				)}
+				{!formState.showLookupKey && formState.showDescription && (
+					<Textarea
+						label='Feature Description'
+						placeholder='Enter description'
+						value={data.description || ''}
+						error={errors.description}
+						className='!min-h-32'
+						onChange={(description) => onUpdateFeature({ description })}
+					/>
+				)}
+			</div>
 		</Card>
 	);
 };
@@ -380,11 +458,15 @@ const FeatureDetailsSection = ({
 const EventDetailsSection = ({
 	meter,
 	meterErrors,
+	formState,
 	onUpdateFeature,
+	onUpdateFormState,
 }: {
 	meter: Partial<CreateMeterRequest> | undefined;
 	meterErrors: MeterErrors;
+	formState: FeatureFormState;
 	onUpdateFeature: (updates: Partial<FeatureFormData>) => void;
+	onUpdateFormState: (updates: Partial<FeatureFormState>) => void;
 }) => {
 	const handleEventNameChange = useCallback(
 		(event_name: string) => {
@@ -423,14 +505,27 @@ const EventDetailsSection = ({
 			/>
 			<Spacer height='20px' />
 
-			<FormHeader
-				title='Event Filters'
-				subtitle='Filter events based on specific properties e.g., region, user type or custom attributes to refine tracking.'
-				variant='form-component-title'
-			/>
+			<div className='flex flex-col gap-2 min-h-[52px]'>
+				{!formState.showEventFilters ? (
+					<AddChargesButton
+						label='Event filters'
+						onClick={() => onUpdateFormState({ showEventFilters: true })}
+						className='self-start min-w-[160px] h-9'
+					/>
+				) : null}
+				{formState.showEventFilters ? (
+					<>
+						<FormHeader
+							title='Event Filters'
+							subtitle='Filter events based on specific properties e.g., region, user type or custom attributes to refine tracking.'
+							variant='form-component-title'
+						/>
 
-			<div>
-				<EventFilter eventFilters={meter?.filters || []} setEventFilters={handleFiltersChange} error={meterErrors.filters} />
+						<div>
+							<EventFilter eventFilters={meter?.filters || []} setEventFilters={handleFiltersChange} error={meterErrors.filters} />
+						</div>
+					</>
+				) : null}
 			</div>
 		</Card>
 	);
@@ -440,11 +535,15 @@ const EventDetailsSection = ({
 const AggregationSection = ({
 	meter,
 	meterErrors,
+	formState,
 	onUpdateFeature,
+	onUpdateFormState,
 }: {
 	meter: Partial<CreateMeterRequest> | undefined;
 	meterErrors: MeterErrors;
+	formState: FeatureFormState;
 	onUpdateFeature: (updates: Partial<FeatureFormData>) => void;
+	onUpdateFormState: (updates: Partial<FeatureFormState>) => void;
 }) => {
 	const handleAggregationTypeChange = useCallback(
 		(type: string) => {
@@ -527,8 +626,6 @@ const AggregationSection = ({
 
 	const showFieldInput = meter?.aggregation?.type !== METER_AGGREGATION_TYPE.COUNT;
 	const showMultiplierInput = meter?.aggregation?.type === METER_AGGREGATION_TYPE.SUM_WITH_MULTIPLIER;
-	const showWindowSizeInput =
-		meter?.aggregation?.type === METER_AGGREGATION_TYPE.MAX || meter?.aggregation?.type === METER_AGGREGATION_TYPE.SUM;
 
 	return (
 		<div className='card'>
@@ -567,16 +664,25 @@ const AggregationSection = ({
 					/>
 				)}
 
-				{showWindowSizeInput && (
-					<Select
-						options={BUCKET_SIZE_OPTIONS}
-						onChange={handleWindowSizeChange}
-						label='Bucket Size'
-						placeholder=''
-						description='The size of the window to aggregate over. eg. 15MIN, 30MIN, HOUR, etc.'
-						value={meter?.aggregation?.bucket_size || undefined}
-					/>
-				)}
+				<div className='flex flex-col gap-2 min-h-[52px]'>
+					{!formState.showBucketSize ? (
+						<AddChargesButton
+							label='Bucket size'
+							onClick={() => onUpdateFormState({ showBucketSize: true })}
+							className='self-start min-w-[160px] h-9'
+						/>
+					) : null}
+					{formState.showBucketSize ? (
+						<Select
+							options={BUCKET_SIZE_OPTIONS}
+							onChange={handleWindowSizeChange}
+							label='Bucket Size'
+							placeholder=''
+							description='The size of the window to aggregate over. eg. 15MIN, 30MIN, HOUR, etc.'
+							value={meter?.aggregation?.bucket_size || undefined}
+						/>
+					) : null}
+				</div>
 			</Card>
 
 			{/* <div className='!mt-6'>
@@ -733,11 +839,23 @@ const AddFeaturePage = () => {
 
 					{isMeteredType && (
 						<div className='w-full'>
-							<EventDetailsSection meter={data.meter} meterErrors={meterErrors} onUpdateFeature={updateFeatureData} />
+							<EventDetailsSection
+								meter={data.meter}
+								meterErrors={meterErrors}
+								formState={formState}
+								onUpdateFeature={updateFeatureData}
+								onUpdateFormState={updateFormState}
+							/>
 
 							<Spacer height='26px' />
 
-							<AggregationSection meter={data.meter} meterErrors={meterErrors} onUpdateFeature={updateFeatureData} />
+							<AggregationSection
+								meter={data.meter}
+								meterErrors={meterErrors}
+								formState={formState}
+								onUpdateFeature={updateFeatureData}
+								onUpdateFormState={updateFormState}
+							/>
 
 							<Spacer height='26px' />
 						</div>
@@ -745,7 +863,7 @@ const AddFeaturePage = () => {
 
 					<div>
 						<Button isLoading={isPending} disabled={isCtaDisabled} onClick={handleSubmit}>
-							{isPending ? 'Creating Feature...' : 'Save Feature'}
+							{isPending ? 'Creating Feature...' : 'Save'}
 						</Button>
 					</div>
 					<Spacer height='16px' />

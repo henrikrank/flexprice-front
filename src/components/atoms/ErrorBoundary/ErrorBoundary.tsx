@@ -9,11 +9,15 @@ import * as Sentry from '@sentry/react';
 import { NODE_ENV, NodeEnv } from '@/types';
 import toast from 'react-hot-toast';
 
+interface ErrorInfo {
+	componentStack?: string | null;
+}
+
 // Generate a unique error ID
 const generateErrorId = () => `err_${Date.now()}_${Math.random().toString(36).substring(2, 8)}`;
 
 // Log error to console in development and to Sentry in production
-const logError = (error: Error, info?: React.ErrorInfo, metadata?: Record<string, any>) => {
+const logError = (error: Error, info?: ErrorInfo, metadata?: Record<string, any>) => {
 	const errorId = generateErrorId();
 	const isProd = NODE_ENV === NodeEnv.PROD;
 
@@ -52,7 +56,7 @@ const logError = (error: Error, info?: React.ErrorInfo, metadata?: Record<string
 // Error Fallback UI Component
 interface ErrorFallbackProps {
 	error: Error | null;
-	errorInfo?: React.ErrorInfo | null;
+	errorInfo?: ErrorInfo | null;
 	errorId: string;
 	resetError: () => void;
 }
@@ -308,14 +312,14 @@ export const ErrorFallback = ({ error, errorInfo, errorId, resetError }: ErrorFa
 interface ErrorBoundaryProps {
 	children: ReactNode;
 	fallback?: ReactNode;
-	onError?: (error: Error, errorInfo: React.ErrorInfo) => void;
+	onError?: (error: Error, errorInfo: ErrorInfo) => void;
 	name?: string;
 }
 
 export const ErrorBoundary = ({ children, fallback, onError, name = 'unnamed' }: ErrorBoundaryProps) => {
 	const [errorId, setErrorId] = useState<string>('');
 
-	const handleError = (error: Error, info: React.ErrorInfo) => {
+	const handleError = (error: Error, info: ErrorInfo) => {
 		const generatedErrorId = logError(error, info, { boundary: name });
 		setErrorId(generatedErrorId);
 		onError?.(error, info);
@@ -324,11 +328,11 @@ export const ErrorBoundary = ({ children, fallback, onError, name = 'unnamed' }:
 	return (
 		<ReactErrorBoundary
 			FallbackComponent={({ error, resetErrorBoundary }) =>
-				fallback || <ErrorFallback error={error} errorInfo={null} errorId={errorId} resetError={resetErrorBoundary} />
+				fallback || <ErrorFallback error={error as Error} errorInfo={null} errorId={errorId} resetError={resetErrorBoundary} />
 			}
 			onReset={() => setErrorId('')}
-			onError={handleError}>
-			{children}
+			onError={(error: unknown, info: ErrorInfo) => handleError(error as Error, info)}>
+			{children as ReactNode}
 		</ReactErrorBoundary>
 	);
 };

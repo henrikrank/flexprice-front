@@ -267,7 +267,6 @@ const RecurringChargesForm = ({
 				setDate={setStartDate}
 				label='Start Date (Optional)'
 				placeholder='Select start date'
-				minDate={new Date()}
 			/>
 			<Spacer height={'16px'} />
 			<FormHeader title='Billing Timing' variant='form-component-title' />
