@@ -14,6 +14,8 @@ interface Props {
 	onCancel: () => void;
 	subscriptionId: string;
 	subscriptionStartDate?: string;
+	/** For recurring grants, start date is fixed to this (subscription current period end). */
+	subscriptionCurrentPeriodEnd?: string;
 }
 
 interface FormErrors {
@@ -61,6 +63,7 @@ const EditSubscriptionCreditGrantModal: React.FC<Props> = ({
 	onCancel,
 	subscriptionId,
 	subscriptionStartDate,
+	subscriptionCurrentPeriodEnd,
 }) => {
 	const [errors, setErrors] = useState<FormErrors>({});
 	const [formData, setFormData] = useState<Partial<CreateCreditGrantRequest>>({
@@ -98,6 +101,7 @@ const EditSubscriptionCreditGrantModal: React.FC<Props> = ({
 	// Sanitize and validate data before saving
 	const sanitizeData = useCallback(
 		(data: Partial<CreateCreditGrantRequest>): CreateCreditGrantRequest => {
+			const isRecurring = data.cadence === CREDIT_GRANT_CADENCE.RECURRING;
 			// Build sanitized object with required fields explicitly set
 			const sanitized: CreateCreditGrantRequest = {
 				name: data.name?.trim() || '',
@@ -114,7 +118,7 @@ const EditSubscriptionCreditGrantModal: React.FC<Props> = ({
 				metadata: data.metadata || {},
 				conversion_rate: data.conversion_rate,
 				topup_conversion_rate: data.topup_conversion_rate,
-				start_date: data.start_date, // Include start_date in the payload
+				start_date: isRecurring && subscriptionCurrentPeriodEnd ? subscriptionCurrentPeriodEnd : data.start_date,
 			};
 
 			// Remove expiration_duration if not needed
@@ -130,7 +134,7 @@ const EditSubscriptionCreditGrantModal: React.FC<Props> = ({
 
 			return sanitized;
 		},
-		[subscriptionId],
+		[subscriptionId, subscriptionCurrentPeriodEnd],
 	);
 
 	const validateForm = useCallback((): { isValid: boolean; errors: FormErrors } => {
@@ -141,8 +145,12 @@ const EditSubscriptionCreditGrantModal: React.FC<Props> = ({
 			newErrors.name = 'Name is required';
 		}
 
-		// Validate start date
-		if (!formData.start_date) {
+		// Validate start date (recurring uses current period end; one-time requires selection)
+		if (formData.cadence === CREDIT_GRANT_CADENCE.RECURRING) {
+			if (!subscriptionCurrentPeriodEnd) {
+				newErrors.start_date = 'Current period end is not available';
+			}
+		} else if (!formData.start_date) {
 			newErrors.start_date = 'Start date is required';
 		}
 
@@ -196,7 +204,7 @@ const EditSubscriptionCreditGrantModal: React.FC<Props> = ({
 			isValid: Object.keys(newErrors).length === 0,
 			errors: newErrors,
 		};
-	}, [formData]);
+	}, [formData, subscriptionCurrentPeriodEnd]);
 
 	const handleSave = useCallback(() => {
 		const validation = validateForm();
@@ -217,10 +225,21 @@ const EditSubscriptionCreditGrantModal: React.FC<Props> = ({
 			field: keyof CreateCreditGrantRequest,
 			value: string | number | Date | CREDIT_GRANT_CADENCE | CREDIT_GRANT_EXPIRATION_TYPE | CREDIT_GRANT_PERIOD | undefined,
 		) => {
-			setFormData((prev) => ({ ...prev, [field]: value }));
+			setFormData((prev) => {
+				const next = { ...prev, [field]: value };
+				// Recurring: start date is subscription current period end; One-time: use subscription start date
+				if (field === 'cadence') {
+					if (value === CREDIT_GRANT_CADENCE.RECURRING && subscriptionCurrentPeriodEnd) {
+						next.start_date = subscriptionCurrentPeriodEnd;
+					} else if (value === CREDIT_GRANT_CADENCE.ONETIME) {
+						next.start_date = subscriptionStartDate || new Date().toISOString();
+					}
+				}
+				return next;
+			});
 			setErrors((prev) => (prev[field as keyof FormErrors] === undefined ? prev : { ...prev, [field]: undefined }));
 		},
-		[],
+		[subscriptionCurrentPeriodEnd, subscriptionStartDate],
 	);
 
 	const selectedCadenceDescription = billingCadenceOptions.find((o) => o.value === formData.cadence)?.description;
@@ -251,19 +270,34 @@ const EditSubscriptionCreditGrantModal: React.FC<Props> = ({
 					/>
 				</div>
 
-				<div className='space-y-2'>
-					<DatePicker
-						label='Start Date *'
-						date={formData.start_date ? new Date(formData.start_date) : undefined}
-						setDate={(date) => {
-							if (date) {
-								handleFieldChange('start_date', date.toISOString());
-							}
-						}}
-						placeholder='Select start date'
-					/>
-					{errors.start_date && <p className='text-sm text-destructive'>{errors.start_date}</p>}
-				</div>
+				{formData.cadence === CREDIT_GRANT_CADENCE.RECURRING ? (
+					<div className='space-y-2'>
+						<Label label='Start Date' />
+						<p className='text-sm text-muted-foreground'>
+							{subscriptionCurrentPeriodEnd
+								? new Date(subscriptionCurrentPeriodEnd).toLocaleDateString(undefined, {
+										dateStyle: 'medium',
+									})
+								: '—'}
+						</p>
+						<p className='text-xs text-gray-500'>The effective date is the current period end.</p>
+						{errors.start_date && <p className='text-sm text-destructive'>{errors.start_date}</p>}
+					</div>
+				) : (
+					<div className='space-y-2'>
+						<Label label='Start Date *' />
+						<DatePicker
+							date={formData.start_date ? new Date(formData.start_date) : undefined}
+							setDate={(date) => {
+								if (date) {
+									handleFieldChange('start_date', date.toISOString());
+								}
+							}}
+							placeholder='Select start date'
+						/>
+						{errors.start_date && <p className='text-sm text-destructive'>{errors.start_date}</p>}
+					</div>
+				)}
 
 				<div className='space-y-2'>
 					<Input

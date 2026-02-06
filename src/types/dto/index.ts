@@ -250,6 +250,7 @@ export type {
 	GetCreditGrantsResponse,
 	ProcessScheduledCreditGrantApplicationsResponse,
 	CancelFutureCreditGrantRequest,
+	DeleteCreditGrantRequest,
 } from './CreditGrant';
 
 export type {

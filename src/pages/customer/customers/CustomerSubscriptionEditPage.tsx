@@ -125,23 +125,20 @@ const CustomerSubscriptionEditPage: React.FC = () => {
 		},
 	});
 
-	const { mutate: cancelCreditGrant } = useMutation({
+	const { mutate: deleteCreditGrant } = useMutation({
 		mutationFn: async ({ creditGrantId, effectiveDate }: { creditGrantId: string; effectiveDate: string }) => {
-			return await CreditGrantApi.CancelFutureCreditGrant({
-				subscription_id: subscriptionId!,
-				credit_grant_ids: [creditGrantId],
-				effective_date: effectiveDate,
-			});
+			const deleteRequest: { effective_date?: string } = effectiveDate ? { effective_date: effectiveDate } : {};
+			return await CreditGrantApi.Delete(creditGrantId, deleteRequest);
 		},
 		onSuccess: () => {
-			toast.success('Credit grant cancelled successfully');
+			toast.success('Credit grant deleted successfully');
 			refetchQueries(['creditGrants', subscriptionId!]);
 			refetchQueries(['subscriptionDetails', subscriptionId!]);
 			setIsCancelCreditGrantModalOpen(false);
 			setSelectedCreditGrantToCancel(null);
 		},
 		onError: (error: { error?: { message?: string } }) => {
-			toast.error(error?.error?.message || 'Failed to cancel credit grant');
+			toast.error(error?.error?.message || 'Failed to delete credit grant');
 		},
 	});
 
@@ -265,9 +262,9 @@ const CustomerSubscriptionEditPage: React.FC = () => {
 
 	const handleConfirmCancelCreditGrant = (effectiveDate: string) => {
 		if (selectedCreditGrantToCancel) {
-			cancelCreditGrant({
+			deleteCreditGrant({
 				creditGrantId: selectedCreditGrantToCancel.id,
-				effectiveDate,
+				effectiveDate: effectiveDate || new Date().toISOString(),
 			});
 		}
 	};
@@ -528,6 +525,7 @@ const CustomerSubscriptionEditPage: React.FC = () => {
 						onCancel={() => setIsAddCreditGrantModalOpen(false)}
 						subscriptionId={subscriptionId}
 						subscriptionStartDate={subscriptionDetails?.start_date}
+						subscriptionCurrentPeriodEnd={subscriptionDetails?.current_period_end}
 					/>
 				)}
 

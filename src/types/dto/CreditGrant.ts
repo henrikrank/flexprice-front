@@ -30,7 +30,10 @@ export interface CreateCreditGrantRequest {
 	metadata?: Metadata;
 	conversion_rate?: number;
 	topup_conversion_rate?: number;
+	/** ISO date string. Required for SUBSCRIPTION-scoped grants. */
 	start_date?: string;
+	/** ISO date string. Optional; must be >= start_date when provided. */
+	end_date?: string;
 }
 
 export interface UpdateCreditGrantRequest {
@@ -75,6 +78,8 @@ export const creditGrantToInternal = (grant: CreditGrant): InternalCreditGrantRe
 		metadata: grant.metadata,
 		conversion_rate: grant.conversion_rate,
 		topup_conversion_rate: grant.topup_conversion_rate,
+		start_date: grant.start_date,
+		end_date: grant.end_date,
 	};
 };
 
@@ -113,6 +118,14 @@ export interface ProcessScheduledCreditGrantApplicationsResponse {
 
 export interface CancelFutureCreditGrantRequest {
 	subscription_id: string;
-	credit_grant_ids?: string[];
-	effective_date: string;
+	effective_date?: string;
+}
+
+/**
+ * Optional request body for DELETE /creditgrants/:id.
+ * CreditGrantID is set by the backend from the path param; only effective_date is sent in the body.
+ */
+export interface DeleteCreditGrantRequest {
+	/** ISO date string. Optional; when set (subscription scope) the grant end date is set to this time. Omit for immediate delete. */
+	effective_date?: string;
 }
