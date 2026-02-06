@@ -105,8 +105,8 @@ const TopupCard: FC<TopupCardProps> = ({ walletId, currency, conversion_rate = 1
 			const today = new Date();
 			today.setHours(0, 0, 0, 0);
 
-			// Convert ISO string to Date object if it's a string
-			const expiryDate = typeof expiry_date_utc === 'string' ? new Date(expiry_date_utc) : new Date(expiry_date_utc);
+			// Convert ISO string to Date object
+			const expiryDate = new Date(expiry_date_utc);
 			expiryDate.setHours(0, 0, 0, 0);
 
 			if (expiryDate.getTime() < today.getTime()) {
@@ -241,10 +241,12 @@ const TopupCard: FC<TopupCardProps> = ({ walletId, currency, conversion_rate = 1
 				<DatePicker
 					minDate={new Date(Date.UTC(new Date().getUTCFullYear(), new Date().getUTCMonth(), new Date().getUTCDate() + 1, 0, 0, 0, 0))}
 					label='Expiry Date'
-					date={topupPayload.expiry_date_utc}
+					date={topupPayload.expiry_date_utc ? new Date(topupPayload.expiry_date_utc) : undefined}
 					setDate={(value) =>
 						updateTopupPayload({
-							expiry_date_utc: value ? new Date(Date.UTC(value.getFullYear(), value.getMonth(), value.getDate(), 0, 0, 0, 0)) : undefined,
+							expiry_date_utc: value
+								? new Date(Date.UTC(value.getFullYear(), value.getMonth(), value.getDate(), 0, 0, 0, 0)).toISOString()
+								: undefined,
 						})
 					}
 					className='w-full'

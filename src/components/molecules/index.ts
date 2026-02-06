@@ -122,8 +122,7 @@ export { default as EventFilter } from './EventFilter';
 export type { EventFilterData } from './EventFilter';
 
 // Modals & Dialogs
-export { default as RolloutChargesModal, RolloutOption } from './RolloutChargesModal';
-export { default as TerminatePriceModal, SyncOption } from './TerminatePriceModal';
+export { default as TerminatePriceModal } from './TerminatePriceModal';
 export { default as TerminateLineItemModal } from './TerminateLineItemModal';
 export { default as SaveCardModal } from './SaveCardModal';
 export { MetadataModal } from './MetadataModal';

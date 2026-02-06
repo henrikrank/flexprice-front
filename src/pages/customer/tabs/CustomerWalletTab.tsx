@@ -14,7 +14,7 @@ import {
 import type { AutoTopupConfig } from '@/components/molecules/WalletAutoTopup/WalletAutoTopup';
 import { Dialog, Skeleton, Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui';
 import usePagination from '@/hooks/usePagination';
-import { Wallet } from '@/models/Wallet';
+import { Wallet, WALLET_TYPE } from '@/models/Wallet';
 import WalletApi from '@/api/WalletApi';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { useEffect, useMemo, useState } from 'react';
@@ -44,6 +44,14 @@ enum WALLET_BALANCE_TYPE {
 	CURRENT = 'current',
 	ONGOING = 'ongoing',
 }
+const formatWalletType = (walletType?: WALLET_TYPE) => {
+	if (!walletType) return 'Unknown';
+	const typeMap: Record<WALLET_TYPE, string> = {
+		[WALLET_TYPE.PRE_PAID]: 'Pre-Paid',
+		[WALLET_TYPE.POST_PAID]: 'Post-Paid',
+	};
+	return typeMap[walletType] || walletType;
+};
 
 const filterStringMetadata = (meta: Record<string, unknown> | undefined): Record<string, string> => {
 	if (!meta) return {};
@@ -52,7 +60,9 @@ const filterStringMetadata = (meta: Record<string, unknown> | undefined): Record
 
 const CustomerWalletTab = () => {
 	const { id: customerId } = useParams();
+
 	const { limit, offset } = usePagination();
+
 	const {
 		queryParams: { activeWalletId },
 		setQueryParam,
@@ -345,6 +355,15 @@ const CustomerWalletTab = () => {
 								title='Wallet Details'
 								data={[
 									{ label: 'Wallet Name', value: activeWallet?.name || 'Prepaid wallet' },
+									{
+										label: 'Wallet Type',
+										value: (
+											<Chip
+												variant={activeWallet?.wallet_type === WALLET_TYPE.PRE_PAID ? 'default' : 'info'}
+												label={formatWalletType(activeWallet?.wallet_type)}
+											/>
+										),
+									},
 									{
 										label: 'Status',
 										value: (

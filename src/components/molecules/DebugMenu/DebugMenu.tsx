@@ -1,6 +1,6 @@
 import { Button } from '@/components/ui';
 import { Loader2, Rocket, X } from 'lucide-react';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import useEnvironment from '@/hooks/useEnvironment';
 import { useQuery } from '@tanstack/react-query';
@@ -9,6 +9,7 @@ import { Link, useNavigate } from 'react-router';
 import { Progress } from '@/components/ui';
 import { RouteNames } from '@/core/routes/Routes';
 import EventsApi from '@/api/EventsApi';
+import { getCommandPaletteActionEventName, CommandPaletteActionId } from '@/core/actions';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui';
 import { AddButton } from '@/components/atoms';
 
@@ -93,6 +94,19 @@ const DebugMenu = () => {
 			duration: STREAM_DURATION / 1000,
 		});
 	};
+
+	const handleStartStreamingRef = useRef(handleStartStreaming);
+	handleStartStreamingRef.current = handleStartStreaming;
+
+	useEffect(() => {
+		const eventName = getCommandPaletteActionEventName(CommandPaletteActionId.DebugSimulateIngestEvents);
+		const handler = () => {
+			handleStartStreamingRef.current();
+			setIsOpen(true);
+		};
+		window.addEventListener(eventName, handler);
+		return () => window.removeEventListener(eventName, handler);
+	}, []);
 
 	const handleClose = () => {
 		setIsOpen(false);

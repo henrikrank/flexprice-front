@@ -5,7 +5,6 @@ import {
 	ColumnData,
 	DropdownMenu,
 	TerminatePriceModal,
-	SyncOption,
 	UpdatePriceDialog,
 	UpdatePriceDetailsDrawer,
 } from '@/components/molecules';
@@ -14,7 +13,6 @@ import { PriceUnit } from '@/models/PriceUnit';
 import { Plus, Trash2, Pencil, FileText } from 'lucide-react';
 import { useMutation } from '@tanstack/react-query';
 import { PriceApi } from '@/api/PriceApi';
-import { PlanApi } from '@/api/PlanApi';
 import toast from 'react-hot-toast';
 import { useNavigate } from 'react-router';
 import { RouteNames } from '@/core/routes/Routes';
@@ -24,6 +22,7 @@ import { ChargeValueCell } from '@/components/molecules';
 import { formatInvoiceCadence } from '@/pages';
 import { Dialog } from '@/components/ui';
 import { DeletePriceRequest } from '@/types/dto';
+import { ServerError } from '@/core/axios/types';
 import { formatDateTimeWithSecondsAndTimezone } from '@/utils/common/format_date';
 
 // ===== TYPES & CONSTANTS =====
@@ -217,17 +216,7 @@ const PlanPriceTable: FC<PlanChargesTableProps> = ({ plan, onPriceUpdate }) => {
 		},
 	});
 
-	const { mutateAsync: syncPlanCharges, isPending: isSyncing } = useMutation({
-		mutationFn: () => PlanApi.synchronizePlanPricesWithSubscription(plan.id),
-		onSuccess: () => {
-			toast.success('Sync has been started and will take up to 1 hour to complete.');
-		},
-		onError: (error: ServerError) => {
-			toast.error(error?.error?.message || 'Error synchronizing charges with subscriptions');
-		},
-	});
-
-	const isPending = isDeletingPrice || isSyncing;
+	const isPending = isDeletingPrice;
 
 	// ===== HANDLERS =====
 	const handleEditPrice = useCallback((price: Price) => {
@@ -258,7 +247,7 @@ const PlanPriceTable: FC<PlanChargesTableProps> = ({ plan, onPriceUpdate }) => {
 	);
 
 	const handleTerminateConfirm = useCallback(
-		async (endDate: string | undefined, syncOption?: SyncOption) => {
+		async (endDate: string | undefined) => {
 			if (!selectedPriceForTermination) return;
 
 			setShowTerminateModal(false);
@@ -273,17 +262,13 @@ const PlanPriceTable: FC<PlanChargesTableProps> = ({ plan, onPriceUpdate }) => {
 					: `${priceName} has been terminated immediately.`;
 				toast.success(message);
 
-				if (syncOption === SyncOption.EXISTING_ALSO) {
-					await syncPlanCharges();
-				}
-
 				onPriceUpdate?.();
 				setSelectedPriceForTermination(null);
 			} catch (error) {
 				console.error('Error terminating price:', error);
 			}
 		},
-		[selectedPriceForTermination, deletePrice, syncPlanCharges, onPriceUpdate],
+		[selectedPriceForTermination, deletePrice, onPriceUpdate],
 	);
 
 	const handleTerminateCancel = useCallback(() => {

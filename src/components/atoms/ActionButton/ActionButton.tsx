@@ -98,7 +98,7 @@ const ActionButton: FC<ActionProps> = ({
 		mutationFn: deleteMutationFn,
 		onSuccess: async () => {
 			if (!disableToast) {
-				toast.success(`${entityName} ${archiveActionText.toLowerCase()} successfully`);
+				toast.success(`Successfully ${archiveActionText.toLowerCase()}d ${entityName}`);
 			}
 			await refetchQueries(refetchQueryKey);
 		},

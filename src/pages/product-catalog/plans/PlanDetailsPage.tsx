@@ -1,16 +1,18 @@
 // React imports
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Outlet, useNavigate, useParams, useLocation } from 'react-router';
 
 // Third-party libraries
 import { useMutation, useQuery } from '@tanstack/react-query';
-import { EyeOff, Pencil } from 'lucide-react';
+import { EyeOff, EllipsisVertical, Pencil, RefreshCw } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { cn } from '@/lib/utils';
 
 // Internal components
 import { Button, CopyIdButton, Loader, Page } from '@/components/atoms';
-import { ApiDocsContent, PlanDrawer } from '@/components/molecules';
+import { ApiDocsContent, DropdownMenu, PlanDrawer } from '@/components/molecules';
+import type { DropdownMenuOption } from '@/components/molecules';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui';
 
 // API imports
 import { PlanApi } from '@/api';
@@ -25,6 +27,8 @@ import { Plan, ENTITY_STATUS } from '@/models';
 import { useBreadcrumbsStore } from '@/store/useBreadcrumbsStore';
 import { ServerError } from '@/core/axios/types';
 import { INVOICE_CADENCE } from '@/models';
+import { usePlanSyncCooldown } from '@/hooks/usePlanSyncCooldown';
+import { formatDateTimeWithSecondsAndTimezone } from '@/utils/common/format_date';
 
 export const formatInvoiceCadence = (cadence: string): string => {
 	switch (cadence.toUpperCase()) {
@@ -87,7 +91,36 @@ const PlanDetailsPage = () => {
 		},
 	});
 
+	const { mutate: syncPlan, isPending: isSyncing } = useMutation({
+		mutationFn: () => PlanApi.synchronizePlanPricesWithSubscription(planId!),
+		onSuccess: () => {
+			toast.success('Sync has been started and will take up to 1 hour to complete.');
+			triggerCooldown();
+		},
+		onError: (error: ServerError) => {
+			toast.error(error?.error?.message || 'Error synchronizing plan with subscriptions');
+		},
+	});
+
 	const { updateBreadcrumb, setSegmentLoading } = useBreadcrumbsStore();
+	const { canSync, cooldownEndsAt, triggerCooldown } = usePlanSyncCooldown(planId);
+
+	const dropdownOptions: DropdownMenuOption[] = useMemo(
+		() => [
+			{
+				label: 'Edit',
+				icon: <Pencil />,
+				onSelect: () => setPlanDrawerOpen(true),
+			},
+			{
+				label: 'Archive',
+				icon: <EyeOff />,
+				onSelect: () => archivePlan(),
+				disabled: planData?.status !== ENTITY_STATUS.PUBLISHED,
+			},
+		],
+		[archivePlan, planData?.status],
+	);
 
 	// Handle tab changes based on URL
 	useEffect(() => {
@@ -124,6 +157,11 @@ const PlanDetailsPage = () => {
 		}
 	};
 
+	const cooldownEndsAtFormatted = useMemo(
+		() => (cooldownEndsAt != null ? formatDateTimeWithSecondsAndTimezone(new Date(cooldownEndsAt)) : ''),
+		[cooldownEndsAt],
+	);
+
 	if (isLoading) {
 		return <Loader />;
 	}
@@ -148,21 +186,38 @@ const PlanDetailsPage = () => {
 				</div>
 			}
 			headingCTA={
-				<>
-					<Button onClick={() => setPlanDrawerOpen(true)} variant={'outline'} className='flex gap-2'>
-						<Pencil />
-						Edit
-					</Button>
-
-					<Button
-						onClick={() => archivePlan()}
-						disabled={planData?.status !== ENTITY_STATUS.PUBLISHED}
-						variant={'outline'}
-						className='flex gap-2'>
-						<EyeOff />
-						Archive
-					</Button>
-				</>
+				<div className='flex items-center gap-2'>
+					<TooltipProvider delayDuration={0}>
+						<Tooltip>
+							<TooltipTrigger asChild>
+								<span className='inline-block'>
+									<Button
+										onClick={() => syncPlan()}
+										disabled={isSyncing || !canSync}
+										isLoading={isSyncing}
+										variant='outline'
+										className='flex gap-2'>
+										<RefreshCw />
+										Sync
+									</Button>
+								</span>
+							</TooltipTrigger>
+							<TooltipContent>
+								{isSyncing ? (
+									<span className='text-sm'>Syncing...</span>
+								) : !canSync && cooldownEndsAtFormatted ? (
+									<div className='text-sm space-y-1 max-w-[280px]'>
+										<p className='font-medium'>Plan sync was triggered recently.</p>
+										<p className='text-muted-foreground'>You can sync again after {cooldownEndsAtFormatted}.</p>
+									</div>
+								) : (
+									<span className='text-sm'>Synchronize plan prices with existing subscriptions</span>
+								)}
+							</TooltipContent>
+						</Tooltip>
+					</TooltipProvider>
+					<DropdownMenu options={dropdownOptions} trigger={<Button variant='outline' prefixIcon={<EllipsisVertical />} size='icon' />} />
+				</div>
 			}>
 			<PlanDrawer data={planData as Plan} open={planDrawerOpen} onOpenChange={setPlanDrawerOpen} refetchQueryKeys={['fetchPlan']} />
 

@@ -1,13 +1,15 @@
-import { FC, useEffect, useMemo, useState } from 'react';
+import { FC, useMemo } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { Sheet } from '@/components/atoms';
 import { Event } from '@/models/Event';
 import toast from 'react-hot-toast';
 import EventsApi from '@/api/EventsApi';
-import { GetEventDebugResponse } from '@/types/dto';
 import { Skeleton } from '@/components/ui/skeleton';
 import { RouteNames } from '@/core/routes/Routes';
 import { useNavigate } from 'react-router';
 import SubscriptionApi from '@/api/SubscriptionApi';
+import CustomerApi from '@/api/CustomerApi';
+import FeatureApi from '@/api/FeatureApi';
 import JsonCodeBlock from './JsonCodeBlock';
 import ProcessedEventsSection from './ProcessedEventsSection';
 import EventTrackerSection from './EventTrackerSection';
@@ -21,44 +23,63 @@ interface Props {
 
 const EventPropertiesDrawer: FC<Props> = ({ isOpen, onOpenChange, event }) => {
 	const navigate = useNavigate();
-	const [loading, setLoading] = useState(false);
-	const [debugResponse, setDebugResponse] = useState<GetEventDebugResponse | null>(null);
-	const [loadError, setLoadError] = useState<string | null>(null);
 
-	useEffect(() => {
-		let isMounted = true;
+	const {
+		data: debugResponse,
+		isLoading: loading,
+		error: loadError,
+	} = useQuery({
+		queryKey: ['eventDebug', event?.id],
+		queryFn: () => EventsApi.getEventDebug(event!.id),
+		enabled: isOpen && !!event?.id,
+	});
 
-		const run = async () => {
-			if (!isOpen || !event?.id) return;
-			setLoading(true);
-			setLoadError(null);
-			try {
-				const res = await EventsApi.getEventDebug(event.id);
-				if (!isMounted) return;
-				setDebugResponse(res);
-			} catch (e: any) {
-				if (!isMounted) return;
-				setDebugResponse(null);
-				setLoadError(e?.message || 'Failed to load event debug details');
-			} finally {
-				if (isMounted) setLoading(false);
-			}
-		};
-
-		run();
-
-		return () => {
-			isMounted = false;
-		};
-	}, [isOpen, event?.id]);
-
-	// Fallback to the table event while the debug payload loads
 	const displayEvent = debugResponse?.event ?? event;
 	const processedEvents = debugResponse?.processed_events ?? [];
 	const resolvedCustomerId =
 		processedEvents?.[0]?.customer_id ??
 		(displayEvent?.customer_id && displayEvent.customer_id.trim().length > 0 ? displayEvent.customer_id : undefined) ??
 		debugResponse?.debug_tracker?.customer_lookup?.customer?.id;
+
+	const customerIds = useMemo(
+		() => [...new Set(processedEvents.map((pe) => pe.customer_id).filter(Boolean))] as string[],
+		[processedEvents],
+	);
+	const featureIds = useMemo(() => [...new Set(processedEvents.map((pe) => pe.feature_id).filter(Boolean))] as string[], [processedEvents]);
+
+	const { data: customerNames = {} } = useQuery({
+		queryKey: ['eventCustomerNames', customerIds.slice().sort().join(',')],
+		queryFn: async () => {
+			const res = await CustomerApi.getCustomersByFilters({
+				customer_ids: customerIds,
+				filters: [],
+				sort: [],
+			});
+			const map: Record<string, string> = {};
+			res.items.forEach((c) => {
+				map[c.id] = c.name;
+			});
+			return map;
+		},
+		enabled: customerIds.length > 0,
+	});
+
+	const { data: featureNames = {} } = useQuery({
+		queryKey: ['eventFeatureNames', featureIds.slice().sort().join(',')],
+		queryFn: async () => {
+			const res = await FeatureApi.listFeatures({
+				feature_ids: featureIds,
+				limit: featureIds.length,
+				offset: 0,
+			});
+			const map: Record<string, string> = {};
+			res.items.forEach((f) => {
+				map[f.id] = f.name;
+			});
+			return map;
+		},
+		enabled: featureIds.length > 0,
+	});
 
 	const openSubscription = async (subscriptionId: string) => {
 		try {
@@ -106,7 +127,7 @@ const EventPropertiesDrawer: FC<Props> = ({ isOpen, onOpenChange, event }) => {
 					) : loadError ? (
 						<div className='rounded-lg border border-red-200 bg-red-50 px-4 py-3'>
 							<p className='text-sm font-medium text-red-700'>Failed to load event debug details</p>
-							<p className='text-xs text-red-600 mt-1'>{loadError}</p>
+							<p className='text-xs text-red-600 mt-1'>{loadError instanceof Error ? loadError.message : String(loadError)}</p>
 						</div>
 					) : debugResponse ? (
 						<div className='space-y-6'>
@@ -115,7 +136,12 @@ const EventPropertiesDrawer: FC<Props> = ({ isOpen, onOpenChange, event }) => {
 
 							{/* Processed: show processed events only. Failed: show tracker waterfall. */}
 							{showProcessedOnly ? (
-								<ProcessedEventsSection events={processedEvents} onOpenSubscription={openSubscription} />
+								<ProcessedEventsSection
+									events={processedEvents}
+									onOpenSubscription={openSubscription}
+									customerNames={customerNames}
+									featureNames={featureNames}
+								/>
 							) : debugResponse.debug_tracker ? (
 								<EventTrackerSection debugResponse={debugResponse} displayEventTimestamp={displayEvent?.timestamp} />
 							) : (
