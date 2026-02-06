@@ -1,19 +1,15 @@
-import { FC, useState, useEffect, useMemo } from 'react';
+import { FC, useState, useEffect } from 'react';
 import { Dialog } from '@/components/atoms';
 import { Input, Button, Select, SelectOption, DatePicker } from '@/components/atoms';
-import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Price, BILLING_MODEL, TIER_MODE, CreatePriceTier, TransformQuantity, PRICE_TYPE, PRICE_UNIT_TYPE } from '@/models/Price';
 import { formatAmount, removeFormatting } from '@/components/atoms/Input/Input';
 import { getCurrencySymbol } from '@/utils/common/helper_functions';
 import VolumeTieredPricingForm from '@/components/organisms/PlanForm/VolumeTieredPricingForm';
-import { useQuery, useMutation } from '@tanstack/react-query';
-import SubscriptionApi from '@/api/SubscriptionApi';
-import { PlanApi } from '@/api/PlanApi';
+import { useMutation } from '@tanstack/react-query';
 import toast from 'react-hot-toast';
 import { PriceApi } from '@/api/PriceApi';
 import { UpdatePriceRequest } from '@/types/dto';
-import { cn } from '@/lib/utils';
-import { SyncOption } from '../TerminatePriceModal';
+import { ServerError } from '@/core/axios/types';
 import { formatDateTimeWithSecondsAndTimezone } from '@/utils/common/format_date';
 import { PremiumFeatureIcon } from '../PremiumFeature/PremiumFeature';
 
@@ -25,27 +21,6 @@ interface UpdatePriceDialogProps {
 	onSuccess?: () => void;
 }
 
-interface RadioOptionProps {
-	value: SyncOption;
-	selected: SyncOption;
-	title: string;
-	description: string;
-}
-
-const RadioOption: FC<RadioOptionProps> = ({ value, selected, title, description }) => (
-	<div
-		className={cn(
-			'flex items-start gap-3 p-4 border-2 rounded-lg cursor-pointer transition-colors',
-			selected === value ? 'border-[#0F172A] bg-gray-50' : 'border-[#E2E8F0] hover:border-gray-300',
-		)}>
-		<RadioGroupItem value={value} id={value} className='mt-1' />
-		<label htmlFor={value} className='flex-1 cursor-pointer'>
-			<p className='font-medium text-[#18181B]'>{title}</p>
-			<p className='text-sm text-[#64748B] mt-1'>{description}</p>
-		</label>
-	</div>
-);
-
 const billingModelOptions: SelectOption[] = [
 	{ label: 'Flat Fee', value: BILLING_MODEL.FLAT_FEE },
 	{ label: 'Package', value: BILLING_MODEL.PACKAGE },
@@ -53,7 +28,7 @@ const billingModelOptions: SelectOption[] = [
 	{ label: 'Slab Tiered', value: 'SLAB_TIERED' },
 ];
 
-const UpdatePriceDialog: FC<UpdatePriceDialogProps> = ({ isOpen, onOpenChange, price, planId, onSuccess }) => {
+const UpdatePriceDialog: FC<UpdatePriceDialogProps> = ({ isOpen, onOpenChange, price, planId: _planId, onSuccess }) => {
 	const [overrideAmount, setOverrideAmount] = useState('');
 	const [overrideQuantity, setOverrideQuantity] = useState<number | undefined>(undefined);
 	const [overrideBillingModel, setOverrideBillingModel] = useState<BILLING_MODEL | 'SLAB_TIERED'>(price.billing_model);
@@ -63,25 +38,9 @@ const UpdatePriceDialog: FC<UpdatePriceDialogProps> = ({ isOpen, onOpenChange, p
 		divide_by: 1,
 	});
 	const [effectiveFrom, setEffectiveFrom] = useState<Date | undefined>(undefined);
-	const [selectedSyncOption, setSelectedSyncOption] = useState<SyncOption>(SyncOption.NEW_ONLY);
 
 	// Detect price unit type
 	const isCustomPriceUnit = price.price_unit_type === PRICE_UNIT_TYPE.CUSTOM;
-
-	// Hide sync option if price type is FIXED
-	const isFixedPrice = price.type === PRICE_TYPE.FIXED;
-
-	// Check for existing subscriptions (only if not FIXED price)
-	const { data: existingSubscriptions } = useQuery({
-		queryKey: ['subscriptions', planId],
-		queryFn: () => SubscriptionApi.listSubscriptions({ plan_id: planId, limit: 1 }),
-		enabled: !!planId && isOpen && !isFixedPrice,
-	});
-
-	const shouldShowSyncOption = useMemo(
-		() => !isFixedPrice && (existingSubscriptions?.items?.length ?? 0) > 0,
-		[isFixedPrice, existingSubscriptions],
-	);
 
 	// Initialize state when price or dialog opens
 	useEffect(() => {
@@ -138,7 +97,6 @@ const UpdatePriceDialog: FC<UpdatePriceDialogProps> = ({ isOpen, onOpenChange, p
 
 			setOverrideTransformQuantity(price.transform_quantity || { divide_by: 1, round: 'up' });
 			setEffectiveFrom(undefined);
-			setSelectedSyncOption(SyncOption.NEW_ONLY);
 		}
 	}, [isOpen, price, isCustomPriceUnit]);
 
@@ -151,17 +109,7 @@ const UpdatePriceDialog: FC<UpdatePriceDialogProps> = ({ isOpen, onOpenChange, p
 		},
 	});
 
-	const { mutateAsync: syncPlanCharges, isPending: isSyncing } = useMutation({
-		mutationFn: () => PlanApi.synchronizePlanPricesWithSubscription(planId),
-		onSuccess: () => {
-			toast.success('Sync has been started and will take up to 1 hour to complete.');
-		},
-		onError: (error: ServerError) => {
-			toast.error(error?.error?.message || 'Error synchronizing charges with subscriptions');
-		},
-	});
-
-	const isLoading = isUpdatingPrice || isSyncing;
+	const isLoading = isUpdatingPrice;
 
 	const handleUpdate = async () => {
 		const updateData: UpdatePriceRequest = {};
@@ -229,11 +177,6 @@ const UpdatePriceDialog: FC<UpdatePriceDialogProps> = ({ isOpen, onOpenChange, p
 				? `${priceName} will be effective from ${formatDateTimeWithSecondsAndTimezone(effectiveFrom)}.`
 				: `${priceName} has been updated successfully.`;
 			toast.success(message);
-
-			// If user selected to sync with existing subscriptions
-			if (shouldShowSyncOption && selectedSyncOption === SyncOption.EXISTING_ALSO) {
-				await syncPlanCharges();
-			}
 
 			onSuccess?.();
 			onOpenChange(false);
@@ -485,38 +428,6 @@ const UpdatePriceDialog: FC<UpdatePriceDialogProps> = ({ isOpen, onOpenChange, p
 						/>
 						<p className='text-xs text-gray-500'>Schedule this price change to take effect on a future date</p>
 					</div>
-
-					{/* Sync Option Radio - Only show if there are active subscriptions */}
-					{shouldShowSyncOption && (
-						<div className='space-y-4'>
-							<p className='text-sm font-medium text-gray-700'>Apply to Subscriptions</p>
-							<RadioGroup
-								value={selectedSyncOption}
-								onValueChange={(value) => setSelectedSyncOption(value as SyncOption)}
-								className='space-y-1'>
-								<RadioOption
-									value={SyncOption.NEW_ONLY}
-									selected={selectedSyncOption}
-									title='New Subscriptions Only'
-									description='Price update will only apply to new subscriptions going forward.'
-								/>
-								<RadioOption
-									value={SyncOption.EXISTING_ALSO}
-									selected={selectedSyncOption}
-									title='Existing Subscriptions Also'
-									description='Price update will apply to both new and existing subscriptions. A sync will be initiated.'
-								/>
-							</RadioGroup>
-
-							{selectedSyncOption === SyncOption.EXISTING_ALSO && (
-								<div className='bg-blue-50 border border-blue-200 rounded-lg p-4'>
-									<p className='text-sm text-blue-800'>
-										<strong>Note:</strong> Syncing plan prices with existing subscriptions will take up to 1 hour to complete.
-									</p>
-								</div>
-							)}
-						</div>
-					)}
 				</div>
 
 				<div className='flex gap-3 pt-4'>

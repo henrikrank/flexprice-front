@@ -4,7 +4,7 @@ import { Outlet, useNavigate, useParams, useLocation } from 'react-router';
 
 // Third-party libraries
 import { useMutation, useQuery } from '@tanstack/react-query';
-import { EyeOff, Pencil } from 'lucide-react';
+import { EyeOff, Pencil, RefreshCw } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { cn } from '@/lib/utils';
 
@@ -87,6 +87,16 @@ const PlanDetailsPage = () => {
 		},
 	});
 
+	const { mutate: syncPlan, isPending: isSyncing } = useMutation({
+		mutationFn: () => PlanApi.synchronizePlanPricesWithSubscription(planId!),
+		onSuccess: () => {
+			toast.success('Sync has been started and will take up to 1 hour to complete.');
+		},
+		onError: (error: ServerError) => {
+			toast.error(error?.error?.message || 'Error synchronizing plan with subscriptions');
+		},
+	});
+
 	const { updateBreadcrumb, setSegmentLoading } = useBreadcrumbsStore();
 
 	// Handle tab changes based on URL
@@ -149,6 +159,11 @@ const PlanDetailsPage = () => {
 			}
 			headingCTA={
 				<>
+					<Button onClick={() => syncPlan()} disabled={isSyncing} isLoading={isSyncing} variant={'outline'} className='flex gap-2'>
+						<RefreshCw />
+						Plan Sync
+					</Button>
+
 					<Button onClick={() => setPlanDrawerOpen(true)} variant={'outline'} className='flex gap-2'>
 						<Pencil />
 						Edit
