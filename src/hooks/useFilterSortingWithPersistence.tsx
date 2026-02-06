@@ -13,20 +13,14 @@ import {
 	writeFiltersAndSortsToSession,
 } from '@/utils/filterPersistence';
 
-export type FilterPersistenceType = 'url' | 'localStorage';
-
-export interface FilterPersistenceConfig {
-	type: FilterPersistenceType;
-	key: string;
-}
-
 interface Props {
 	initialFilters?: FilterCondition[];
 	initialSorts?: SortOption[];
 	debounceTime?: number;
 	onFilterChange?: (filters: FilterCondition[]) => void;
 	onSortChange?: (sorts: SortOption[]) => void;
-	persistence?: FilterPersistenceConfig;
+	/** When set, filters/sorts are persisted to URL and session storage using this key */
+	persistenceKey?: string;
 }
 
 /**
@@ -73,10 +67,9 @@ const useFilterSortingWithPersistence = ({
 	debounceTime = 300,
 	onFilterChange,
 	onSortChange,
-	persistence,
+	persistenceKey,
 }: Props) => {
 	const [searchParams, setSearchParams] = useSearchParams();
-	const persistenceKey = persistence?.type === 'url' ? persistence.key : null;
 
 	// Hydrate once from URL (window.location); useSearchParams() can be empty on first paint after refresh.
 	const initialRef = useRef<{ key: string; filters: FilterCondition[]; sorts: SortOption[] } | null>(null);
