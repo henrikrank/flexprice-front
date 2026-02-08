@@ -65,14 +65,15 @@ const MultichipField = React.forwardRef<HTMLInputElement, InputProps>(
 								className='peer flex-1 h-full bg-transparent  outline-none ring-0 focus:outline-none w-full'
 								onChange={(e) => setinputText(e.target.value)}
 								onKeyDown={(e) => {
-									if (e.key === 'Enter' && inputText.trim()) {
+									if (e.key === ' ') {
+										e.preventDefault();
 										const trimmedText = inputText.trim();
-										if (!chips.includes(trimmedText)) {
+										if (trimmedText && !chips.includes(trimmedText)) {
 											const updatedChips = [...chips, trimmedText];
 											setchips(updatedChips);
 											onChange?.(updatedChips);
 										}
-										setinputText('');
+										if (trimmedText) setinputText('');
 									}
 								}}
 								ref={ref}
