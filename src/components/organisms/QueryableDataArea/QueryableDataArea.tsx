@@ -3,7 +3,7 @@ import { QueryBuilder } from '@/components/molecules';
 import { ColumnData } from '@/components/molecules/Table';
 import usePagination from '@/hooks/usePagination';
 import { usePaginationReset } from '@/hooks/usePaginationReset';
-import useFilterSorting from '@/hooks/useFilterSorting';
+import useFilterSortingWithPersistence from '@/hooks/useFilterSortingWithPersistence';
 import { useQueryWithEmptyState } from '@/hooks/useQueryWithEmptyState';
 import { FilterField, FilterCondition, SortOption } from '@/types/common/QueryBuilder';
 import LoadingState from './LoadingState';
@@ -26,6 +26,10 @@ export interface QueryConfig {
 	initialSorts?: SortOption[];
 	/** Debounce time in milliseconds for filter changes (default: 300) */
 	debounceTime?: number;
+	/**
+	 * Key for filter/sort persistence (URL + session storage). Default: dataConfig.queryKey. Omit or set to undefined to use default.
+	 */
+	filterPersistenceKey?: string;
 }
 
 /**
@@ -265,10 +269,12 @@ const QueryableDataArea = <T = any,>({
 	});
 
 	// Filter and sort state
-	const { filters, sorts, setFilters, setSorts, sanitizedFilters, sanitizedSorts } = useFilterSorting({
+	// URL + session persistence by default so filters/sorts are shareable via link
+	const { filters, sorts, setFilters, setSorts, sanitizedFilters, sanitizedSorts } = useFilterSortingWithPersistence({
 		initialFilters: queryConfig.initialFilters ?? [],
 		initialSorts: queryConfig.initialSorts ?? [],
 		debounceTime: queryConfig.debounceTime ?? 300,
+		persistenceKey: queryConfig.filterPersistenceKey ?? dataConfig.queryKey,
 	});
 
 	// Generate query key for tracking changes
