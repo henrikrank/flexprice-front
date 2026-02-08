@@ -8,6 +8,7 @@ import { GetMonitoringDataRequest } from '@/types';
 import { WindowSize } from '@/models';
 import { TIME_PERIOD } from '@/constants/constants';
 import {
+	ApiDocsContent,
 	EventsMonitoringChart,
 	DashboardControls,
 	RecentSubscriptionsCard,
@@ -171,6 +172,7 @@ const DashboardPage = () => {
 					onWindowSizeChange={setWindowSize}
 				/>
 			}>
+			<ApiDocsContent tags={['Events']} />
 			<div className='space-y-6'>
 				{/* Events Monitoring Chart */}
 				<div>
