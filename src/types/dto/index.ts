@@ -249,6 +249,8 @@ export type {
 	GetCreditGrantsRequest,
 	GetCreditGrantsResponse,
 	ProcessScheduledCreditGrantApplicationsResponse,
+	CancelFutureCreditGrantRequest,
+	DeleteCreditGrantRequest,
 } from './CreditGrant';
 
 export type {

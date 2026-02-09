@@ -5,7 +5,7 @@ import {
 	CREDIT_GRANT_PERIOD,
 	CREDIT_GRANT_EXPIRATION_TYPE,
 	CREDIT_GRANT_PERIOD_UNIT,
-	CREDIT_SCOPE,
+	CREDIT_GRANT_SCOPE,
 	Metadata,
 } from '@/models';
 import { QueryFilter, TimeRangeFilter } from './base';
@@ -16,7 +16,7 @@ import { QueryFilter, TimeRangeFilter } from './base';
 
 export interface CreateCreditGrantRequest {
 	name: string;
-	scope: CREDIT_SCOPE;
+	scope: CREDIT_GRANT_SCOPE;
 	plan_id?: string;
 	subscription_id?: string;
 	credits: number;
@@ -30,6 +30,10 @@ export interface CreateCreditGrantRequest {
 	metadata?: Metadata;
 	conversion_rate?: number;
 	topup_conversion_rate?: number;
+	/** ISO date string. Required for SUBSCRIPTION-scoped grants. */
+	start_date?: string;
+	/** ISO date string. Optional; must be >= start_date when provided. */
+	end_date?: string;
 }
 
 export interface UpdateCreditGrantRequest {
@@ -74,6 +78,8 @@ export const creditGrantToInternal = (grant: CreditGrant): InternalCreditGrantRe
 		metadata: grant.metadata,
 		conversion_rate: grant.conversion_rate,
 		topup_conversion_rate: grant.topup_conversion_rate,
+		start_date: grant.start_date,
+		end_date: grant.end_date,
 	};
 };
 
@@ -108,4 +114,18 @@ export interface ProcessScheduledCreditGrantApplicationsResponse {
 	success_applications_count: number;
 	failed_applications_count: number;
 	total_applications_count: number;
+}
+
+export interface CancelFutureCreditGrantRequest {
+	subscription_id: string;
+	effective_date?: string;
+}
+
+/**
+ * Optional request body for DELETE /creditgrants/:id.
+ * CreditGrantID is set by the backend from the path param; only effective_date is sent in the body.
+ */
+export interface DeleteCreditGrantRequest {
+	/** ISO date string. Optional; when set (subscription scope) the grant end date is set to this time. Omit for immediate delete. */
+	effective_date?: string;
 }
