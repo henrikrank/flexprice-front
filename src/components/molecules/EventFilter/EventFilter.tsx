@@ -103,9 +103,6 @@ const EventFilter: FC<Props> = ({ eventFilters, setEventFilters, error, disabled
 			{error && <p className='text-sm text-destructive'>{error}</p>}
 
 			<div className='space-y-2'>
-				<p className='text-xs text-muted-foreground'>
-					Press Enter in the Value fields to apply your input. Without pressing Enter, values won’t be saved.
-				</p>
 				<Button
 					disabled={disabled}
 					variant='outline'
