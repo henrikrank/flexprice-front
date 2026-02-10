@@ -52,7 +52,7 @@ const EmptyPage: FC<Props> = ({ onAddClick, tags, heading, children, addButtonLa
 					/>
 				)
 			}>
-			<div className='bg-[#fafafa] border border-[#E9E9E9] rounded-xl w-full h-[360px] flex flex-col items-center justify-center mx-auto '>
+			<div className='bg-[#fafafa] border border-[#E9E9E9] rounded-[6px] w-full h-[360px] flex flex-col items-center justify-center mx-auto '>
 				{card?.icon && <div className='mb-8'>{card?.icon}</div>}
 				{card?.heading && <div className=' font-medium text-[20px] leading-normal text-gray-700 mb-4 text-center'>{card?.heading}</div>}
 				{card?.description && (
@@ -81,12 +81,12 @@ const EmptyPage: FC<Props> = ({ onAddClick, tags, heading, children, addButtonLa
 						<motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }} key={index}>
 							<Card
 								className={cn(
-									'h-full group bg-white border border-slate-100 rounded-xl shadow-sm hover:border-blue-100 hover:bg-slate-50 transition-all duration-200 cursor-pointer hover:shadow-lg hover:shadow-blue-500/5 flex flex-col max-w-[280px] mx-auto p-4',
+									'h-full group bg-white border border-slate-100 rounded-[6px] shadow-sm hover:border-blue-100 hover:bg-slate-50 transition-all duration-200 cursor-pointer hover:shadow-lg hover:shadow-blue-500/5 flex flex-col max-w-[280px] mx-auto p-4',
 									'!aspect-auto bg-gradient-to-r from-[#ffffff] to-[#fcfcfc]',
 								)}
 								onClick={item.onClick}>
 								{/* Image at the top */}
-								<div className='w-full h-[80px] aspect-video rounded-t-lg overflow-hidden bg-[#f5f5f5] flex items-center justify-center'>
+								<div className='w-full h-[80px] aspect-video rounded-t-[6px] overflow-hidden bg-[#f5f5f5] flex items-center justify-center'>
 									<img src={imageUrl} loading='lazy' className='object-cover bg-gray-100 w-full h-full' alt={' '} />
 								</div>
 								{/* Content below image */}

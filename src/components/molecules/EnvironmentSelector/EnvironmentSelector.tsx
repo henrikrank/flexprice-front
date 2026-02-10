@@ -40,7 +40,7 @@ const SelectItem = React.forwardRef<
 	<SelectPrimitive.Item
 		ref={ref}
 		className={cn(
-			'relative flex w-full cursor-default select-none items-center rounded-sm py-1.5 px-2 text-sm outline-none focus:bg-accent focus:text-accent-foreground data-[disabled]:pointer-events-none data-[disabled]:opacity-50',
+			'relative flex w-full cursor-default select-none items-center rounded-[6px] py-1.5 px-2 text-sm outline-none focus:bg-accent focus:text-accent-foreground data-[disabled]:pointer-events-none data-[disabled]:opacity-50',
 			className,
 		)}
 		{...props}>
@@ -108,7 +108,7 @@ const EnvironmentSelector: React.FC<Props> = ({ disabled = false, className }) =
 			{/* Tenant */}
 			<div className='w-full mt-2 flex items-center justify-between gap-2'>
 				<div className='flex items-center text-start gap-2 min-w-0'>
-					<span className='size-7 bg-black text-white flex justify-center items-center bg-contain rounded-md text-xs font-semibold'>
+					<span className='size-7 bg-black text-white flex justify-center items-center bg-contain rounded-[6px] text-xs font-semibold'>
 						{user?.tenant?.name
 							?.split(' ')
 							.map((n) => n[0])
@@ -126,7 +126,7 @@ const EnvironmentSelector: React.FC<Props> = ({ disabled = false, className }) =
 				<SelectTrigger className={cn(sidebarOpen ? '' : 'hidden')}>
 					<div
 						className={cn(
-							'w-full mt-3.5 flex items-center justify-between h-10 px-2 py-[10px] rounded-[8px] border',
+							'w-full mt-3.5 flex items-center justify-between h-10 px-2 py-[10px] rounded-[6px] border',
 							isDevelopment && 'border-yellow-400 text-yellow-900',
 							isProduction && 'border-[#BFD0F5] text-[#1F5ADA]',
 						)}
@@ -166,7 +166,7 @@ const EnvironmentSelector: React.FC<Props> = ({ disabled = false, className }) =
 							key='create'
 							value='create'
 							size='sm'
-							className='w-full text-center rounded-md justify-center items-center'>
+							className='w-full text-center rounded-[6px] justify-center items-center'>
 							<Plus className='h-4 w-4' />
 							Add Environment
 						</Button>

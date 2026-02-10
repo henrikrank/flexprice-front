@@ -217,7 +217,7 @@ export const CustomerUsageChart: React.FC<CustomerUsageChartProps> = ({ data, ti
 				}
 				.custom-tooltip-scroll::-webkit-scrollbar-thumb {
 					background: rgba(156, 163, 175, 0.3);
-					border-radius: 2px;
+					border-radius: 6px;
 				}
 				.custom-tooltip-scroll::-webkit-scrollbar-thumb:hover {
 					background: rgba(156, 163, 175, 0.5);

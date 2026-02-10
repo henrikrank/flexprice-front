@@ -1,6 +1,7 @@
 import { useEffect, useRef } from 'react';
 import { TestimonialCard } from '@/components/molecules';
 import { Testimonial } from '@/types';
+import authBg from '../../../assets/toolright.jpg';
 
 const testimonials: Testimonial[] = [
 	{
@@ -103,7 +104,14 @@ const LandingSection = () => {
 	const cards = testimonials.concat(testimonials);
 
 	return (
-		<section className='w-full h-full py-12 bg-[#f8fafc] flex flex-col items-center justify-center'>
+		<section
+			className='w-full min-h-full flex-1 pt-14 pb-12 flex flex-col items-center justify-center'
+			style={{
+				backgroundImage: `url(${authBg})`,
+				backgroundSize: 'cover',
+				backgroundPosition: 'center',
+				backgroundRepeat: 'no-repeat',
+			}}>
 			<h2 className='text-[28px] font-normal text-zinc-950 text-center mb-[44px]'>
 				Focus on <span className='font-medium'>building</span>, not billing.
 			</h2>

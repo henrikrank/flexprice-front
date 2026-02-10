@@ -94,15 +94,15 @@ const IntegrationDetails = () => {
 	return (
 		<Page>
 			<ApiDocsContent tags={['Integrations', 'secrets']} />
-			<div className={cn('border rounded-xl p-4 flex items-center shadow-sm', !integration.premium && 'cursor-pointer')}>
-				<div className='size-20 flex items-center justify-center bg-gray-100 rounded-lg'>
+			<div className={cn('border rounded-[6px] p-4 flex items-center shadow-sm', !integration.premium && 'cursor-pointer')}>
+				<div className='size-20 flex items-center justify-center bg-gray-100 rounded-[6px]'>
 					<img src={integration.logo} alt={integration.name} className='size-16 object-contain' />
 				</div>
 				<div className='ml-4 flex-1'>
 					<div className='flex items-center justify-between w-full'>
 						<h3 className='font-semibold text-lg'>{integration.name}</h3>
 						{integration.premium && (
-							<div className='absolute top-2 right-2 bg-[#FEF08A] text-[#D97706] text-xs !font-semibold px-2 py-1 rounded-2xl !opacity-55'>
+							<div className='absolute top-2 right-2 bg-[#FEF08A] text-[#D97706] text-xs !font-semibold px-2 py-1 rounded-[6px] !opacity-55'>
 								Coming Soon
 							</div>
 						)}
@@ -110,7 +110,7 @@ const IntegrationDetails = () => {
 					<p className='text-gray-500 text-sm'>{integration.description}</p>
 					<div className='mt-2 flex items-center gap-2'>
 						{integration.tags.map((tag, idx) => (
-							<span key={idx} className='text-xs bg-gray-200 px-2 py-1 rounded-md'>
+							<span key={idx} className='text-xs bg-gray-200 px-2 py-1 rounded-[6px]'>
 								{tag}
 							</span>
 						))}

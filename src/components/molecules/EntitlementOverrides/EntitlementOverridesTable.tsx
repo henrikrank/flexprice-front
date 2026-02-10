@@ -105,7 +105,7 @@ const EntitlementOverridesTable: FC<EntitlementOverridesTableProps> = ({ entitle
 								</TooltipTrigger>
 								<TooltipContent
 									sideOffset={5}
-									className='bg-white border border-gray-200 shadow-lg text-sm text-gray-900 px-4 py-3 rounded-lg max-w-[300px]'>
+									className='bg-white border border-gray-200 shadow-lg text-sm text-gray-900 px-4 py-3 rounded-[6px] max-w-[300px]'>
 									<div className='space-y-2'>
 										<div className='font-medium text-gray-900'>Entitlement Override Applied</div>
 										<div className='text-sm text-gray-600'>
@@ -134,7 +134,7 @@ const EntitlementOverridesTable: FC<EntitlementOverridesTableProps> = ({ entitle
 								</TooltipTrigger>
 								<TooltipContent
 									sideOffset={5}
-									className='bg-white border border-gray-200 shadow-lg text-sm text-gray-900 px-4 py-3 rounded-lg max-w-[300px]'>
+									className='bg-white border border-gray-200 shadow-lg text-sm text-gray-900 px-4 py-3 rounded-[6px] max-w-[300px]'>
 									<div className='space-y-2'>
 										<div className='font-medium text-gray-900'>Entitlement Override Applied</div>
 										<div className='text-sm text-gray-600'>
@@ -162,7 +162,7 @@ const EntitlementOverridesTable: FC<EntitlementOverridesTableProps> = ({ entitle
 								</TooltipTrigger>
 								<TooltipContent
 									sideOffset={5}
-									className='bg-white border border-gray-200 shadow-lg text-sm text-gray-900 px-4 py-3 rounded-lg max-w-[300px]'>
+									className='bg-white border border-gray-200 shadow-lg text-sm text-gray-900 px-4 py-3 rounded-[6px] max-w-[300px]'>
 									<div className='space-y-2'>
 										<div className='font-medium text-gray-900'>Entitlement Override Applied</div>
 										<div className='text-sm text-gray-600'>

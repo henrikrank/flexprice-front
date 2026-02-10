@@ -135,7 +135,7 @@ const AppSidebar: React.FC<React.ComponentProps<typeof Sidebar>> = ({ ...props }
 		<Sidebar
 			collapsible='icon'
 			{...props}
-			className={cn('border-none px-3 py-1 shadow-md  bg-[#f9f9f9]', sidebarOpen ? 'px-3' : 'pr-0 pl-2')}>
+			className={cn('border-r-[1.5px] border-gray-300 py-1 bg-[#f9f9f9]', sidebarOpen ? 'px-3' : 'px-2')}>
 			<SidebarHeader>
 				<EnvironmentSelector />
 			</SidebarHeader>

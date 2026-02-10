@@ -80,8 +80,8 @@ const SidebarItem: FC<SidebarItemProps> = (item) => {
 					tooltip={item.title}
 					isActive={isMainItemActive}
 					className={cn(
-						'flex items-center gap-2 h-10 px-2 py-[10px] rounded-[10px] text-[14px] cursor-pointer font-normal transition-all duration-200 ease-in-out',
-						isMainItemActive ? 'bg-white shadow-sm font-medium' : 'font-thin',
+						'flex items-center gap-2 h-10 px-2 py-[10px] rounded-[6px] text-[14px] cursor-pointer font-normal transition-all duration-200 ease-in-out',
+						isMainItemActive ? 'bg-zinc-200 border border-zinc-300 shadow-sm font-medium' : 'font-thin',
 						item.disabled && 'cursor-not-allowed opacity-50',
 					)}>
 					<Link to={item.url || '#'} onClick={(e) => item.disabled && e.preventDefault()}>
@@ -103,8 +103,8 @@ const SidebarItem: FC<SidebarItemProps> = (item) => {
 						tooltip={item.title}
 						isActive={isMainItemActive}
 						className={cn(
-							'flex items-center gap-2 h-10 px-2 py-[10px] rounded-[10px] text-[14px] cursor-pointer font-normal transition-all duration-200 ease-in-out',
-							isMainItemActive ? 'bg-white shadow-sm font-medium' : 'font-thin',
+							'flex items-center gap-2 h-10 px-2 py-[10px] rounded-[6px] text-[14px] cursor-pointer font-normal transition-all duration-200 ease-in-out',
+							isMainItemActive ? 'bg-zinc-200 border border-zinc-300 shadow-sm font-medium' : 'font-thin',
 							item.disabled && 'cursor-not-allowed opacity-50',
 						)}>
 						<Link to={item.url || '#'} onClick={handleMainItemClick}>

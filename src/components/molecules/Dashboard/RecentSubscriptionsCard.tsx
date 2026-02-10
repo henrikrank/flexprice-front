@@ -85,7 +85,7 @@ export const RecentSubscriptionsCard: React.FC<RecentSubscriptionsCardProps> = (
 											contentStyle={{
 												backgroundColor: 'white',
 												border: '1px solid #e5e7eb',
-												borderRadius: '8px',
+												borderRadius: '6px',
 												padding: '8px 12px',
 											}}
 											formatter={(value: any, _name: any, props: any) => [

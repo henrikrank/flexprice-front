@@ -27,7 +27,7 @@ const Dialog: FC<Props> = ({
 }) => {
 	return (
 		<ShadcnDialog open={isOpen} onOpenChange={onOpenChange}>
-			<DialogContent className={cn('bg-white !rounded-2xl max-h-[80vh] overflow-y-auto', className)} showCloseButton={showCloseButton}>
+			<DialogContent className={cn('bg-white rounded-[10px] max-h-[80vh] overflow-y-auto', className)} showCloseButton={showCloseButton}>
 				<DialogHeader className=''>
 					<DialogTitle className={cn('font-medium text-xl', titleClassName)}>
 						{typeof title === 'string' ? title : <>{title}</>}

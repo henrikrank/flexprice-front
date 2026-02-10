@@ -400,63 +400,61 @@ const EntityChargesPage: React.FC<EntityChargesPageProps> = ({ entityType, entit
 	return (
 		<Page documentTitle={`Add Charges to ${entityName || entityType}`} heading={`Add Charges to ${entityName || entityType}`}>
 			<div className='space-y-6'>
-				<div className='p-6 rounded-xl border border-[#E4E4E7] space-y-4'>
-					{/* Recurring Charges Section */}
-					{state.recurringCharges.map((charge, index) => (
-						<div key={`recurring-${index}`}>
-							<RecurringChargesForm
-								price={charge}
-								entityType={priceEntityType}
-								entityId={entityId}
-								entityName={entityData?.name || entityName}
-								onAdd={(charge) => handleRecurringChargeAdd(index, charge)}
-								onUpdate={(price) => handleRecurringChargeUpdate(index, price)}
-								onDeleteClicked={() => handleRecurringChargeDelete(index)}
-								onEditClicked={() => handleRecurringChargeEdit(index)}
-							/>
-						</div>
-					))}
+				{/* Recurring Charges Section */}
+				{state.recurringCharges.map((charge, index) => (
+					<div key={`recurring-${index}`}>
+						<RecurringChargesForm
+							price={charge}
+							entityType={priceEntityType}
+							entityId={entityId}
+							entityName={entityData?.name || entityName}
+							onAdd={(charge) => handleRecurringChargeAdd(index, charge)}
+							onUpdate={(price) => handleRecurringChargeUpdate(index, price)}
+							onDeleteClicked={() => handleRecurringChargeDelete(index)}
+							onEditClicked={() => handleRecurringChargeEdit(index)}
+						/>
+					</div>
+				))}
 
-					{/* Usage Charges Section */}
-					{state.usageCharges.map((charge, index) => (
-						<div key={`usage-${index}`}>
-							<UsagePricingForm
-								price={charge}
-								entityType={priceEntityType}
-								entityId={entityId}
-								onAdd={(charge) => handleUsageChargeAdd(index, charge)}
-								onUpdate={(charge) => handleUsageChargeUpdate(index, charge)}
-								onEditClicked={() => handleUsageChargeEdit(index)}
-								onDeleteClicked={() => handleUsageChargeDelete(index)}
-							/>
-						</div>
-					))}
+				{/* Usage Charges Section */}
+				{state.usageCharges.map((charge, index) => (
+					<div key={`usage-${index}`}>
+						<UsagePricingForm
+							price={charge}
+							entityType={priceEntityType}
+							entityId={entityId}
+							onAdd={(charge) => handleUsageChargeAdd(index, charge)}
+							onUpdate={(charge) => handleUsageChargeUpdate(index, charge)}
+							onEditClicked={() => handleUsageChargeEdit(index)}
+							onDeleteClicked={() => handleUsageChargeDelete(index)}
+						/>
+					</div>
+				))}
 
-					{/* Add Charge Buttons */}
-					{!hasAnyCharges ? (
-						<div>
-							<RectangleRadiogroup
-								title='Select Charge Type'
-								options={CHARGE_OPTIONS}
-								onChange={(value) => handleAddNewPrice(value as PRICE_TYPE)}
-								aria-label={`Select charge type for your ${entityType.toLowerCase()}`}
-							/>
-						</div>
-					) : (
-						<div className='flex gap-2' role='group' aria-label='Add charge options'>
-							<AddChargesButton
-								onClick={() => handleAddNewPrice(PRICE_TYPE.FIXED)}
-								label='Add Recurring Charges'
-								aria-label={`Add recurring charges to ${entityType.toLowerCase()}`}
-							/>
-							<AddChargesButton
-								onClick={() => handleAddNewPrice(PRICE_TYPE.USAGE)}
-								label='Add Usage Based Charges'
-								aria-label={`Add usage-based charges to ${entityType.toLowerCase()}`}
-							/>
-						</div>
-					)}
-				</div>
+				{/* Add Charge Buttons */}
+				{!hasAnyCharges ? (
+					<div>
+						<RectangleRadiogroup
+							title='Select Charge Type'
+							options={CHARGE_OPTIONS}
+							onChange={(value) => handleAddNewPrice(value as PRICE_TYPE)}
+							aria-label={`Select charge type for your ${entityType.toLowerCase()}`}
+						/>
+					</div>
+				) : (
+					<div className='flex gap-2' role='group' aria-label='Add charge options'>
+						<AddChargesButton
+							onClick={() => handleAddNewPrice(PRICE_TYPE.FIXED)}
+							label='Add Recurring Charges'
+							aria-label={`Add recurring charges to ${entityType.toLowerCase()}`}
+						/>
+						<AddChargesButton
+							onClick={() => handleAddNewPrice(PRICE_TYPE.USAGE)}
+							label='Add Usage Based Charges'
+							aria-label={`Add usage-based charges to ${entityType.toLowerCase()}`}
+						/>
+					</div>
+				)}
 
 				{/* Save Button */}
 				<div className='flex justify-start'>

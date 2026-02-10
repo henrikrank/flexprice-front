@@ -179,7 +179,7 @@ const InvoiceLineItemTable: FC<Props> = ({
 										<TooltipTrigger asChild>
 											<Info className='h-3.5 w-3.5 text-gray-400 hover:text-gray-600 transition-colors cursor-help' />
 										</TooltipTrigger>
-										<TooltipContent sideOffset={5} className='bg-gray-900 text-xs text-white px-2.5 py-1.5 rounded-md max-w-[200px]'>
+										<TooltipContent sideOffset={5} className='bg-gray-900 text-xs text-white px-2.5 py-1.5 rounded-[6px] max-w-[200px]'>
 											Final amount due after applying credit notes
 										</TooltipContent>
 									</Tooltip>

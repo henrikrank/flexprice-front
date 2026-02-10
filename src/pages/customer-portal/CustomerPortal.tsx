@@ -119,13 +119,13 @@ const CustomerPortal = ({ token }: CustomerPortalProps) => {
 				className='max-w-6xl mx-auto px-4 sm:px-6 py-6'>
 				{/* Tab Navigation */}
 				<div className='mb-6'>
-					<div className='flex space-x-1 bg-white border border-[#E9E9E9] rounded-lg p-1 w-fit'>
+					<div className='flex space-x-1 bg-white border border-[#E9E9E9] rounded-[6px] p-1 w-fit'>
 						{visibleTabs.map((tab) => (
 							<button
 								key={tab.id}
 								onClick={() => setActiveTab(tab.id)}
 								className={cn(
-									'px-4 py-2 text-sm font-medium rounded-md transition-colors',
+									'px-4 py-2 text-sm font-medium rounded-[6px] transition-colors',
 									activeTab === tab.id ? 'bg-zinc-100 text-zinc-900' : 'text-zinc-500 hover:text-zinc-700 hover:bg-zinc-50',
 								)}>
 								{tab.label}

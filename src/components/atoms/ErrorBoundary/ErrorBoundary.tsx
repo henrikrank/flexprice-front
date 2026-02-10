@@ -119,7 +119,7 @@ export const ErrorFallback = ({ error, errorInfo, errorId, resetError }: ErrorFa
 											duration: 2000,
 											position: 'bottom-center',
 											style: {
-												borderRadius: '8px',
+												borderRadius: '6px',
 												background: '#333',
 												color: '#fff',
 											},

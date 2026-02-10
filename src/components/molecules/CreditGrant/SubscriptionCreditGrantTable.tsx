@@ -143,7 +143,7 @@ const SubscriptionCreditGrantTable: React.FC<Props> = ({
 					<FormHeader className='mb-0' title='Credit Grants' variant='sub-header' />
 					<AddButton onClick={() => setIsOpen(true)} disabled={disabled} />
 				</div>
-				<div className='rounded-xl border border-gray-300'>
+				<div className='rounded-[6px] border border-gray-300'>
 					<FlexpriceTable data={data} columns={columns} showEmptyRow />
 				</div>
 			</div>

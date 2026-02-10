@@ -320,7 +320,7 @@ const FeatureDetailsSection = ({
 	const isMeteredType = data.type === FEATURE_TYPE.METERED;
 
 	return (
-		<Card className='p-6 rounded-xl border border-[#E4E4E7]'>
+		<Card className='p-6 rounded-[6px] border border-[#E4E4E7]'>
 			<Input
 				label='Name*'
 				placeholder='Enter a name for the feature'
@@ -503,15 +503,11 @@ const EventDetailsSection = ({
 				error={meterErrors.event_name}
 				onChange={handleEventNameChange}
 			/>
-			<Spacer height='20px' />
+			<Spacer height='12px' />
 
-			<div className='flex flex-col gap-2 min-h-[52px]'>
+			<div className='flex flex-col gap-2'>
 				{!formState.showEventFilters ? (
-					<AddChargesButton
-						label='Event filters'
-						onClick={() => onUpdateFormState({ showEventFilters: true })}
-						className='self-start min-w-[160px] h-9'
-					/>
+					<AddChargesButton label='Event filters' onClick={() => onUpdateFormState({ showEventFilters: true })} className='self-start' />
 				) : null}
 				{formState.showEventFilters ? (
 					<>
@@ -628,8 +624,8 @@ const AggregationSection = ({
 	const showMultiplierInput = meter?.aggregation?.type === METER_AGGREGATION_TYPE.SUM_WITH_MULTIPLIER;
 
 	return (
-		<div className='card'>
-			<Card className='flex flex-col gap-4'>
+		<>
+			<Card className='flex flex-col gap-3 pt-6 px-6 pb-4'>
 				<Select
 					options={AGGREGATION_OPTIONS}
 					value={meter?.aggregation?.type || AGGREGATION_OPTIONS[0].value}
@@ -664,13 +660,9 @@ const AggregationSection = ({
 					/>
 				)}
 
-				<div className='flex flex-col gap-2 min-h-[52px]'>
+				<div className='flex flex-col gap-2'>
 					{!formState.showBucketSize ? (
-						<AddChargesButton
-							label='Bucket size'
-							onClick={() => onUpdateFormState({ showBucketSize: true })}
-							className='self-start min-w-[160px] h-9'
-						/>
+						<AddChargesButton label='Bucket size' onClick={() => onUpdateFormState({ showBucketSize: true })} className='self-start' />
 					) : null}
 					{formState.showBucketSize ? (
 						<Select
@@ -693,7 +685,7 @@ const AggregationSection = ({
 					onChange={handleResetUsageChange}
 				/>
 			</div> */}
-		</div>
+		</>
 	);
 };
 
@@ -825,7 +817,7 @@ const AddFeaturePage = () => {
 
 			<Spacer height='16px' />
 
-			<div className={cn('flex gap-6 relative !mb-24', isMeteredType && 'w-full')}>
+			<div className={cn('flex gap-5 relative !mb-24', isMeteredType && 'w-full')}>
 				<div className='flex-[6] gap-7'>
 					<FeatureDetailsSection
 						data={data}
@@ -869,7 +861,7 @@ const AddFeaturePage = () => {
 					<Spacer height='16px' />
 				</div>
 
-				<div className={cn('flex-[5] max-w-lg relative')}>{isMeteredType && <CodePreviewSection meter={data.meter} />}</div>
+				<div className={cn('flex-[6] max-w-lg relative')}>{isMeteredType && <CodePreviewSection meter={data.meter} />}</div>
 			</div>
 		</Page>
 	);

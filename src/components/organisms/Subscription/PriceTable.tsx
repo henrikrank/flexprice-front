@@ -267,7 +267,7 @@ const PriceTable: FC<Props> = ({
 			<div>
 				<FormHeader title='Charges' variant='sub-header' />
 			</div>
-			<div className='rounded-xl border border-gray-300'>
+			<div className='rounded-[6px] border border-gray-300'>
 				<motion.div
 					initial={{ height: 'auto' }}
 					// animate={{ height: showAllRows ? 'auto' : 200 }}
@@ -280,7 +280,7 @@ const PriceTable: FC<Props> = ({
 				<div className='flex justify-center mt-3'>
 					<button
 						onClick={() => setShowAllRows((prev) => !prev)}
-						className='flex items-center gap-1.5 text-sm text-gray-600 hover:text-gray-900 transition-colors py-2 px-3 rounded-md hover:bg-gray-50'>
+						className='flex items-center gap-1.5 text-sm text-gray-600 hover:text-gray-900 transition-colors py-2 px-3 rounded-[6px] hover:bg-gray-50'>
 						{showAllRows ? (
 							<>
 								<span>Show less</span>

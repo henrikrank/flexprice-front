@@ -350,7 +350,7 @@ const PricingPage = () => {
 						<div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 w-full mb-16'>
 							{[1, 2, 3].map((index) => (
 								<div key={index} className='w-full rounded-3xl bg-white p-6 min-h-[280px] flex items-center justify-center relative'>
-									<svg className='absolute inset-0 w-full h-full pointer-events-none' style={{ borderRadius: '1.5rem' }}>
+									<svg className='absolute inset-0 w-full h-full pointer-events-none' style={{ borderRadius: '6px' }}>
 										<rect
 											x='1'
 											y='1'
