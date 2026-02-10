@@ -33,7 +33,7 @@ const PaymentList = () => {
 	if ((payments?.items ?? []).length === 0) {
 		return (
 			<div className='space-y-6'>
-				<div className='bg-[#fafafa] border border-[#E9E9E9] rounded-xl w-full h-[360px] flex flex-col items-center justify-center mx-auto'>
+				<div className='bg-[#fafafa] border border-[#E9E9E9] rounded-[10px] w-full h-[360px] flex flex-col items-center justify-center mx-auto'>
 					<div className='font-medium text-[20px] leading-normal text-gray-700 mb-4 text-center'>Record Your First Payment</div>
 					<div className='font-normal bg-[#F9F9F9] text-[16px] leading-normal text-gray-400 mb-8 text-center max-w-[350px]'>
 						Add a payment record to manage customer charges and settlements.
@@ -50,7 +50,7 @@ const PaymentList = () => {
 								<motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }} key={index}>
 									<Card
 										className={cn(
-											'h-full group bg-white border border-slate-100 rounded-xl shadow-sm hover:border-blue-100 hover:bg-slate-50 transition-all duration-200 cursor-pointer hover:shadow-lg hover:shadow-blue-500/5 flex flex-col max-w-[280px] mx-auto p-4',
+											'h-full group bg-white border border-slate-100 rounded-[10px] shadow-sm hover:border-blue-100 hover:bg-slate-50 transition-all duration-200 cursor-pointer hover:shadow-lg hover:shadow-blue-500/5 flex flex-col max-w-[280px] mx-auto p-4',
 											'!aspect-auto bg-gradient-to-r from-[#ffffff] to-[#fcfcfc]',
 										)}
 										onClick={item.onClick}>

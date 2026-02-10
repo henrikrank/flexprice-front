@@ -186,11 +186,11 @@ const FlexpriceTable: FC<FlexpriceTableProps<any>> = ({
 	const renderTableHeader = () => (
 		<TableHeader
 			className={cn(
-				variant === 'default' ? 'h-8 bg-muted border-b border-[#E2E8F0] rounded-t-xl' : 'h-8',
+				variant === 'default' ? 'h-8 bg-muted border-b border-[#E2E8F0] rounded-t-[6px]' : 'h-8',
 				variant === 'no-bordered' && 'bg-transparent',
 			)}>
 			<TableRow
-				className={cn(variant === 'default' ? 'rounded-t-xl border-b border-[#E2E8F0]' : '', variant === 'no-bordered' && 'border-b-0')}>
+				className={cn(variant === 'default' ? 'rounded-t-[6px] border-b border-[#E2E8F0]' : '', variant === 'no-bordered' && 'border-b-0')}>
 				{columns.map(({ title, flex = 1, width, color = '#64748B', align = 'left', className, children }, index) => (
 					<TableHead
 						variant={variant}
@@ -201,8 +201,8 @@ const FlexpriceTable: FC<FlexpriceTableProps<any>> = ({
 						className={cn(
 							color ? `text-[${color}] !text-black` : 'text-black',
 							'font-sans font-medium px-3',
-							variant === 'default' && index === 0 ? 'rounded-tl-xl' : '',
-							variant === 'default' && index === columns.length - 1 ? 'rounded-tr-xl' : '',
+							variant === 'default' && index === 0 ? 'rounded-tl-[6px]' : '',
+							variant === 'default' && index === columns.length - 1 ? 'rounded-tr-[6px]' : '',
 							variant === 'no-bordered' && 'border-b-0',
 							className,
 						)}>
@@ -287,7 +287,7 @@ const FlexpriceTable: FC<FlexpriceTableProps<any>> = ({
 		<div
 			className={cn(
 				'overflow-hidden',
-				variant === 'default' && 'rounded-xl border border-[#E2E8F0]',
+				variant === 'default' && 'rounded-[6px] border border-[#E2E8F0]',
 				variant === 'default' && !hideBottomBorder && 'border-b border-[#E2E8F0]',
 				variant === 'no-bordered' && 'border-0',
 			)}>

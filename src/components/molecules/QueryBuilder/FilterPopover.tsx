@@ -309,12 +309,7 @@ const FilterPopover: React.FC<Props> = ({ fields, value = [], onChange, classNam
 										return (
 											<SortableItem key={filter.id} value={filter.field}>
 												<div
-													className={cn(
-														'grid items-center',
-														GRID_GAP,
-														ITEM_PADDING,
-														'w-full rounded-[4px] hover:bg-accent/40 transition-colors',
-													)}
+													className={cn('grid items-center', GRID_GAP, ITEM_PADDING, 'w-full rounded hover:bg-accent/40 transition-colors')}
 													style={gridTemplateColumns}>
 													<span className='text-xs text-muted-foreground'>{index > 0 ? 'And' : 'Where'}</span>
 													<Combobox
@@ -370,13 +365,13 @@ const FilterPopover: React.FC<Props> = ({ fields, value = [], onChange, classNam
 									})}
 								</SortableContent>
 								<SortableOverlay>
-									<div className={cn('grid', GRID_GAP, ITEM_PADDING, 'w-full bg-accent/40 rounded-[4px]')} style={gridTemplateColumns}>
-										<div className='h-7 rounded-[4px] border-border/40 bg-background' />
-										<div className='h-7 rounded-[4px] border-border/40 bg-background' />
-										<div className='h-7 rounded-[4px] border-border/40 bg-background' />
+									<div className={cn('grid', GRID_GAP, ITEM_PADDING, 'w-full bg-accent/40 rounded')} style={gridTemplateColumns}>
+										<div className='h-7 rounded border-border/40 bg-background' />
+										<div className='h-7 rounded border-border/40 bg-background' />
+										<div className='h-7 rounded border-border/40 bg-background' />
 										<div className='flex gap-1 justify-end'>
-											<div className='h-7 w-7 rounded-[4px] border-border/40 bg-background' />
-											<div className='h-7 w-7 rounded-[4px] border-border/40 bg-background' />
+											<div className='h-7 w-7 rounded border-border/40 bg-background' />
+											<div className='h-7 w-7 rounded border-border/40 bg-background' />
 										</div>
 									</div>
 								</SortableOverlay>

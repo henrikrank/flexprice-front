@@ -17,9 +17,14 @@ export default {
 				qanelas: ['Qanelas', 'sans-serif'],
 			},
 			borderRadius: {
-				lg: 'var(--radius)',
-				md: 'calc(var(--radius) - 2px)',
-				sm: 'calc(var(--radius) - 4px)',
+				DEFAULT: '6px',
+				sm: '6px',
+				md: '6px',
+				lg: '6px',
+				xl: '6px',
+				'2xl': '6px',
+				'3xl': '6px',
+				full: '9999px',
 			},
 			colors: {
 				background: 'hsl(var(--background))',

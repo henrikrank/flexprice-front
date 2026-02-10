@@ -115,7 +115,7 @@ const Sheet: FC<Props> = ({ children, trigger, description, title, isOpen, onOpe
 			{trigger && <SheetTrigger asChild>{trigger}</SheetTrigger>}
 			<SheetContent
 				ref={contentRef}
-				className={cn('h-screen overflow-y-auto !rounded-xl', className, {
+				className={cn('h-screen overflow-y-auto rounded-[10px]', className, {
 					'sm:max-w-sm': size === 'sm',
 					'sm:max-w-md': size === 'md',
 					'sm:max-w-lg': size === 'lg',

@@ -55,7 +55,7 @@
 
 		--chart-5: 27 87% 67%;
 
-		--radius: 0.5rem;
+		--radius: 6px;
 	}
 	.dark {
 		--background: 0 0% 3.9%;
@@ -119,7 +119,7 @@
 
 @layer utilities {
 	.card {
-		@apply rounded-xl border border-gray-300 p-6;
+		@apply rounded-[6px] border border-gray-300 p-6;
 	}
 	.page {
 		@apply flex flex-col px-4 py-12 h-screen;

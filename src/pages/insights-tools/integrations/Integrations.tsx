@@ -84,8 +84,8 @@ const IntegrationCard = ({ integration }: { integration: Integration; installed?
 	return (
 		<PremiumFeature isPremiumFeature={integration.premium}>
 			<div className='relative'>
-				<div onClick={handleCardClick} className={cn('border rounded-2xl p-4 flex shadow-sm relative', 'cursor-pointer')}>
-					<div className='w-16 h-16 flex items-center justify-center bg-gray-100 rounded-lg'>
+				<div onClick={handleCardClick} className={cn('border rounded-[6px] p-4 flex shadow-sm relative', 'cursor-pointer')}>
+					<div className='w-16 h-16 flex items-center justify-center bg-gray-100 rounded-[6px]'>
 						<img src={integration.logo} alt={integration.name} className='w-12 h-12 object-contain' />
 					</div>
 					<div className='ml-4 flex-1'>
@@ -96,7 +96,7 @@ const IntegrationCard = ({ integration }: { integration: Integration; installed?
 						<p className='text-gray-500 text-sm'>{integration.description}</p>
 						<div className='mt-5 flex items-center gap-2 '>
 							{integration.tags.map((tag, idx) => (
-								<span key={idx} className='text-xs bg-[#f4f4f4] text-[#5e5e5e] px-2 py-1 rounded-md mb-1'>
+								<span key={idx} className='text-xs bg-[#f4f4f4] text-[#5e5e5e] px-2 py-1 rounded-[6px] mb-1'>
 									{tag}
 								</span>
 							))}

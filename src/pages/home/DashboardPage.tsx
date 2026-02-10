@@ -179,7 +179,14 @@ const DashboardPage = () => {
 					) : monitoringError ? (
 						<EventsMonitoringChartError />
 					) : (
-						monitoringData && <EventsMonitoringChart data={monitoringData} title='Events Monitoring' description={getUpdatedTime()} />
+						monitoringData && (
+							<EventsMonitoringChart
+								data={monitoringData}
+								title='Events Monitoring'
+								description={getUpdatedTime()}
+								onViewLatestData={() => setTimePeriod(TIME_PERIOD.LAST_30_DAYS)}
+							/>
+						)
 					)}
 				</div>
 

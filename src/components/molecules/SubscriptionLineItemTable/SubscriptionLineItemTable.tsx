@@ -245,7 +245,7 @@ const SubscriptionLineItemTable: FC<Props> = ({ data, onEdit, onTerminate, isLoa
 						content={rowData.tooltipContent}
 						delayDuration={0}
 						sideOffset={5}
-						className='bg-white border border-gray-200 shadow-lg text-sm text-gray-900 px-4 py-3 rounded-lg max-w-[320px]'>
+						className='bg-white border border-gray-200 shadow-lg text-sm text-gray-900 px-4 py-3 rounded-[6px] max-w-[320px]'>
 						<span>
 							<Chip label={rowData.statusLabel} variant={rowData.statusVariant} />
 						</span>

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router';
 import LoginForm from './LoginForm';
+import flexpriceLogo from '../../../assets/comicon.png';
 import SignupForm from './SignupForm';
 import ForgotPasswordForm from './ForgotPasswordForm';
 import AuthService from '@/core/auth/AuthService';
@@ -73,7 +74,7 @@ const AuthPage: React.FC = () => {
 	};
 
 	return (
-		<div className='flex w-full bg-white page !p-0 !flex-row '>
+		<div className='flex w-full min-h-screen bg-white page !p-0 !flex-row'>
 			{/* Left side - Auth Form */}
 			<div className='w-[45%] flex flex-col'>
 				{/* Slack Community Strip - Absolute Top */}
@@ -93,7 +94,7 @@ const AuthPage: React.FC = () => {
 				<div className='flex-1 flex justify-center items-center pt-[10px]'>
 					<div className='flex flex-col justify-center max-w-xl w-[55%] mx-auto'>
 						<div className='flex justify-center mb-4'>
-							<img src={'/newlogobrowser.png'} alt='Flexprice Logo' className='h-12' />
+							<img src={flexpriceLogo} alt='Flexprice Logo' className='h-12' />
 						</div>
 
 						{currentTab === AuthTab.SIGNUP && (
@@ -127,7 +128,7 @@ const AuthPage: React.FC = () => {
 			</div>
 
 			{/* Right side - Marketing Content */}
-			<div className='w-[55%]'>
+			<div className='w-[55%] min-h-screen flex'>
 				<LandingSection />
 			</div>
 		</div>

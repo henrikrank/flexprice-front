@@ -55,7 +55,7 @@ const BillingCycleSelector = ({
 						key={index}
 						data-state={value === option.value ? 'active' : 'inactive'}
 						className={cn(
-							'text-[15px] font-normal text-gray-500 px-3 py-1 rounded-md',
+							'text-[15px] font-normal text-gray-500 px-3 py-1 rounded-[6px]',
 							'data-[state=active]:text-gray-900 data-[state=active]:bg-gray-100',
 							'hover:text-gray-900 transition-colors',
 							'data-[state=inactive]:border data-[state=inactive]:border-border data-[state=active]:border-primary',
@@ -362,7 +362,7 @@ const SubscriptionForm = ({
 	};
 
 	return (
-		<div className='p-6 rounded-lg border border-gray-300 space-y-6 bg-white'>
+		<div className='p-6 rounded-[6px] border border-gray-300 space-y-6 bg-white'>
 			<FormHeader title='Subscription Details' variant='sub-header' />
 
 			{/* Plan Selection */}
@@ -649,7 +649,7 @@ const SubscriptionForm = ({
 			{state.selectedPlan && !isLoadingPlanDetails && allEntitlements.length > 0 && (
 				<div className='space-y-4 mt-4 pt-3 border-t border-gray-200'>
 					<FormHeader className='mb-0' title='Entitlements' variant='sub-header' />
-					<div className='rounded-xl border border-gray-300 space-y-6 mt-2'>
+					<div className='rounded-[6px] border border-gray-300 space-y-6 mt-2'>
 						<EntitlementOverridesTable
 							entitlements={allEntitlements}
 							overrides={state.entitlementOverrides}

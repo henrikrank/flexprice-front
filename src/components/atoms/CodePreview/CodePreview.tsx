@@ -17,7 +17,7 @@ interface Props {
 const CodePreview: FC<Props> = ({ code, language, className: styles, title }) => {
 	return (
 		<>
-			<div className={cn(' bg-[#FAFAFA]  border rounded-lg')}>
+			<div className={cn('bg-[#FAFAFA] border rounded-[6px]')}>
 				<div className='flex justify-between py-2 px-6 items-center w-full'>
 					<p className='font-semibold text-lg'>{title}</p>
 					<Button
@@ -43,7 +43,7 @@ const CodePreview: FC<Props> = ({ code, language, className: styles, title }) =>
 						code={code}
 						language={language ?? 'javascript'}>
 						{({ className, style, tokens, getLineProps, getTokenProps }) => (
-							<pre className={cn(className, styles)} style={{ ...style, padding: '0.5rem', borderRadius: '8px', overflowX: 'auto' }}>
+							<pre className={cn(className, styles)} style={{ ...style, padding: '0.5rem', borderRadius: '6px', overflowX: 'auto' }}>
 								{tokens.map((line, i) => (
 									<div key={i} {...getLineProps({ line })}>
 										{line.map((token, key) => (

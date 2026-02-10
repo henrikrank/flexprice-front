@@ -162,7 +162,7 @@ const SubscriptionDiscountTable: FC<Props> = ({ coupon, onChange, disabled, curr
 					<FormHeader className='mb-0' title='Discounts' variant='sub-header' />
 					{!coupon && <AddButton onClick={() => setIsModalOpen(true)} disabled={disabled} label='Add' />}
 				</div>
-				<div className='rounded-xl border border-gray-300'>
+				<div className='rounded-[6px] border border-gray-300'>
 					<FlexpriceTable data={tableData} columns={columns} showEmptyRow />
 				</div>
 			</div>

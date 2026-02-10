@@ -8,7 +8,7 @@ import { BILLING_MODEL, Price, PRICE_TYPE, PRICE_UNIT_TYPE, PriceUnitConfig } fr
 import { BILLING_PERIOD, currencyOptions } from '@/constants/constants';
 import RecurringChargesForm from './RecurringChargesForm';
 import UsagePricingForm, { PriceInternalState } from './UsagePricingForm';
-import { CirclePlus } from 'lucide-react';
+import { Plus } from 'lucide-react';
 import { BILLING_CADENCE, INVOICE_CADENCE } from '@/models/Invoice';
 import { PRICE_ENTITY_TYPE } from '@/models/Price';
 
@@ -48,11 +48,11 @@ export const AddChargesButton = ({ onClick, label, className }: AddChargesButton
 	<button
 		onClick={onClick}
 		className={cn(
-			'shrink-0 cursor-pointer flex gap-2 items-center justify-center bg-[#F4F4F5] rounded-md px-4 h-9 min-w-[160px] text-left',
+			'shrink-0 cursor-pointer flex gap-2 items-center justify-center bg-[#F4F4F5] rounded-[6px] px-2.5 h-9 w-fit text-left',
 			className,
 		)}>
-		<CirclePlus size={16} className='shrink-0' />
-		<span className='text-[#18181B] text-sm font-medium truncate'>{label}</span>
+		<Plus size={16} className='shrink-0' />
+		<span className='text-[#18181B] text-sm font-medium whitespace-nowrap'>{label}</span>
 	</button>
 );
 

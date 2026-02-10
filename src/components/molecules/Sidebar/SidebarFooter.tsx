@@ -58,7 +58,7 @@ const SidebarFooter = () => {
 			{/* user profile */}
 			<Popover>
 				<PopoverTrigger asChild>
-					<button className='w-full flex items-center justify-between h-10 rounded-md gap-2 px-2 hover:bg-muted transition-colors'>
+					<button className='w-full flex items-center justify-between h-10 rounded-[6px] gap-2 px-2 hover:bg-muted transition-colors'>
 						<div className='flex items-center gap-1 min-w-0 flex-1'>
 							<div className='size-5 text-xs   bg-primary text-primary-foreground flex justify-center items-center rounded-full flex-shrink-0 font-medium'>
 								{user?.email ? user.email.charAt(0).toUpperCase() : 'F'}
@@ -76,7 +76,7 @@ const SidebarFooter = () => {
 							<button
 								key={index}
 								onClick={item.onClick}
-								className='w-full flex items-center gap-2 rounded-md px-2 py-1 text-sm hover:bg-muted transition-colors'>
+								className='w-full flex items-center gap-2 rounded-[6px] px-2 py-1 text-sm hover:bg-muted transition-colors'>
 								{item.icon && <item.icon className='size-4' />}
 								<span className='text-sm'>{item.label}</span>
 							</button>

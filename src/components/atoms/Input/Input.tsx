@@ -176,7 +176,7 @@ const Input = React.forwardRef<HTMLInputElement, InputProps>(
 						sizes[size].padding,
 						sizes[size].text,
 						sizes[size].display,
-						'w-full flex h-full group items-center rounded-md border bg-background ring-offset-background placeholder:text-muted-foreground disabled:opacity-50 disabled:cursor-not-allowed',
+						'w-full flex h-full group items-center rounded-[6px] border bg-background ring-offset-background placeholder:text-muted-foreground disabled:opacity-50 disabled:cursor-not-allowed',
 						error ? 'border-destructive' : 'border-input focus-within:ring-ring focus-within:ring-offset-2',
 						'focus-within:border-black',
 						className,

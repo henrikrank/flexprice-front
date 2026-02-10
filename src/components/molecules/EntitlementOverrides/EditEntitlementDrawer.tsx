@@ -104,7 +104,7 @@ const EditEntitlementDrawer: FC<EditEntitlementDrawerProps> = ({ isOpen, onOpenC
 			title={`Edit Entitlement: ${entitlement.feature?.name || 'Unknown'}`}
 			description='Override entitlement values for this subscription'
 			size='md'>
-			<div className='space-y-6 p-6'>
+			<div className='space-y-5 p-6'>
 				<div className='space-y-2'>
 					<Label label='Feature Type' />
 					<div className='text-sm text-gray-600 capitalize'>{entitlement.feature_type?.toLowerCase()}</div>
@@ -112,7 +112,7 @@ const EditEntitlementDrawer: FC<EditEntitlementDrawerProps> = ({ isOpen, onOpenC
 
 				{entitlement.feature_type === FEATURE_TYPE.METERED && (
 					<div className='space-y-4'>
-						<div className='space-y-2'>
+						<div className='space-y-3'>
 							<Label label='Usage Limit' />
 							<Input
 								type='number'
@@ -160,7 +160,7 @@ const EditEntitlementDrawer: FC<EditEntitlementDrawerProps> = ({ isOpen, onOpenC
 					</div>
 				)}
 
-				<div className='flex justify-end gap-3 pt-4'>
+				<div className='flex justify-end gap-3 mt-4'>
 					<Button variant='outline' onClick={handleCancel}>
 						Cancel
 					</Button>

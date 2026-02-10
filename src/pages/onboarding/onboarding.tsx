@@ -89,7 +89,7 @@ const OnboardingPage = () => {
 				<ApiDocsContent tags={['Events']} />
 				<div className='flex gap-6 mb-16 w-full'>
 					{/* Welcome Container */}
-					<div className='flex-1 w-[70%] flex-grow rounded-[20px] bg-[#dde1eb] p-8'>
+					<div className='flex-1 w-[70%] flex-grow rounded bg-[#dde1eb] p-8'>
 						<div className='flex justify-between items-start w-full'>
 							<div className='w-[60%]'>
 								<h1 className='mb-2 text-xl font-semibold tracking-tight'>Welcome to Flexprice!</h1>
@@ -109,7 +109,7 @@ const OnboardingPage = () => {
 						</div>
 					</div>
 					{/* Learn More Container */}
-					<div className='flex-1 max-w-[35%] bg-[#0B1121] rounded-[20px] relative overflow-hidden'>
+					<div className='flex-1 max-w-[35%] bg-[#0B1121] rounded relative overflow-hidden'>
 						<iframe
 							src='https://www.loom.com/embed/60d8308781254fe0bc5be341501f9fd5?sid=c034e9a8-e243-4def-ab50-976f08d56cee&amp;hideEmbedTopBar=true&amp;hide_title=true&amp;hide_owner=true&amp;hide_speed=true&amp;hide_share=true'
 							allowFullScreen
