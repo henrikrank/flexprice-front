@@ -55,7 +55,7 @@ const TaxPage = () => {
 		return (
 			<EmptyPage
 				heading='Tax Rates'
-				tags={['Taxes']}
+				tags={['Taxes', 'Tax', 'Tax Rates']}
 				emptyStateCard={{
 					heading: 'Create Your First Tax Rate',
 					description: 'Set up tax rates to automatically calculate taxes on invoices and ensure compliance with local regulations.',
@@ -76,7 +76,7 @@ const TaxPage = () => {
 
 	return (
 		<Page heading='Tax Rates' headingCTA={<AddButton onClick={handleCreateNew} />}>
-			<ApiDocsContent tags={['Taxes']} />
+			<ApiDocsContent tags={['Taxes', 'Tax', 'Tax Rates']} />
 			<div className='px-0'>
 				<TaxTable data={taxData?.items || []} onEdit={handleEdit} />
 				<Spacer className='!h-4' />

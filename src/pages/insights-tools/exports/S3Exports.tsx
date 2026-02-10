@@ -7,6 +7,7 @@ import { ConnectionApi, TaskApi } from '@/api';
 import { ENTITY_STATUS, CONNECTION_PROVIDER_TYPE } from '@/models';
 import toast from 'react-hot-toast';
 import S3ConnectionDrawer from '@/components/molecules/S3ConnectionDrawer/S3ConnectionDrawer';
+import { API_DOCS_TAGS } from '@/constants/apiDocsTags';
 import { ApiDocsContent } from '@/components/molecules';
 
 const S3Exports = () => {
@@ -81,7 +82,7 @@ const S3Exports = () => {
 
 	return (
 		<Page heading='S3 Data Exports'>
-			<ApiDocsContent tags={['Exports', 'S3', 'Data Pipelines']} />
+			<ApiDocsContent tags={API_DOCS_TAGS.Tasks} />
 
 			{/* Back button and Add Connection Button */}
 			<div className='mb-6 flex items-center justify-between'>

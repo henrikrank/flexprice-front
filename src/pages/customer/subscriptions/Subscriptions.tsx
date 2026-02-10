@@ -1,5 +1,5 @@
 import { Page, ActionButton, Chip } from '@/components/atoms';
-import { RedirectCell } from '@/components/molecules';
+import { ApiDocsContent, RedirectCell } from '@/components/molecules';
 import { ColumnData } from '@/components/molecules/Table';
 import { QueryableDataArea } from '@/components/organisms';
 import GUIDES from '@/constants/guides';
@@ -201,6 +201,7 @@ const SubscriptionsPage = () => {
 
 	return (
 		<Page heading='Subscriptions'>
+			<ApiDocsContent tags={['Subscriptions', 'Subscription']} />
 			<QueryableDataArea<SubscriptionResponse>
 				queryConfig={{
 					filterOptions,
@@ -239,7 +240,7 @@ const SubscriptionsPage = () => {
 					heading: 'Subscriptions',
 					description: 'Create your first subscription to start billing your customers.',
 					buttonLabel: 'Create Subscription',
-					tags: ['Subscriptions'],
+					tags: ['Subscriptions', 'Subscription'],
 					tutorials: GUIDES.customers.tutorials,
 				}}
 			/>

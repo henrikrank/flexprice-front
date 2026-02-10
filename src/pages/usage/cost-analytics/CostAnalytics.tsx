@@ -6,6 +6,7 @@ import CostSheetApi from '@/api/CostSheetApi';
 import toast from 'react-hot-toast';
 import { GetCostAnalyticsRequest } from '@/types';
 import { Feature } from '@/models';
+import { API_DOCS_TAGS } from '@/constants/apiDocsTags';
 import { ApiDocsContent, MetricCard } from '@/components/molecules';
 import { CostDataTable } from '@/components/molecules';
 
@@ -97,7 +98,7 @@ const CostAnalyticsPage: React.FC = () => {
 
 	return (
 		<Page heading='Analytics'>
-			<ApiDocsContent tags={['Analytics']} />
+			<ApiDocsContent tags={API_DOCS_TAGS.Costs} />
 			<div className='space-y-6'>
 				{/* Filters Section */}
 				<div className='grid grid-cols-1 md:grid-cols-3 gap-3 w-full'>
