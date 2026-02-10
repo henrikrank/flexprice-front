@@ -73,7 +73,7 @@ const BillingPage = () => {
 
 	return (
 		<Page heading='Billing'>
-			<ApiDocsContent tags={['Billing']} />
+			<ApiDocsContent tags={['Tenants']} />
 
 			<FlatTabs
 				tabs={[

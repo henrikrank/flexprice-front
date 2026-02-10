@@ -1,4 +1,5 @@
 import { Button, Chip, Loader, Page, ShortPagination } from '@/components/atoms';
+import { API_DOCS_TAGS } from '@/constants/apiDocsTags';
 import { ApiDocsContent, ColumnData, FlexpriceTable, ImportFileDrawer } from '@/components/molecules';
 import { EmptyPage } from '@/components/organisms';
 import GUIDES from '@/constants/guides';
@@ -102,7 +103,7 @@ const ImportExport = () => {
 					},
 				}}
 				tutorials={GUIDES.importExport.tutorials}
-				tags={['Import Export', 'Tasks']}>
+				tags={[...API_DOCS_TAGS.Tasks]}>
 				<ImportFileDrawer taskId={activeTask} isOpen={drawerOpen} onOpenChange={(value) => setdrawerOpen(value)} />
 			</EmptyPage>
 		);
@@ -126,7 +127,7 @@ const ImportExport = () => {
 					</Button>
 				</>
 			}>
-			<ApiDocsContent tags={['Import Export', 'Tasks']} />
+			<ApiDocsContent tags={[...API_DOCS_TAGS.Tasks]} />
 			{/* import export drawer */}
 			<ImportFileDrawer taskId={activeTask} isOpen={drawerOpen} onOpenChange={(value) => setdrawerOpen(value)} />
 

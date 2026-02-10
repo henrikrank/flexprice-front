@@ -76,7 +76,7 @@ const CustomerInvoiceDetailsPage = () => {
 
 	return (
 		<div className='mt-5 '>
-			<ApiDocsContent tags={['Invoice']} />
+			<ApiDocsContent tags={['Invoices']} />
 			<div className=''>
 				<CustomTabs tabs={tabs} defaultValue='Overview' />
 			</div>

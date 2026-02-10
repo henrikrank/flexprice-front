@@ -146,7 +146,7 @@ const TaxrateDetailsPage = () => {
 				</>
 			}>
 			<TaxDrawer data={taxData as TaxRate} open={taxDrawerOpen} onOpenChange={setTaxDrawerOpen} refetchQueryKeys={['fetchTaxRate']} />
-			<ApiDocsContent tags={['Taxes']} />
+			<ApiDocsContent tags={['Taxes', 'Tax', 'Tax Rates']} />
 
 			<div className='space-y-6'>
 				<DetailsCard variant='stacked' title='Tax Rate Details' data={taxDetails} />

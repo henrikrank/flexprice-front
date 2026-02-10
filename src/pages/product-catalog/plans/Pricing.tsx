@@ -344,7 +344,7 @@ const PricingPage = () => {
 							}}
 						/>
 					}>
-					<ApiDocsContent tags={['Plans', 'Pricing']} />
+					<ApiDocsContent tags={['Plans', 'Prices']} />
 					<div className='flex flex-col items-center mt-6'>
 						{/* 3 Dotted Placeholder Boxes */}
 						<div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 w-full mb-16'>
@@ -402,7 +402,7 @@ const PricingPage = () => {
 					/>
 				</div>
 			}>
-			<ApiDocsContent tags={['Plans', 'Pricing']} />
+			<ApiDocsContent tags={['Plans', 'Prices']} />
 			{/* filters */}
 
 			<div className='flex flex-col'>

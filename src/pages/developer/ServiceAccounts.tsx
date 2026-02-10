@@ -98,7 +98,7 @@ const ServiceAccountsPage = () => {
 
 	return (
 		<div>
-			<ApiDocsContent tags={['service-accounts']} />
+			<ApiDocsContent tags={['Users']} />
 			<ServiceAccountDrawer isOpen={isServiceAccountDrawerOpen} onOpenChange={setIsServiceAccountDrawerOpen} />
 
 			{/* Service Accounts Section */}
@@ -112,7 +112,7 @@ const ServiceAccountsPage = () => {
 						buttonLabel: 'Create Service Account',
 						buttonAction: handleAddServiceAccount,
 					}}
-					tags={['service-accounts']}
+					tags={['Users']}
 				/>
 			)}
 			{(serviceAccountsResponse?.items.length || 0) > 0 && (

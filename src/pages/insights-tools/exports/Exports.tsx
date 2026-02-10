@@ -1,6 +1,7 @@
 import { FormHeader, Page } from '@/components/atoms';
 import { useNavigate } from 'react-router';
 import { cn } from '@/lib/utils';
+import { API_DOCS_TAGS } from '@/constants/apiDocsTags';
 import { ApiDocsContent } from '@/components/molecules';
 import { Download, Database, Cloud } from 'lucide-react';
 
@@ -44,7 +45,7 @@ const Exports = () => {
 
 	return (
 		<Page heading='Data Exports'>
-			<ApiDocsContent tags={['Exports', 'Data Pipelines', 'Storage']} />
+			<ApiDocsContent tags={API_DOCS_TAGS.Tasks} />
 
 			{/* Overview Section */}
 			<div className='mb-14'>

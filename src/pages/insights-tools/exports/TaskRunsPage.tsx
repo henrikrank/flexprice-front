@@ -2,6 +2,7 @@ import { Page, Button } from '@/components/atoms';
 import { useParams, useNavigate } from 'react-router';
 import { ArrowLeft } from 'lucide-react';
 import TaskRunsTable from '@/components/molecules/TaskRunsTable/TaskRunsTable';
+import { API_DOCS_TAGS } from '@/constants/apiDocsTags';
 import { ApiDocsContent } from '@/components/molecules';
 import { RouteNames } from '@/core/routes/Routes';
 
@@ -11,7 +12,7 @@ const TaskRunsPage = () => {
 
 	return (
 		<Page heading='Task Runs'>
-			<ApiDocsContent tags={['Task Runs', 'Exports', 'Monitoring']} />
+			<ApiDocsContent tags={API_DOCS_TAGS.Tasks} />
 
 			{/* Back button */}
 			<div className='mb-6'>
