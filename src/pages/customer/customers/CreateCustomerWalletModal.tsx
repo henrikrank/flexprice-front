@@ -33,7 +33,7 @@ interface Props {
 	onOpenChange: (open: boolean) => void;
 }
 
-const CreateCustomerWalletModal: FC<Props> = ({ customerId, onSuccess = () => { }, open, onOpenChange }) => {
+const CreateCustomerWalletModal: FC<Props> = ({ customerId, onSuccess = () => {}, open, onOpenChange }) => {
 	const [errors, setErrors] = useState({
 		currency: '',
 		conversion_rate: '',
