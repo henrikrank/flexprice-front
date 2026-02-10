@@ -6,6 +6,31 @@ import { useBreadcrumbs } from '@/hooks/useBreadcrumbs';
 import { SidebarTrigger } from '@/components/ui/sidebar';
 import ApiDocs from '../ApiDocs';
 import IntercomMessenger from '@/core/services/intercom/IntercomMessenger';
+import { Search } from 'lucide-react';
+import { Button } from '@/components/atoms';
+
+const COMMAND_PALETTE_EVENT = 'open-command-palette';
+
+const BreadCrumbsSearchTrigger: React.FC = () => {
+	const handleClick = () => window.dispatchEvent(new CustomEvent(COMMAND_PALETTE_EVENT));
+
+	return (
+		<Button
+			type='button'
+			onClick={handleClick}
+			variant='outline'
+			size='sm'
+			className='flex items-center gap-2'
+			aria-label='Search or run a command (⌘K)'>
+			<Search className='h-4 w-4 shrink-0 opacity-70' />
+			<span className='flex-1 truncate'>Search...</span>
+			<kbd className='pointer-events-none hidden h-5 select-none items-center gap-0.5 rounded border border-border bg-muted px-1.5 font-mono text-[10px] font-medium text-muted-foreground sm:inline-flex'>
+				⌘ K
+			</kbd>
+		</Button>
+	);
+};
+
 const BreadCrumbs: FC = () => {
 	useBreadcrumbs();
 	const { breadcrumbs, isLoading } = useBreadcrumbsStore();
@@ -57,6 +82,7 @@ const BreadCrumbs: FC = () => {
 					))}
 				</nav>
 				<div className='flex items-center gap-4'>
+					<BreadCrumbsSearchTrigger />
 					<IntercomMessenger />
 					<ApiDocs />
 				</div>
