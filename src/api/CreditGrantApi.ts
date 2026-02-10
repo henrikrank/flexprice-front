@@ -6,6 +6,8 @@ import {
 	CreditGrantResponse,
 	ListCreditGrantsResponse,
 	GetCreditGrantsRequest,
+	CancelFutureCreditGrantRequest,
+	DeleteCreditGrantRequest,
 } from '@/types/dto';
 
 class CreditGrantApi {
@@ -24,12 +26,16 @@ class CreditGrantApi {
 		return await AxiosClient.put<CreditGrantResponse, UpdateCreditGrantRequest>(`${this.baseUrl}/${id}`, data);
 	}
 
-	public static async Delete(id: string) {
-		return await AxiosClient.delete<void>(`${this.baseUrl}/${id}`);
+	public static async Delete(id: string, data?: DeleteCreditGrantRequest) {
+		return await AxiosClient.delete<void, DeleteCreditGrantRequest>(`${this.baseUrl}/${id}`, data);
 	}
 
 	public static async Get(id: string) {
 		return await AxiosClient.get<CreditGrantResponse>(`${this.baseUrl}/${id}`);
+	}
+
+	public static async CancelFuture(data: CancelFutureCreditGrantRequest) {
+		return await AxiosClient.post<void, CancelFutureCreditGrantRequest>(`${this.baseUrl}/cancel`, data);
 	}
 }
 

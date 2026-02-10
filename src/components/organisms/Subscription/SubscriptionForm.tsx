@@ -3,7 +3,7 @@ import { Switch } from '@/components/ui';
 import { cn } from '@/lib/utils';
 import { toSentenceCase } from '@/utils/common/helper_functions';
 import { PlanResponse } from '@/types';
-import { useMemo, useEffect, useRef } from 'react';
+import { useMemo, useEffect, useRef, useState } from 'react';
 import toast from 'react-hot-toast';
 import SubscriptionCreditGrantTable from '@/components/molecules/CreditGrant/SubscriptionCreditGrantTable';
 import SubscriptionAddonTable from '@/components/molecules/SubscriptionAddonTable/SubscriptionAddonTable';
@@ -14,7 +14,7 @@ import {
 	CREDIT_GRANT_PERIOD,
 	CREDIT_GRANT_PERIOD_UNIT,
 	CREDIT_GRANT_SCOPE,
-} from '@/models/CreditGrant';
+} from '@/models';
 import { BILLING_PERIOD } from '@/constants/constants';
 import { SubscriptionFormState } from '@/pages';
 import { useQuery } from '@tanstack/react-query';
@@ -242,8 +242,8 @@ const SubscriptionForm = ({
 		};
 	};
 
-	// Check if the selected plan already has a credit grant
-	const { data: selectedPlanCreditGrants, isLoading: isLoadingCreditGrants } = useQuery({
+	// Fetch plan-level credit grants to display them alongside subscription-level grants
+	const { data: selectedPlanCreditGrants } = useQuery({
 		queryKey: ['creditGrants', state.selectedPlan],
 		queryFn: async () => {
 			const response = await PlanApi.getPlanCreditGrants(state.selectedPlan);
@@ -252,23 +252,49 @@ const SubscriptionForm = ({
 		enabled: !!state.selectedPlan,
 	});
 
-	const isCreditGrantDisabled = useMemo(() => {
-		return isLoadingCreditGrants || (selectedPlanCreditGrants?.items.length ?? 0) > 0;
-	}, [isLoadingCreditGrants, selectedPlanCreditGrants]);
+	// Track which credit grants were originally from plan level
+	const planLevelCreditGrantIds = useMemo(() => {
+		const ids = new Set<string>();
+		if (selectedPlanCreditGrants?.items) {
+			selectedPlanCreditGrants.items.forEach((grant) => ids.add(grant.id));
+		}
+		return ids;
+	}, [selectedPlanCreditGrants]);
 
-	// Combine plan credit grants (read-only) with user-added credit grants (editable)
+	// Track edited plan-level grant IDs (these will be converted to subscription scope)
+	const [editedPlanGrantIds, setEditedPlanGrantIds] = useState<Set<string>>(new Set());
+
+	// Combine plan credit grants with user-added credit grants (all editable now)
 	const relevantCreditGrants = useMemo(() => {
 		const planGrants: InternalCreditGrantRequest[] =
 			state.selectedPlan && selectedPlanCreditGrants && (selectedPlanCreditGrants.items.length ?? 0) > 0
 				? selectedPlanCreditGrants.items.map(creditGrantToInternal)
 				: [];
 
-		// User-added credit grants from state (these are editable)
+		// User-added credit grants from state (subscription-level)
 		const userGrants: InternalCreditGrantRequest[] = (state.creditGrants || []) as InternalCreditGrantRequest[];
 
-		// Return combined list: plan grants first (read-only), then user grants (editable)
+		// If there are edited/deleted plan grants, all grants are in state.creditGrants
+		// So we should only show those grants, not the original plan grants
+		const hasEditedOrDeletedPlanGrants = Array.from(planLevelCreditGrantIds).some((planGrantId) => {
+			// Check if this plan grant was deleted or is now in state.creditGrants (edited)
+			const isDeleted = !userGrants.find((g) => g.id === planGrantId) && editedPlanGrantIds.has(planGrantId);
+			const isInUserGrants = userGrants.find((g) => g.id === planGrantId);
+			return isDeleted || isInUserGrants;
+		});
+
+		if (hasEditedOrDeletedPlanGrants) {
+			// All grants are managed in state.creditGrants, don't show original plan grants
+			return userGrants;
+		}
+
+		// No edits/deletes: show original plan grants + subscription-level user grants
 		return [...planGrants, ...userGrants];
-	}, [selectedPlanCreditGrants, state.selectedPlan, state.creditGrants]);
+	}, [selectedPlanCreditGrants, state.selectedPlan, state.creditGrants, planLevelCreditGrantIds, editedPlanGrantIds]);
+
+	const handleMarkGrantAsEdited = (grantId: string) => {
+		setEditedPlanGrantIds((prev) => new Set(prev).add(grantId));
+	};
 
 	// Fetch plan entitlements
 	const { data: planEntitlements } = useQuery({
@@ -602,18 +628,62 @@ const SubscriptionForm = ({
 						getEmptyCreditGrant={() => getEmptyCreditGrant()}
 						data={relevantCreditGrants}
 						onChange={(data: InternalCreditGrantRequest[]) => {
-							// Filter out plan credit grants (they have plan_id set and are read-only)
-							// Only keep user-added credit grants (subscription-scoped or new ones)
-							const planGrantIds = new Set((selectedPlanCreditGrants?.items || []).map((grant) => grant.id));
-							const userGrants = data.filter((grant) => !planGrantIds.has(grant.id));
+							// Check if any plan-level grants were edited or deleted by inspecting the data
+							const hasEditedOrDeletedPlanGrants = Array.from(planLevelCreditGrantIds).some((planGrantId) => {
+								const grantInData = data.find((g) => g.id === planGrantId);
+								// Deleted: not in data anymore
+								if (!grantInData) return true;
+								// Edited: scope changed from PLAN to SUBSCRIPTION
+								if (grantInData.scope === CREDIT_GRANT_SCOPE.SUBSCRIPTION) return true;
+								return false;
+							});
 
-							// Store only user-added credit grants in state
-							setState((prev) => ({
-								...prev,
-								creditGrants: userGrants,
-							}));
+							// Check if there are any new subscription-level grants (not from plan)
+							const hasNewSubscriptionGrants = data.some(
+								(grant) => !planLevelCreditGrantIds.has(grant.id) && grant.scope === CREDIT_GRANT_SCOPE.SUBSCRIPTION,
+							);
+
+							// If plan grants were modified OR new subscription grants were added, convert all to subscription level
+							const shouldConvertAll = hasEditedOrDeletedPlanGrants || (hasNewSubscriptionGrants && planLevelCreditGrantIds.size > 0);
+
+							if (shouldConvertAll) {
+								// If any plan-level grant was edited/deleted OR new subscription grant added,
+								// convert ALL remaining plan grants to subscription scope
+								const convertedGrants = data.map((grant) => {
+									// If it's an unedited plan-level grant (still has PLAN scope), convert it now
+									if (planLevelCreditGrantIds.has(grant.id) && grant.scope !== CREDIT_GRANT_SCOPE.SUBSCRIPTION) {
+										return {
+											...grant,
+											scope: CREDIT_GRANT_SCOPE.SUBSCRIPTION,
+											subscription_id: uniqueId('sub_'),
+											plan_id: undefined,
+										};
+									}
+									// Already converted or subscription-level grant, keep as is
+									return grant;
+								});
+
+								// Store all grants (all are now subscription-level) and mark as modified
+								setState((prev) => ({
+									...prev,
+									creditGrants: convertedGrants,
+									hasModifiedPlanCreditGrants: true,
+								}));
+							} else {
+								// No plan grants edited/deleted and no new subscription grants: only store subscription-level grants
+								// Plan-level grants will be sent automatically by the backend
+								const userGrants = data.filter((grant) => !planLevelCreditGrantIds.has(grant.id));
+								setState((prev) => ({
+									...prev,
+									creditGrants: userGrants,
+									hasModifiedPlanCreditGrants: false,
+								}));
+							}
 						}}
-						disabled={isDisabled || isCreditGrantDisabled}
+						disabled={isDisabled}
+						planLevelCreditGrantIds={planLevelCreditGrantIds}
+						onMarkAsEdited={handleMarkGrantAsEdited}
+						subscriptionId={uniqueId('sub_')}
 					/>
 				</div>
 			)}

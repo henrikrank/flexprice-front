@@ -23,7 +23,7 @@ export type { Coupon } from './Coupon';
 // CreditGrant
 export type { CreditGrant } from './CreditGrant';
 export {
-	CREDIT_GRANT_SCOPE as CREDIT_SCOPE,
+	CREDIT_GRANT_SCOPE,
 	CREDIT_GRANT_CADENCE,
 	CREDIT_GRANT_EXPIRATION_TYPE,
 	CREDIT_GRANT_PERIOD_UNIT,

@@ -21,6 +21,10 @@ export interface CreditGrant extends BaseModel {
 	readonly subscription_id?: string;
 	readonly conversion_rate?: number;
 	readonly topup_conversion_rate?: number;
+	/** ISO date string. Present for SUBSCRIPTION-scoped grants. */
+	readonly start_date?: string;
+	/** ISO date string. Optional end date for the grant. */
+	readonly end_date?: string;
 }
 
 export enum CREDIT_GRANT_CADENCE {
