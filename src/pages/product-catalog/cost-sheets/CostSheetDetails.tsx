@@ -1,5 +1,6 @@
 import { Button, CardHeader, Chip, Loader, Page, Spacer, NoDataCard } from '@/components/atoms';
 import { ApiDocsContent, ColumnData, FlexpriceTable, CostSheetDrawer } from '@/components/molecules';
+import { API_DOCS_TAGS } from '@/constants/apiDocsTags';
 import { DetailsCard } from '@/components/molecules';
 import { RouteNames } from '@/core/routes/Routes';
 import { Price } from '@/models/Price';
@@ -178,7 +179,7 @@ const CostSheetDetails = () => {
 				onOpenChange={setCostSheetDrawerOpen}
 				refetchQueryKeys={['fetchCostSheet']}
 			/>
-			<ApiDocsContent tags={['Cost Sheets']} />
+			<ApiDocsContent tags={[...API_DOCS_TAGS.Costs]} />
 			<div className='space-y-6'>
 				<DetailsCard variant='stacked' title='Cost Sheet Details' data={costSheetDetails} />
 
