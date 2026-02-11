@@ -1,5 +1,5 @@
-import React, { FC, useCallback, useState, useMemo } from 'react';
-import { Button, Card, CardHeader, NoDataCard, Chip, Tooltip } from '@/components/atoms';
+import React, { FC, useCallback, useState, useMemo, useEffect } from 'react';
+import { Button, Card, CardHeader, NoDataCard, Chip, Tooltip, Loader } from '@/components/atoms';
 import {
 	FlexpriceTable,
 	ColumnData,
@@ -7,11 +7,12 @@ import {
 	TerminatePriceModal,
 	UpdatePriceDialog,
 	UpdatePriceDetailsDrawer,
+	QueryBuilder,
 } from '@/components/molecules';
 import { Price, Plan, PRICE_STATUS } from '@/models';
 import { PriceUnit } from '@/models/PriceUnit';
 import { Plus, Trash2, Pencil, FileText } from 'lucide-react';
-import { useMutation } from '@tanstack/react-query';
+import { useMutation, useQuery } from '@tanstack/react-query';
 import { PriceApi } from '@/api/PriceApi';
 import toast from 'react-hot-toast';
 import { useNavigate } from 'react-router';
@@ -24,6 +25,23 @@ import { Dialog } from '@/components/ui';
 import { DeletePriceRequest } from '@/types/dto';
 import { ServerError } from '@/core/axios/types';
 import { formatDateTimeWithSecondsAndTimezone } from '@/utils/common/format_date';
+import useFilterSortingWithPersistence from '@/hooks/useFilterSortingWithPersistence';
+import { FilterField, FilterFieldType, FilterOperator, DataType, SortDirection, FilterCondition } from '@/types/common/QueryBuilder';
+import type { TypedBackendFilter, TypedBackendSort } from '@/types/formatters/QueryBuilder';
+import usePagination, { PAGINATION_PREFIX } from '@/hooks/usePagination';
+import { ShortPagination } from '@/components/atoms';
+import type { SearchPricesFilter, SearchPricesResponse } from '@/types/dto';
+
+// ===== FILTER FIELD NAMES (no hardcoded strings in logic) =====
+const CHARGE_FILTER_FIELD = {
+	DISPLAY_NAME: 'display_name',
+	AMOUNT: 'amount',
+	CHARGE_TYPE: 'charge_type',
+	CURRENCY: 'currency',
+	BILLING_PERIOD: 'billing_period',
+} as const;
+
+const PLAN_CHARGES_PAGE_SIZE = 10;
 
 // ===== TYPES & CONSTANTS =====
 
@@ -44,7 +62,7 @@ interface PriceDropdownProps {
 	hasEndDate: boolean;
 	onEditPrice: (price: Price) => void;
 	onEditDetails: (price: Price) => void;
-	onTerminatePrice: (priceId: string) => void;
+	onTerminatePrice: (priceId: string, priceFromRow?: Price) => void;
 }
 
 const PriceDropdown: FC<PriceDropdownProps> = ({ row, hasEndDate, onEditPrice, onEditDetails, onTerminatePrice }) => {
@@ -88,7 +106,7 @@ const PriceDropdown: FC<PriceDropdownProps> = ({ row, hasEndDate, onEditPrice, o
 						onSelect: (e: Event) => {
 							e.preventDefault();
 							setIsOpen(false);
-							onTerminatePrice(row.id);
+							onTerminatePrice(row.id, row);
 						},
 						disabled: hasEndDate,
 					},
@@ -197,6 +215,118 @@ const formatPriceDateTooltip = (price: Price & { start_date?: string; end_date?:
 	return <div className='flex flex-col gap-2'>{dateItems}</div>;
 };
 
+const FILTER_ANY_VALUE = '__any__';
+
+const chargeFilterOptions: FilterField[] = [
+	{
+		field: CHARGE_FILTER_FIELD.DISPLAY_NAME,
+		label: 'Display name',
+		fieldType: FilterFieldType.INPUT,
+		operators: [FilterOperator.EQUAL, FilterOperator.CONTAINS],
+		dataType: DataType.STRING,
+	},
+	{
+		field: CHARGE_FILTER_FIELD.AMOUNT,
+		label: 'Amount',
+		fieldType: FilterFieldType.INPUT,
+		operators: [FilterOperator.EQUAL, FilterOperator.GREATER_THAN, FilterOperator.LESS_THAN],
+		dataType: DataType.NUMBER,
+	},
+];
+
+function getFilterValue(filters: TypedBackendFilter[], field: string): string | undefined {
+	const f = filters.find((x) => x.field === field);
+	const v = f?.value?.string?.trim();
+	return v && v !== FILTER_ANY_VALUE ? v : undefined;
+}
+
+/** Build search API filters from FilterCondition[] (no hardcoded values; amount parsed from valueString when dataType is NUMBER) */
+function buildSearchFiltersFromConditions(conditions: FilterCondition[]): SearchPricesFilter[] {
+	const out: SearchPricesFilter[] = [];
+	for (const c of conditions) {
+		if (!c.field?.trim() || !c.operator || !c.dataType) continue;
+		if (c.dataType === DataType.NUMBER) {
+			const num =
+				typeof c.valueNumber === 'number' && Number.isFinite(c.valueNumber)
+					? c.valueNumber
+					: c.valueString != null && c.valueString.trim() !== ''
+						? parseFloat(c.valueString.trim())
+						: NaN;
+			if (Number.isNaN(num)) continue;
+			out.push({
+				field: c.field,
+				operator: c.operator,
+				data_type: c.dataType,
+				value: { number: num },
+			});
+			continue;
+		}
+		const stringVal = c.valueString?.trim();
+		if (stringVal === '' || stringVal === FILTER_ANY_VALUE) continue;
+		out.push({
+			field: c.field,
+			operator: c.operator,
+			data_type: c.dataType,
+			value: { string: stringVal },
+		});
+	}
+	return out;
+}
+
+function applyPriceFilterAndSort(
+	prices: PriceWithStatus[],
+	sanitizedFilters: TypedBackendFilter[],
+	sanitizedSorts: TypedBackendSort[],
+): PriceWithStatus[] {
+	const displayNameFilterVal = getFilterValue(sanitizedFilters, CHARGE_FILTER_FIELD.DISPLAY_NAME);
+	const displayNameFilterOp = sanitizedFilters.find((x) => x.field === CHARGE_FILTER_FIELD.DISPLAY_NAME)?.operator;
+	const amountFilter = sanitizedFilters.find((x) => x.field === CHARGE_FILTER_FIELD.AMOUNT);
+	const amountNum = amountFilter?.value?.number;
+	const amountOp = amountFilter?.operator;
+
+	let items = prices.filter((price) => {
+		if (displayNameFilterVal && displayNameFilterOp) {
+			const dn = (price.display_name ?? '').toLowerCase();
+			const search = displayNameFilterVal.toLowerCase();
+			if (displayNameFilterOp === FilterOperator.EQUAL && dn !== search) return false;
+			if (displayNameFilterOp === FilterOperator.CONTAINS && !dn.includes(search)) return false;
+		}
+		if (amountNum != null && amountOp) {
+			const pAmount = parseFloat(price.amount as string) || 0;
+			if (amountOp === FilterOperator.EQUAL && pAmount !== amountNum) return false;
+			if (amountOp === FilterOperator.GREATER_THAN && pAmount <= amountNum) return false;
+			if (amountOp === FilterOperator.LESS_THAN && pAmount >= amountNum) return false;
+		}
+		return true;
+	});
+
+	const sort = sanitizedSorts[0];
+	if (sort) {
+		const dir = sort.direction === SortDirection.DESC ? -1 : 1;
+		items = [...items].sort((a, b) => {
+			let cmp = 0;
+			switch (sort.field) {
+				case CHARGE_FILTER_FIELD.CHARGE_TYPE:
+					cmp = (a.type || '').localeCompare(b.type || '');
+					break;
+				case CHARGE_FILTER_FIELD.CURRENCY:
+					cmp = (a.currency || '').localeCompare(b.currency || '');
+					break;
+				case CHARGE_FILTER_FIELD.BILLING_PERIOD:
+					cmp = (a.billing_period || '').localeCompare(b.billing_period || '');
+					break;
+				case CHARGE_FILTER_FIELD.AMOUNT:
+					cmp = (parseFloat(a.amount as string) || 0) - (parseFloat(b.amount as string) || 0);
+					break;
+				default:
+					break;
+			}
+			return cmp * dir;
+		});
+	}
+	return items;
+}
+
 const PlanPriceTable: FC<PlanChargesTableProps> = ({ plan, onPriceUpdate }) => {
 	const navigate = useNavigate();
 	const [showTerminateModal, setShowTerminateModal] = useState(false);
@@ -236,10 +366,9 @@ const PlanPriceTable: FC<PlanChargesTableProps> = ({ plan, onPriceUpdate }) => {
 	}, [onPriceUpdate]);
 
 	const handleTerminatePrice = useCallback(
-		(priceId: string) => {
-			const price = plan.prices?.find((p) => p.id === priceId);
+		(priceId: string, priceFromRow?: Price) => {
+			const price = priceFromRow ?? plan.prices?.find((p) => p.id === priceId);
 			if (!price) return;
-
 			setSelectedPriceForTermination(price);
 			setShowTerminateModal(true);
 		},
@@ -307,6 +436,102 @@ const PlanPriceTable: FC<PlanChargesTableProps> = ({ plan, onPriceUpdate }) => {
 			return statusOrder[a.precomputedStatus] - statusOrder[b.precomputedStatus];
 		});
 	}, [plan.prices]);
+
+	// ===== FILTER & SORT =====
+	const initialFilters = useMemo<FilterCondition[]>(
+		() => [
+			{
+				id: 'plan-display_name',
+				field: CHARGE_FILTER_FIELD.DISPLAY_NAME,
+				operator: FilterOperator.CONTAINS,
+				valueString: '',
+				dataType: DataType.STRING,
+			},
+			{ id: 'plan-amount', field: CHARGE_FILTER_FIELD.AMOUNT, operator: FilterOperator.EQUAL, valueString: '', dataType: DataType.NUMBER },
+		],
+		[],
+	);
+	const initialSorts = useMemo(() => [{ field: CHARGE_FILTER_FIELD.AMOUNT, label: 'Amount', direction: SortDirection.ASC }], []);
+
+	const { filters, sorts, setFilters, setSorts, sanitizedFilters, sanitizedSorts } = useFilterSortingWithPersistence({
+		initialFilters,
+		initialSorts,
+		debounceTime: 300,
+		persistenceKey: 'planCharges',
+	});
+
+	const {
+		page,
+		limit,
+		offset,
+		reset: resetPage,
+	} = usePagination({
+		initialLimit: PLAN_CHARGES_PAGE_SIZE,
+		prefix: PAGINATION_PREFIX.PLAN_CHARGES,
+	});
+
+	const searchFilters = useMemo(() => buildSearchFiltersFromConditions(filters), [filters]);
+
+	// Stable signature so we only reset page when filter values change, not when resetPage reference changes (e.g. after setPage(2))
+	const searchFiltersSignature = useMemo(() => JSON.stringify(searchFilters), [searchFilters]);
+
+	const {
+		data: searchData,
+		isLoading: isSearchLoading,
+		isError: isSearchError,
+	} = useQuery<SearchPricesResponse>({
+		queryKey: ['planChargesSearch', plan.id, searchFilters, page, limit],
+		queryFn: () =>
+			PriceApi.searchPrices({
+				entity_ids: [plan.id],
+				entity_type: 'PLAN',
+				filters: searchFilters.length > 0 ? searchFilters : undefined,
+				allow_expired_prices: true,
+				limit,
+				offset,
+			}),
+		enabled: !!plan.id,
+	});
+
+	// Keep latest resetPage in a ref so the effect only runs when filter content changes, not when callback identity changes (e.g. after setPage(2))
+	const resetPageRef = React.useRef(resetPage);
+	resetPageRef.current = resetPage;
+	useEffect(() => {
+		resetPageRef.current();
+	}, [searchFiltersSignature]);
+
+	const tablePricesFromSearch = useMemo<PriceWithStatus[]>(() => {
+		if (!searchData?.items?.length) return [];
+		return searchData.items.map((price: Price) => {
+			const status = getPriceStatus(price);
+			const variant = getStatusChipVariant(status);
+			const statusLabel = status.charAt(0).toUpperCase() + status.slice(1);
+			const tooltipContent = formatPriceDateTooltip(price);
+			return {
+				...price,
+				precomputedStatus: status,
+				statusVariant: variant,
+				statusLabel,
+				tooltipContent,
+			};
+		});
+	}, [searchData?.items]);
+
+	const filteredAndSortedPrices = useMemo(() => {
+		// Use search results only when API succeeded and returned at least one item; otherwise filter plan.prices client-side
+		// so display_name/amount filters still show matches when the API returns empty (e.g. backend filter not supported)
+		if (searchData != null && !isSearchError && (searchData.items?.length ?? 0) > 0) {
+			return tablePricesFromSearch;
+		}
+		return applyPriceFilterAndSort(processedPrices, sanitizedFilters, sanitizedSorts);
+	}, [searchData, isSearchError, tablePricesFromSearch, processedPrices, sanitizedFilters, sanitizedSorts]);
+
+	const totalFromSearch = searchData?.pagination?.total ?? 0;
+	const useSearchResults = searchData != null && !isSearchError && (searchData.items?.length ?? 0) > 0;
+	// When API doesn't return total (e.g. on page 2), use a minimum so pagination still shows and user can go back
+	const totalItems = useSearchResults
+		? totalFromSearch || Math.max(offset + (searchData?.items?.length ?? 0), limit * page)
+		: filteredAndSortedPrices.length;
 
 	// ===== TABLE COLUMNS =====
 	const chargeColumns: ColumnData<PriceWithStatus>[] = [
@@ -426,7 +651,29 @@ const PlanPriceTable: FC<PlanChargesTableProps> = ({ plan, onPriceUpdate }) => {
 							</Button>
 						}
 					/>
-					<FlexpriceTable columns={chargeColumns} data={processedPrices} />
+					<div className='px-4 pb-3'>
+						<QueryBuilder
+							filterOptions={chargeFilterOptions}
+							filters={filters}
+							onFilterChange={setFilters}
+							sortOptions={[]}
+							selectedSorts={sorts}
+							onSortChange={setSorts}
+							debounceTime={300}
+						/>
+					</div>
+					{isSearchLoading ? (
+						<div className='flex items-center justify-center py-12'>
+							<Loader />
+						</div>
+					) : (
+						<>
+							<FlexpriceTable columns={chargeColumns} data={filteredAndSortedPrices} />
+							{useSearchResults && (totalItems > 0 || page > 1) && (
+								<ShortPagination unit='Charges' totalItems={totalItems} pageSize={limit} prefix={PAGINATION_PREFIX.PLAN_CHARGES} />
+							)}
+						</>
+					)}
 				</Card>
 			) : (
 				<NoDataCard

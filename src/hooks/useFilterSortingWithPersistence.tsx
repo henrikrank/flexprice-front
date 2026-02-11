@@ -110,7 +110,6 @@ const useFilterSortingWithPersistence = ({
 	});
 
 	const isMountedRef = useRef(false);
-	const skipNextSyncToUrlRef = useRef(true);
 
 	useLayoutEffect(() => {
 		if (!persistenceKey) return;
@@ -124,12 +123,9 @@ const useFilterSortingWithPersistence = ({
 		// eslint-disable-next-line react-hooks/exhaustive-deps -- run once on mount
 	}, []);
 
+	// Sync state to URL/session whenever filters or sorts change
 	useEffect(() => {
 		if (!persistenceKey || !isMountedRef.current) return;
-		if (skipNextSyncToUrlRef.current) {
-			skipNextSyncToUrlRef.current = false;
-			return;
-		}
 		const params = new URLSearchParams(window.location.search);
 		const urlFiltersStr = params.get(getFiltersParamKey(persistenceKey))?.trim() ?? '';
 		const urlSortsStr = params.get(getSortsParamKey(persistenceKey))?.trim() ?? '';
@@ -140,7 +136,7 @@ const useFilterSortingWithPersistence = ({
 		} else {
 			writeFiltersAndSortsToSession(persistenceKey, result.filters, result.sorts);
 		}
-		// eslint-disable-next-line react-hooks/exhaustive-deps -- only when filters/sorts change
+		// eslint-disable-next-line react-hooks/exhaustive-deps -- sync when filters/sorts change
 	}, [result.filters, result.sorts, persistenceKey]);
 
 	useEffect(() => {

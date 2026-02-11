@@ -102,8 +102,14 @@ const convertFilterToBackend = (condition: FilterCondition): TypedBackendFilter 
 				break;
 			}
 			case DataType.NUMBER: {
-				const num = condition.valueNumber;
-				if (typeof num === 'number' && !isNaN(num) && isFinite(num)) {
+				// INPUT fields often set only valueString; parse it when valueNumber is missing
+				const num =
+					typeof condition.valueNumber === 'number' && Number.isFinite(condition.valueNumber)
+						? condition.valueNumber
+						: condition.valueString != null && condition.valueString.trim() !== ''
+							? parseFloat(condition.valueString.trim())
+							: NaN;
+				if (!Number.isNaN(num) && isFinite(num)) {
 					value = { number: num };
 				}
 				break;

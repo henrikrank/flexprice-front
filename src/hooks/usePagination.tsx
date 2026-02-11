@@ -8,6 +8,7 @@ interface UsePaginationProps {
 
 export enum PAGINATION_PREFIX {
 	WALLET_TRANSACTIONS = 'wallet_transactions',
+	PLAN_CHARGES = 'plan_charges',
 }
 
 const usePagination = ({ initialLimit = 10, prefix }: UsePaginationProps = {}) => {
@@ -18,26 +19,32 @@ const usePagination = ({ initialLimit = 10, prefix }: UsePaginationProps = {}) =
 	const page = Number(searchParams.get(pageKey) || '1');
 
 	const reset = useCallback(() => {
-		const newParams = new URLSearchParams(searchParams);
-		newParams.set(pageKey, '1');
-		setSearchParams(newParams);
-	}, [searchParams, setSearchParams, pageKey]);
+		setSearchParams((prev) => {
+			const next = new URLSearchParams(prev);
+			next.set(pageKey, '1');
+			return next;
+		});
+	}, [setSearchParams, pageKey]);
 
 	const setPage = useCallback(
 		(newPage: number) => {
-			const newParams = new URLSearchParams(searchParams);
-			newParams.set(pageKey, String(newPage));
-			setSearchParams(newParams);
+			setSearchParams((prev) => {
+				const next = new URLSearchParams(prev);
+				next.set(pageKey, String(newPage));
+				return next;
+			});
 		},
-		[searchParams, setSearchParams, pageKey],
+		[setSearchParams, pageKey],
 	);
 
 	// Ensure `page` is set in the query parameters
 	useEffect(() => {
 		if (!searchParams.get(pageKey)) {
-			const newParams = new URLSearchParams(searchParams);
-			newParams.set(pageKey, '1');
-			setSearchParams(newParams);
+			setSearchParams((prev) => {
+				const next = new URLSearchParams(prev);
+				next.set(pageKey, '1');
+				return next;
+			});
 		}
 	}, [searchParams, setSearchParams, pageKey]);
 

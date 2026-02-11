@@ -25,6 +25,28 @@ export interface GetAllPricesResponse extends Pagination {
 	items: PriceResponse[];
 }
 
+/** Filter item for POST /prices/search request body */
+export interface SearchPricesFilter {
+	field: string;
+	operator: string;
+	data_type: string;
+	value: { string?: string; number?: number; date?: string; array?: string[] };
+}
+
+export interface SearchPricesRequest {
+	entity_ids: string[];
+	entity_type: string;
+	filters?: SearchPricesFilter[];
+	allow_expired_prices?: boolean;
+	limit?: number;
+	offset?: number;
+}
+
+export interface SearchPricesResponse {
+	items: PriceResponse[];
+	pagination?: { total?: number; limit?: number; offset?: number };
+}
+
 export interface PriceFilter extends QueryFilter, TimeRangeFilter {
 	price_ids?: string[];
 	entity_type?: PRICE_ENTITY_TYPE;
