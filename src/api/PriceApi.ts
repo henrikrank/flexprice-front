@@ -8,6 +8,8 @@ import {
 	CreateBulkPriceResponse,
 	PriceResponse,
 	DeletePriceRequest,
+	SearchPricesRequest,
+	SearchPricesResponse,
 } from '@/types/dto';
 import { generateQueryParams } from '@/utils/common/api_helper';
 
@@ -73,5 +75,14 @@ export class PriceApi {
 	 */
 	public static async DeletePrice(id: string, data?: DeletePriceRequest) {
 		return await AxiosClient.delete<void>(`${this.baseUrl}/${id}`, data || {});
+	}
+
+	/**
+	 * Search prices by entity and filters (POST /prices/search)
+	 * @param payload - entity_ids, entity_type, filters, allow_expired_prices, limit, offset
+	 * @returns Promise<SearchPricesResponse>
+	 */
+	public static async searchPrices(payload: SearchPricesRequest) {
+		return await AxiosClient.post<SearchPricesResponse>(`${this.baseUrl}/search`, payload);
 	}
 }

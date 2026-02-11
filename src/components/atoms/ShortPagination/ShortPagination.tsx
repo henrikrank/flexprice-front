@@ -29,15 +29,16 @@ const ShortPagination = ({
 
 	// Calculate actual total pages from totalItems and effectivePageSize
 	const calculatedTotalPages = Math.ceil(totalItems / effectivePageSize);
-	// Use calculated pages, fall back to provided total pages for backward compatibility
-	const totalPages = calculatedTotalPages || 1;
+	// Use calculated pages, fall back to provided total pages for backward compatibility. When on page > 1, ensure at least that many pages so Previous stays available.
+	const totalPages = Math.max(calculatedTotalPages || 1, page);
 
 	const handlePageChange = (newPage: number) => {
 		if (newPage < 1 || newPage > totalPages) return;
 		setPage(newPage);
 	};
 
-	if (totalPages <= 1) return null;
+	// Hide only when single page and we're on page 1 (show when page > 1 so user can go back)
+	if (totalPages <= 1 && page <= 1) return null;
 
 	const startItem = (page - 1) * effectivePageSize + 1;
 	const endItem = Math.min(page * effectivePageSize, totalItems);
@@ -50,6 +51,7 @@ const ShortPagination = ({
 			</div>
 			<div className='flex items-center space-x-2'>
 				<Button
+					type='button'
 					variant='outline'
 					size='icon'
 					onClick={() => handlePageChange(page - 1)}
@@ -63,6 +65,7 @@ const ShortPagination = ({
 					</div>
 				)}
 				<Button
+					type='button'
 					variant='outline'
 					size='icon'
 					onClick={() => handlePageChange(page + 1)}
