@@ -273,15 +273,13 @@ const CustomerWalletTab = () => {
 			{/* Wallet Alert Dialog */}
 			<WalletAlertDialog
 				open={showAlertDialog}
-				alertEnabled={activeWallet?.alert_enabled || false}
-				alertConfig={activeWallet?.alert_config}
+				alertSettings={activeWallet?.alert_settings}
 				currency={activeWallet?.currency}
-				onSave={async (alertEnabled, alertConfig) => {
+				onSave={async (alertSettings) => {
 					if (!activeWallet?.id) return;
 					try {
 						await WalletApi.updateWallet(activeWallet.id!, {
-							alert_enabled: alertEnabled,
-							alert_config: alertConfig,
+							alert_settings: alertSettings,
 						});
 						setShowAlertDialog(false);
 						refetchQueries(['fetchWallets', customerId!]);
