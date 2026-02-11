@@ -651,7 +651,7 @@ const PlanPriceTable: FC<PlanChargesTableProps> = ({ plan, onPriceUpdate }) => {
 							</Button>
 						}
 					/>
-					<div className='px-4 pb-3'>
+					<div className='pb-3'>
 						<QueryBuilder
 							filterOptions={chargeFilterOptions}
 							filters={filters}
