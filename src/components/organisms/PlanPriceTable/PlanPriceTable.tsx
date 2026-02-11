@@ -11,7 +11,7 @@ import {
 } from '@/components/molecules';
 import { Price, Plan, PRICE_STATUS } from '@/models';
 import { PriceUnit } from '@/models/PriceUnit';
-import { Plus, Trash2, Pencil, FileText, RefreshCw } from 'lucide-react';
+import { Plus, Trash2, Pencil, FileText } from 'lucide-react';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { PriceApi } from '@/api/PriceApi';
 import toast from 'react-hot-toast';
@@ -26,15 +26,7 @@ import { DeletePriceRequest } from '@/types/dto';
 import { ServerError } from '@/core/axios/types';
 import { formatDateTimeWithSecondsAndTimezone } from '@/utils/common/format_date';
 import useFilterSortingWithPersistence from '@/hooks/useFilterSortingWithPersistence';
-import {
-	FilterField,
-	FilterFieldType,
-	FilterOperator,
-	DataType,
-	SortOption,
-	SortDirection,
-	FilterCondition,
-} from '@/types/common/QueryBuilder';
+import { FilterField, FilterFieldType, FilterOperator, DataType, SortDirection, FilterCondition } from '@/types/common/QueryBuilder';
 import type { TypedBackendFilter, TypedBackendSort } from '@/types/formatters/QueryBuilder';
 import usePagination, { PAGINATION_PREFIX } from '@/hooks/usePagination';
 import { ShortPagination } from '@/components/atoms';
@@ -240,13 +232,6 @@ const chargeFilterOptions: FilterField[] = [
 		operators: [FilterOperator.EQUAL, FilterOperator.GREATER_THAN, FilterOperator.LESS_THAN],
 		dataType: DataType.NUMBER,
 	},
-];
-
-const chargeSortOptions: SortOption[] = [
-	{ field: CHARGE_FILTER_FIELD.CHARGE_TYPE, label: 'Charge type', direction: SortDirection.ASC },
-	{ field: CHARGE_FILTER_FIELD.CURRENCY, label: 'Currency', direction: SortDirection.ASC },
-	{ field: CHARGE_FILTER_FIELD.BILLING_PERIOD, label: 'Billing period', direction: SortDirection.ASC },
-	{ field: CHARGE_FILTER_FIELD.AMOUNT, label: 'Amount', direction: SortDirection.DESC },
 ];
 
 function getFilterValue(filters: TypedBackendFilter[], field: string): string | undefined {
@@ -543,13 +528,10 @@ const PlanPriceTable: FC<PlanChargesTableProps> = ({ plan, onPriceUpdate }) => {
 
 	const totalFromSearch = searchData?.pagination?.total ?? 0;
 	const useSearchResults = searchData != null && !isSearchError && (searchData.items?.length ?? 0) > 0;
-	const totalItems = useSearchResults ? totalFromSearch : filteredAndSortedPrices.length;
-
-	const resetFiltersAndSort = useCallback(() => {
-		setFilters(initialFilters);
-		setSorts(initialSorts);
-		resetPage();
-	}, [initialFilters, initialSorts, setFilters, setSorts, resetPage]);
+	// When API doesn't return total (e.g. on page 2), use a minimum so pagination still shows and user can go back
+	const totalItems = useSearchResults
+		? totalFromSearch || Math.max(offset + (searchData?.items?.length ?? 0), limit * page)
+		: filteredAndSortedPrices.length;
 
 	// ===== TABLE COLUMNS =====
 	const chargeColumns: ColumnData<PriceWithStatus>[] = [
@@ -670,20 +652,15 @@ const PlanPriceTable: FC<PlanChargesTableProps> = ({ plan, onPriceUpdate }) => {
 						}
 					/>
 					<div className='px-4 pb-3'>
-						<div className='flex items-start gap-4'>
-							<QueryBuilder
-								filterOptions={chargeFilterOptions}
-								filters={filters}
-								onFilterChange={setFilters}
-								sortOptions={chargeSortOptions}
-								selectedSorts={sorts}
-								onSortChange={setSorts}
-								debounceTime={300}
-							/>
-							<Button variant='outline' onClick={resetFiltersAndSort}>
-								<RefreshCw />
-							</Button>
-						</div>
+						<QueryBuilder
+							filterOptions={chargeFilterOptions}
+							filters={filters}
+							onFilterChange={setFilters}
+							sortOptions={[]}
+							selectedSorts={sorts}
+							onSortChange={setSorts}
+							debounceTime={300}
+						/>
 					</div>
 					{isSearchLoading ? (
 						<div className='flex items-center justify-center py-12'>
@@ -692,7 +669,7 @@ const PlanPriceTable: FC<PlanChargesTableProps> = ({ plan, onPriceUpdate }) => {
 					) : (
 						<>
 							<FlexpriceTable columns={chargeColumns} data={filteredAndSortedPrices} />
-							{useSearchResults && totalItems > 0 && (
+							{useSearchResults && (totalItems > 0 || page > 1) && (
 								<ShortPagination unit='Charges' totalItems={totalItems} pageSize={limit} prefix={PAGINATION_PREFIX.PLAN_CHARGES} />
 							)}
 						</>
