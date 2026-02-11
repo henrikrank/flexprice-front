@@ -12,10 +12,10 @@ import {
 	EventsMonitoringChart,
 	DashboardControls,
 	RecentSubscriptionsCard,
-	RevenueTrendCard,
+	// RevenueTrendCard,
 	InvoiceIssuesCard,
 } from '@/components/molecules';
-import { useRecentSubscriptions, useRevenueData, useInvoiceIssues } from '@/hooks/useDashboardData';
+import { useRecentSubscriptions, /* useRevenueData, */ useInvoiceIssues } from '@/hooks/useDashboardData';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui';
 import { AlertCircle } from 'lucide-react';
 import { getTypographyClass } from '@/lib/typography';
@@ -105,7 +105,7 @@ const DashboardPage = () => {
 
 	// Use custom hooks for data fetching
 	const { subscriptionsCount, subscriptionsByPlan, isLoading: subscriptionsLoading, error: subscriptionsError } = useRecentSubscriptions();
-	const { revenueData, isLoading: revenueLoading, error: revenueError } = useRevenueData();
+	// const { revenueData, isLoading: revenueLoading, error: revenueError } = useRevenueData();
 	const { invoicesByStatus, isLoading: invoiceIssuesLoading, errors: invoiceErrors } = useInvoiceIssues();
 
 	// Format "Updated just now" timestamp
@@ -116,9 +116,9 @@ const DashboardPage = () => {
 	// Handle errors
 	useEffect(() => {
 		if (subscriptionsError) toast.error('Error fetching subscription data');
-		if (revenueError) toast.error('Error fetching revenue data');
+		// if (revenueError) toast.error('Error fetching revenue data');
 		invoiceErrors.forEach(() => toast.error('Error fetching invoice data'));
-	}, [subscriptionsError, revenueError, invoiceErrors]);
+	}, [subscriptionsError, /* revenueError, */ invoiceErrors]);
 
 	// Skeleton loader for Events Monitoring Chart
 	const EventsMonitoringChartSkeleton = () => (
@@ -195,9 +195,9 @@ const DashboardPage = () => {
 				{/* Business Metrics Cards */}
 				<div className='space-y-6 mt-6'>
 					{/* Revenue Trend Card - Full Width - Only render if there's data, loading, or error */}
-					{(revenueData.length > 0 || revenueLoading || revenueError) && (
+					{/* {(revenueData.length > 0 || revenueLoading || revenueError) && (
 						<RevenueTrendCard revenueData={revenueData} isLoading={revenueLoading} error={revenueError} />
-					)}
+					)} */}
 
 					{/* Recent Subscriptions and Invoice Payment Status - Side by Side */}
 					<div className='grid grid-cols-1 lg:grid-cols-2 gap-6'>
