@@ -510,7 +510,6 @@ const UsagePricingForm: FC<Props> = ({
 				onChange={handleCurrencyPriceUnitChange}
 				label='Currency'
 				error={errors.currency}
-				description='Select a currency (FIAT) or a custom price unit (CUSTOM)'
 			/>
 			<Spacer height='8px' />
 			<Select

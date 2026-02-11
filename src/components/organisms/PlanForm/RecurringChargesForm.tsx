@@ -227,7 +227,6 @@ const RecurringChargesForm = ({
 				onChange={handleCurrencyPriceUnitChange}
 				label='Currency'
 				error={errors.currency || errors.price_unit_config}
-				description='Select a currency (FIAT) or a custom price unit (CUSTOM)'
 			/>
 			<Spacer height={'8px'} />
 			<Select
