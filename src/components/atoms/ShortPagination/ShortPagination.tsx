@@ -50,6 +50,7 @@ const ShortPagination = ({
 			</div>
 			<div className='flex items-center space-x-2'>
 				<Button
+					type='button'
 					variant='outline'
 					size='icon'
 					onClick={() => handlePageChange(page - 1)}
@@ -63,6 +64,7 @@ const ShortPagination = ({
 					</div>
 				)}
 				<Button
+					type='button'
 					variant='outline'
 					size='icon'
 					onClick={() => handlePageChange(page + 1)}
