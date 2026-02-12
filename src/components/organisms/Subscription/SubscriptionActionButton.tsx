@@ -328,7 +328,7 @@ const SubscriptionActionButton: React.FC<Props> = ({ subscription }) => {
 						<Toggle
 							title='Invoice behavior'
 							label='Generate invoice'
-							description='Turn on to send generate_invoice. Keep off to send skip.'
+							description='Enable to generate an invoice for usage till the cancellation date.'
 							checked={state.cancelGenerateInvoice}
 							onChange={(checked) => setState((prev) => ({ ...prev, cancelGenerateInvoice: checked }))}
 						/>
