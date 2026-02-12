@@ -28,6 +28,7 @@ export const commandPalettePaths = {
 	'developers-api-keys': '/developers/api-keys',
 	'developers-service-accounts': '/developers/service-accounts',
 	'developers-webhooks': '/developers/webhooks',
+	'developers-workflows': '/developers/workflows',
 	'tools-integrations': '/tools/integrations',
 	'tools-integrations-stripe': '/tools/integrations/stripe',
 	'tools-integrations-razorpay': '/tools/integrations/razorpay',

@@ -299,3 +299,18 @@ export type {
 	ListPriceUnitsResponse,
 	PriceUnitFilter,
 } from './PriceUnit';
+
+export type {
+	WorkflowExecutionDTO,
+	SearchWorkflowsRequest,
+	ListWorkflowsResponse,
+	WorkflowActivityDTO,
+	ActivityErrorDTO,
+	WorkflowTimelineItemDTO,
+	WorkflowDetailsResponse,
+	WorkflowSummaryResponse,
+	WorkflowTimelineResponse,
+	WorkflowIdentifier,
+	BatchWorkflowsRequest,
+	BatchWorkflowsResponse,
+} from './Workflow';

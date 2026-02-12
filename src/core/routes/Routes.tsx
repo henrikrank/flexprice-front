@@ -63,6 +63,8 @@ import {
 	// Developer pages
 	DeveloperPage,
 	ServiceAccountsPage,
+	WorkflowsPage,
+	WorkflowDetailsPage,
 	// Onboarding pages
 	OnboardingTenant,
 	// Webhooks pages
@@ -154,6 +156,8 @@ export const RouteNames = {
 	webhooks: '/developers/webhooks',
 	apiKeys: '/developers/api-keys',
 	serviceAccounts: '/developers/service-accounts',
+	workflows: '/developers/workflows',
+	workflowDetails: '/developers/workflows/:workflowId/:runId',
 
 	// tools routes
 	tools: '/tools',
@@ -465,6 +469,14 @@ export const MainRouter = createBrowserRouter([
 					{
 						path: RouteNames.serviceAccounts,
 						element: <ServiceAccountsPage />,
+					},
+					{
+						path: RouteNames.workflows,
+						element: <WorkflowsPage />,
+					},
+					{
+						path: RouteNames.workflowDetails,
+						element: <WorkflowDetailsPage />,
 					},
 				],
 			},

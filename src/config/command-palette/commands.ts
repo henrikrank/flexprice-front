@@ -23,6 +23,7 @@ import {
 	BotMessageSquare,
 	LogOut,
 	Keyboard,
+	Workflow,
 } from 'lucide-react';
 import type { CommandPaletteActionIdType } from '@/core/actions';
 import { CommandPaletteActionId } from '@/core/actions';
@@ -408,6 +409,14 @@ export const commandPaletteCommands: CommandPaletteCommand[] = [
 		path: P['developers-webhooks'],
 		keywords: ['webhooks', 'developers'],
 		icon: Webhook,
+	},
+	{
+		id: CommandPaletteCommandId.navDevelopersWorkflows,
+		label: 'Developers → Workflows',
+		group: CommandPaletteGroup.GoTo,
+		path: P['developers-workflows'],
+		keywords: ['workflows', 'temporal', 'runs', 'developers'],
+		icon: Workflow,
 	},
 	// Go to - Integrations & Pricing Widget
 	{
