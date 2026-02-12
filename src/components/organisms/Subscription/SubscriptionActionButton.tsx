@@ -1,9 +1,15 @@
-import { Subscription, SUBSCRIPTION_PRORATION_BEHAVIOR, SUBSCRIPTION_CANCELLATION_TYPE, SUBSCRIPTION_STATUS } from '@/models/Subscription';
+import {
+	Subscription,
+	SUBSCRIPTION_PRORATION_BEHAVIOR,
+	SUBSCRIPTION_CANCELLATION_TYPE,
+	SUBSCRIPTION_CANCEL_IMMEDIATELY_INVOICE_POLICY,
+	SUBSCRIPTION_STATUS,
+} from '@/models/Subscription';
 import { useMutation } from '@tanstack/react-query';
 import { CirclePause, CirclePlay, X, Plus, Pencil, Play } from 'lucide-react';
 import React, { useState, useMemo } from 'react';
 import SubscriptionApi from '@/api/SubscriptionApi';
-import { DatePicker, Modal, Input, Button, FormHeader, Spacer } from '@/components/atoms';
+import { DatePicker, Modal, Input, Button, FormHeader, Spacer, Select, Toggle } from '@/components/atoms';
 import { toast } from 'react-hot-toast';
 import DropdownMenu, { DropdownMenuOption } from '@/components/molecules/DropdownMenu/DropdownMenu';
 import { refetchQueries } from '@/core/services/tanstack/ReactQueryProvider';
@@ -28,7 +34,27 @@ const SubscriptionActionButton: React.FC<Props> = ({ subscription }) => {
 		pauseDays: '',
 		pauseReason: '',
 		activateStartDate: new Date(),
+		cancelCancellationType: SUBSCRIPTION_CANCELLATION_TYPE.IMMEDIATE,
+		cancelProrationBehavior: SUBSCRIPTION_PRORATION_BEHAVIOR.NONE,
+		cancelGenerateInvoice: false,
+		cancelReason: '',
 	});
+
+	const resetCancelState = () => {
+		setState((prev) => ({
+			...prev,
+			isCancelModalOpen: false,
+			cancelCancellationType: SUBSCRIPTION_CANCELLATION_TYPE.IMMEDIATE,
+			cancelProrationBehavior: SUBSCRIPTION_PRORATION_BEHAVIOR.NONE,
+			cancelGenerateInvoice: false,
+			cancelReason: '',
+		}));
+	};
+
+	const getCancelImmediatelyInvoicePolicy = () =>
+		state.cancelGenerateInvoice
+			? SUBSCRIPTION_CANCEL_IMMEDIATELY_INVOICE_POLICY.GENERATE_INVOICE
+			: SUBSCRIPTION_CANCEL_IMMEDIATELY_INVOICE_POLICY.SKIP;
 
 	const pauseEndDate = useMemo(() => {
 		if (!state.pauseDays) return null;
@@ -74,17 +100,19 @@ const SubscriptionActionButton: React.FC<Props> = ({ subscription }) => {
 	const { mutate: cancelSubscription, isPending: isCancelLoading } = useMutation({
 		mutationFn: (id: string) =>
 			SubscriptionApi.cancelSubscription(id, {
-				proration_behavior: SUBSCRIPTION_PRORATION_BEHAVIOR.NONE,
-				cancellation_type: SUBSCRIPTION_CANCELLATION_TYPE.IMMEDIATE,
+				proration_behavior: state.cancelProrationBehavior,
+				cancellation_type: state.cancelCancellationType,
+				cancel_immediately_inovice_policy: getCancelImmediatelyInvoicePolicy(),
+				...(state.cancelReason.trim() ? { reason: state.cancelReason.trim() } : {}),
 			}),
 		onSuccess: async () => {
-			setState((prev) => ({ ...prev, isCancelModalOpen: false }));
+			resetCancelState();
 			toast.success('Subscription cancelled successfully');
 			await refetchQueries(['subscriptionDetails']);
 			await refetchQueries(['subscriptions']);
 		},
 		onError: (err: ServerError) => {
-			setState((prev) => ({ ...prev, isCancelModalOpen: false }));
+			resetCancelState();
 			toast.error(err.error.message || 'Failed to cancel subscription');
 		},
 	});
@@ -252,21 +280,67 @@ const SubscriptionActionButton: React.FC<Props> = ({ subscription }) => {
 			{/* Cancel Modal */}
 			<Modal
 				isOpen={state.isCancelModalOpen}
-				onOpenChange={(open) => setState((prev) => ({ ...prev, isCancelModalOpen: open }))}
+				onOpenChange={(open) => {
+					if (!open) {
+						resetCancelState();
+						return;
+					}
+					setState((prev) => ({ ...prev, isCancelModalOpen: open }));
+				}}
 				className='card bg-white w-[560px] max-w-[90vw]'>
 				<div className='space-y-4'>
 					<FormHeader
 						title='Cancel Subscription'
 						variant='sub-header'
-						subtitle='This action cannot be undone. The subscription will be cancelled immediately.'
+						subtitle='This action cannot be undone. Choose cancellation and invoice behavior before continuing.'
 						titleClassName='!mb-1'
 						subtitleClassName='!text-sm !max-w-[440px] !leading-6'
 					/>
+					<div className='space-y-4'>
+						<Select
+							label='Cancellation Type'
+							value={state.cancelCancellationType}
+							options={[
+								{ label: 'Immediate', value: SUBSCRIPTION_CANCELLATION_TYPE.IMMEDIATE },
+								{ label: 'End of period', value: SUBSCRIPTION_CANCELLATION_TYPE.END_OF_PERIOD },
+							]}
+							onChange={(value) =>
+								setState((prev) => ({
+									...prev,
+									cancelCancellationType: value as SUBSCRIPTION_CANCELLATION_TYPE,
+								}))
+							}
+						/>
+						<Select
+							label='Proration Behavior'
+							value={state.cancelProrationBehavior}
+							options={[
+								{ label: 'None', value: SUBSCRIPTION_PRORATION_BEHAVIOR.NONE },
+								{ label: 'Create prorations', value: SUBSCRIPTION_PRORATION_BEHAVIOR.CREATE_PRORATIONS },
+							]}
+							onChange={(value) =>
+								setState((prev) => ({
+									...prev,
+									cancelProrationBehavior: value as SUBSCRIPTION_PRORATION_BEHAVIOR,
+								}))
+							}
+						/>
+						<Toggle
+							title='Invoice behavior'
+							label='Generate invoice'
+							description='Turn on to send generate_invoice. Keep off to send skip.'
+							checked={state.cancelGenerateInvoice}
+							onChange={(checked) => setState((prev) => ({ ...prev, cancelGenerateInvoice: checked }))}
+						/>
+						<Input
+							label='Reason (optional)'
+							value={state.cancelReason}
+							onChange={(value) => setState((prev) => ({ ...prev, cancelReason: value }))}
+							placeholder='Why is this subscription being cancelled?'
+						/>
+					</div>
 					<div className='flex justify-end gap-3 pt-4'>
-						<Button
-							variant='outline'
-							onClick={() => setState((prev) => ({ ...prev, isCancelModalOpen: false }))}
-							disabled={isCancelLoading}>
+						<Button variant='outline' onClick={() => resetCancelState()} disabled={isCancelLoading}>
 							No, Keep It
 						</Button>
 						<Button variant='destructive' onClick={() => cancelSubscription(subscription.id)} disabled={isCancelLoading}>
