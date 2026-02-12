@@ -15,7 +15,7 @@ import {
 } from '@/types/common/QueryBuilder';
 import { BILLING_CADENCE } from '@/models/Invoice';
 import { BILLING_PERIOD } from '@/constants/constants';
-import { SUBSCRIPTION_CANCELLATION_TYPE, SUBSCRIPTION_STATUS } from '@/models/Subscription';
+import { SUBSCRIPTION_STATUS } from '@/models/Subscription';
 import { toSentenceCase } from '@/utils/common/helper_functions';
 import { EXPAND } from '@/models/expand';
 import { generateExpandQueryParams } from '@/utils/common/api_helper';
@@ -25,7 +25,8 @@ import { RouteNames } from '@/core/routes/Routes';
 import formatDate from '@/utils/common/format_date';
 import { Trash2 } from 'lucide-react';
 import { SubscriptionResponse } from '@/types/dto/Subscription';
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
+import SubscriptionCancelDialog from '@/components/molecules/SubscriptionCancelDialog/SubscriptionCancelDialog';
 
 const sortingOptions: SortOption[] = [
 	{
@@ -145,6 +146,7 @@ const getSubscriptionStatusChip = (status: SUBSCRIPTION_STATUS) => {
 
 const SubscriptionsPage = () => {
 	const navigate = useNavigate();
+	const [cancelSubscriptionId, setCancelSubscriptionId] = useState<string | null>(null);
 
 	const columns: ColumnData<SubscriptionResponse>[] = useMemo(
 		() => [
@@ -177,21 +179,24 @@ const SubscriptionsPage = () => {
 				render: (row) => (
 					<ActionButton
 						id={row.id}
-						deleteMutationFn={async (id) => {
-							await SubscriptionApi.cancelSubscription(id, {
-								cancellation_type: SUBSCRIPTION_CANCELLATION_TYPE.IMMEDIATE,
-							});
-						}}
+						deleteMutationFn={async () => Promise.resolve()}
 						refetchQueryKey='fetchSubscriptions'
+						isArchiveDisabled={true}
 						entityName='Subscription'
 						edit={{
 							path: `${RouteNames.subscriptions}/${row.id}/edit`,
 						}}
 						archive={{
-							enabled: row.subscription_status !== SUBSCRIPTION_STATUS.CANCELLED,
-							text: 'Cancel',
-							icon: <Trash2 />,
+							enabled: false,
 						}}
+						customActions={[
+							{
+								text: 'Cancel',
+								icon: <Trash2 />,
+								enabled: row.subscription_status !== SUBSCRIPTION_STATUS.CANCELLED,
+								onClick: () => setCancelSubscriptionId(row.id),
+							},
+						]}
 					/>
 				),
 			},
@@ -200,51 +205,63 @@ const SubscriptionsPage = () => {
 	);
 
 	return (
-		<Page heading='Subscriptions'>
-			<ApiDocsContent tags={['Subscriptions', 'Subscription']} />
-			<QueryableDataArea<SubscriptionResponse>
-				queryConfig={{
-					filterOptions,
-					sortOptions: sortingOptions,
-					initialFilters,
-					initialSorts,
-					debounceTime: 300,
+		<>
+			<Page heading='Subscriptions'>
+				<ApiDocsContent tags={['Subscriptions', 'Subscription']} />
+				<QueryableDataArea<SubscriptionResponse>
+					queryConfig={{
+						filterOptions,
+						sortOptions: sortingOptions,
+						initialFilters,
+						initialSorts,
+						debounceTime: 300,
+					}}
+					dataConfig={{
+						queryKey: 'fetchSubscriptions',
+						fetchFn: async (params) =>
+							SubscriptionApi.searchSubscriptions({
+								...params,
+								expand: generateExpandQueryParams([EXPAND.CUSTOMER]),
+							}),
+						probeFetchFn: async (params) =>
+							SubscriptionApi.searchSubscriptions({
+								...params,
+								limit: 1,
+								offset: 0,
+								filters: [],
+								sort: [],
+							}),
+					}}
+					tableConfig={{
+						columns,
+						onRowClick: (row) => {
+							navigate(`${RouteNames.customers}/${row?.customer_id}/subscription/${row?.id}`);
+						},
+						showEmptyRow: true,
+					}}
+					paginationConfig={{
+						unit: 'Subscriptions',
+					}}
+					emptyStateConfig={{
+						heading: 'Subscriptions',
+						description: 'Create your first subscription to start billing your customers.',
+						buttonLabel: 'Create Subscription',
+						tags: ['Subscriptions', 'Subscription'],
+						tutorials: GUIDES.customers.tutorials,
+					}}
+				/>
+			</Page>
+			<SubscriptionCancelDialog
+				isOpen={!!cancelSubscriptionId}
+				onOpenChange={(open) => {
+					if (!open) {
+						setCancelSubscriptionId(null);
+					}
 				}}
-				dataConfig={{
-					queryKey: 'fetchSubscriptions',
-					fetchFn: async (params) =>
-						SubscriptionApi.searchSubscriptions({
-							...params,
-							expand: generateExpandQueryParams([EXPAND.CUSTOMER]),
-						}),
-					probeFetchFn: async (params) =>
-						SubscriptionApi.searchSubscriptions({
-							...params,
-							limit: 1,
-							offset: 0,
-							filters: [],
-							sort: [],
-						}),
-				}}
-				tableConfig={{
-					columns,
-					onRowClick: (row) => {
-						navigate(`${RouteNames.customers}/${row?.customer_id}/subscription/${row?.id}`);
-					},
-					showEmptyRow: true,
-				}}
-				paginationConfig={{
-					unit: 'Subscriptions',
-				}}
-				emptyStateConfig={{
-					heading: 'Subscriptions',
-					description: 'Create your first subscription to start billing your customers.',
-					buttonLabel: 'Create Subscription',
-					tags: ['Subscriptions', 'Subscription'],
-					tutorials: GUIDES.customers.tutorials,
-				}}
+				subscriptionId={cancelSubscriptionId}
+				refetchQueryKeys={['fetchSubscriptions']}
 			/>
-		</Page>
+		</>
 	);
 };
 
