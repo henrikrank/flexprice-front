@@ -1,14 +1,14 @@
-import { FC } from 'react';
+import { FC, useState } from 'react';
 import { ActionButton, Chip } from '@/components/atoms';
 import FlexpriceTable, { ColumnData } from '../Table';
 import formatDate from '@/utils/common/format_date';
-import { Subscription, SUBSCRIPTION_CANCELLATION_TYPE, SUBSCRIPTION_STATUS } from '@/models/Subscription';
+import { Subscription, SUBSCRIPTION_STATUS } from '@/models/Subscription';
 import { useNavigate } from 'react-router';
 import { RouteNames } from '@/core/routes/Routes';
-import SubscriptionApi from '@/api/SubscriptionApi';
 import RedirectCell from '../Table/RedirectCell';
 import { Trash2 } from 'lucide-react';
 import { SubscriptionResponse } from '@/types/dto/Subscription';
+import SubscriptionCancelDialog from '@/components/molecules/SubscriptionCancelDialog/SubscriptionCancelDialog';
 
 interface Props {
 	data: Subscription[];
@@ -33,6 +33,7 @@ const getSubscriptionStatusChip = (status: SUBSCRIPTION_STATUS) => {
 
 const SubscriptionTable: FC<Props> = ({ data, onEdit }) => {
 	const navigate = useNavigate();
+	const [cancelSubscriptionId, setCancelSubscriptionId] = useState<string | null>(null);
 
 	const columns: ColumnData<SubscriptionResponse>[] = [
 		{
@@ -66,11 +67,7 @@ const SubscriptionTable: FC<Props> = ({ data, onEdit }) => {
 			render: (row) => (
 				<ActionButton
 					id={row.id}
-					deleteMutationFn={async (id) => {
-						await SubscriptionApi.cancelSubscription(id, {
-							cancellation_type: SUBSCRIPTION_CANCELLATION_TYPE.IMMEDIATE,
-						});
-					}}
+					deleteMutationFn={async () => Promise.resolve()}
 					refetchQueryKey='fetchSubscriptions'
 					entityName='Subscription'
 					edit={{
@@ -78,24 +75,42 @@ const SubscriptionTable: FC<Props> = ({ data, onEdit }) => {
 						onClick: () => onEdit?.(row),
 					}}
 					archive={{
-						enabled: row.subscription_status !== SUBSCRIPTION_STATUS.CANCELLED,
-						text: 'Cancel',
-						icon: <Trash2 />,
+						enabled: false,
 					}}
+					customActions={[
+						{
+							text: 'Cancel',
+							icon: <Trash2 />,
+							enabled: row.subscription_status !== SUBSCRIPTION_STATUS.CANCELLED,
+							onClick: () => setCancelSubscriptionId(row.id),
+						},
+					]}
 				/>
 			),
 		},
 	];
 
 	return (
-		<FlexpriceTable
-			showEmptyRow
-			columns={columns}
-			data={data}
-			onRowClick={(row) => {
-				navigate(`${RouteNames.customers}/${row?.customer_id}/subscription/${row?.id}`);
-			}}
-		/>
+		<>
+			<FlexpriceTable
+				showEmptyRow
+				columns={columns}
+				data={data}
+				onRowClick={(row) => {
+					navigate(`${RouteNames.customers}/${row?.customer_id}/subscription/${row?.id}`);
+				}}
+			/>
+			<SubscriptionCancelDialog
+				isOpen={!!cancelSubscriptionId}
+				onOpenChange={(open) => {
+					if (!open) {
+						setCancelSubscriptionId(null);
+					}
+				}}
+				subscriptionId={cancelSubscriptionId}
+				refetchQueryKeys={['fetchSubscriptions']}
+			/>
+		</>
 	);
 };
 

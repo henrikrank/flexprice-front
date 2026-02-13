@@ -74,6 +74,9 @@ export type {
 	PriceResponse,
 	DeletePriceRequest,
 	CostBreakup,
+	SearchPricesRequest,
+	SearchPricesResponse,
+	SearchPricesFilter,
 } from './Price';
 
 export type {

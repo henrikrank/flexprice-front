@@ -274,3 +274,8 @@ export enum SUBSCRIPTION_CANCELLATION_TYPE {
 	IMMEDIATE = 'immediate',
 	END_OF_PERIOD = 'end_of_period',
 }
+
+export enum SUBSCRIPTION_CANCEL_IMMEDIATELY_INVOICE_POLICY {
+	GENERATE_INVOICE = 'generate_invoice',
+	SKIP = 'skip',
+}

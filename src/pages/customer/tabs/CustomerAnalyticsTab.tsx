@@ -21,6 +21,7 @@ import { Skeleton } from '@/components/ui';
 import { ENTITY_STATUS } from '@/models/base';
 import { RouteNames } from '@/core/routes/Routes';
 import { PremiumFeatureIcon } from '@/components/molecules/PremiumFeature/PremiumFeature';
+import { ChevronDown, ChevronUp, ChevronsUpDown } from 'lucide-react';
 
 const CustomerAnalyticsTab = () => {
 	const { id: customerId } = useParams();
@@ -407,6 +408,67 @@ const CustomerAnalyticsTab = () => {
 };
 
 const UsageDataTable: React.FC<{ items: UsageAnalyticItem[] }> = ({ items }) => {
+	type UsageSortField = 'total_usage' | 'total_cost';
+	type SortDirection = 'asc' | 'desc';
+
+	const [sortField, setSortField] = useState<UsageSortField>('total_cost');
+	const [sortDirection, setSortDirection] = useState<SortDirection>('desc');
+
+	const handleSortToggle = (field: UsageSortField) => {
+		if (sortField !== field) {
+			setSortField(field);
+			setSortDirection('desc');
+			return;
+		}
+
+		setSortDirection((prev) => (prev === 'asc' ? 'desc' : 'asc'));
+	};
+
+	const sortedItems = useMemo(() => {
+		const sorted = [...items];
+		const directionMultiplier = sortDirection === 'asc' ? 1 : -1;
+
+		sorted.sort((a, b) => {
+			switch (sortField) {
+				case 'total_usage': {
+					const valueA = a.total_usage ?? 0;
+					const valueB = b.total_usage ?? 0;
+					return (valueA - valueB) * directionMultiplier;
+				}
+				case 'total_cost': {
+					const valueA = a.total_cost ?? 0;
+					const valueB = b.total_cost ?? 0;
+					return (valueA - valueB) * directionMultiplier;
+				}
+				default:
+					return 0;
+			}
+		});
+
+		return sorted;
+	}, [items, sortDirection, sortField]);
+
+	const renderSortableHeader = (field: UsageSortField, label: string) => {
+		const isActive = sortField === field;
+		return (
+			<button
+				type='button'
+				className={`group -ml-1 inline-flex h-7 items-center gap-1 rounded-md px-1.5 text-left transition-colors ${
+					isActive ? 'text-gray-900' : 'text-gray-500 hover:text-gray-700'
+				}`}
+				onClick={() => handleSortToggle(field)}>
+				<span className='leading-none'>{label}</span>
+				{sortDirection === 'asc' && isActive ? (
+					<ChevronUp className='h-3.5 w-3.5 shrink-0 text-gray-900' />
+				) : isActive ? (
+					<ChevronDown className='h-3.5 w-3.5 shrink-0 text-gray-900' />
+				) : (
+					<ChevronsUpDown className='h-3.5 w-3.5 shrink-0 text-gray-400 group-hover:text-gray-500' />
+				)}
+			</button>
+		);
+	};
+
 	// Define table columns
 	const columns: ColumnData<UsageAnalyticItem>[] = [
 		{
@@ -423,7 +485,7 @@ const UsageDataTable: React.FC<{ items: UsageAnalyticItem[] }> = ({ items }) => 
 			},
 		},
 		{
-			title: 'Total Usage',
+			title: renderSortableHeader('total_usage', 'Total Usage'),
 			render: (row: UsageAnalyticItem) => {
 				const unit = row.unit ? ` ${row.unit}${row.total_usage !== 1 && row.unit_plural ? 's' : ''}` : '';
 				return (
@@ -435,7 +497,7 @@ const UsageDataTable: React.FC<{ items: UsageAnalyticItem[] }> = ({ items }) => 
 			},
 		},
 		{
-			title: 'Total Cost',
+			title: renderSortableHeader('total_cost', 'Total Cost'),
 			render: (row: UsageAnalyticItem) => {
 				if (row.total_cost === 0 || !row.currency) return '-';
 				const currency = getCurrencySymbol(row.currency);
@@ -453,7 +515,7 @@ const UsageDataTable: React.FC<{ items: UsageAnalyticItem[] }> = ({ items }) => 
 	];
 
 	// Prepare data for the table
-	const tableData = items.map((item) => ({
+	const tableData = sortedItems.map((item) => ({
 		...item,
 		// Ensure we have all required fields for the table
 		id: item.feature_id || item.source || 'unknown',
