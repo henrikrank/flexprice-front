@@ -1,6 +1,6 @@
 import { AxiosClient } from '@/core/axios/verbs';
 import type {
-	SearchWorkflowsRequest,
+	WorkflowExecutionFilterRequest,
 	ListWorkflowsResponse,
 	WorkflowDetailsResponse,
 	WorkflowSummaryResponse,
@@ -12,10 +12,7 @@ import type {
 class WorkflowApi {
 	private static baseUrl = '/workflows';
 
-	/**
-	 * Search/list workflows (POST /workflows/search) with body filters and pagination.
-	 */
-	public static async search(payload: SearchWorkflowsRequest): Promise<ListWorkflowsResponse> {
+	public static async search(payload: WorkflowExecutionFilterRequest): Promise<ListWorkflowsResponse> {
 		return await AxiosClient.post<ListWorkflowsResponse>(`${this.baseUrl}/search`, payload);
 	}
 

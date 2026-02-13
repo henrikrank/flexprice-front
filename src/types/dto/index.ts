@@ -302,7 +302,7 @@ export type {
 
 export type {
 	WorkflowExecutionDTO,
-	SearchWorkflowsRequest,
+	WorkflowExecutionFilterRequest,
 	ListWorkflowsResponse,
 	WorkflowActivityDTO,
 	ActivityErrorDTO,

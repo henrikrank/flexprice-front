@@ -3,7 +3,7 @@ import { ApiDocsContent } from '@/components/molecules';
 import { ColumnData, TooltipCell } from '@/components/molecules/Table';
 import { QueryableDataArea } from '@/components/organisms';
 import WorkflowApi from '@/api/WorkflowApi';
-import { useMemo, useCallback } from 'react';
+import { useMemo } from 'react';
 import {
 	FilterField,
 	FilterFieldType,
@@ -19,41 +19,6 @@ import { RouteNames } from '@/core/routes/Routes';
 import formatDate from '@/utils/common/format_date';
 import { WORKFLOW_TYPE_DISPLAY_NAMES } from '@/constants/workflow';
 import type { WorkflowExecutionDTO } from '@/types/dto';
-import type { SearchWorkflowsRequest } from '@/types/dto';
-
-const FIELD_WORKFLOW_ID = 'workflow_id';
-const FIELD_WORKFLOW_TYPE = 'workflow_type';
-const FIELD_TASK_QUEUE = 'task_queue';
-const FIELD_WORKFLOW_STATUS = 'workflow_status';
-const FIELD_ENTITY = 'entity';
-const FIELD_ENTITY_ID = 'entity_id';
-
-function buildSearchPayload(params: {
-	limit: number;
-	offset: number;
-	filters: FilterCondition[];
-	sort: SortOption[];
-}): SearchWorkflowsRequest {
-	const payload: SearchWorkflowsRequest = {
-		limit: params.limit,
-		offset: params.offset,
-	};
-	for (const f of params.filters) {
-		const str = (f.valueString ?? '').trim();
-		const arr = f.valueArray ?? [];
-		if (f.field === FIELD_WORKFLOW_ID && str) payload.workflow_id = str;
-		else if (f.field === FIELD_WORKFLOW_TYPE && str) payload.workflow_type = str;
-		else if (f.field === FIELD_TASK_QUEUE && str) payload.task_queue = str;
-		else if (f.field === FIELD_WORKFLOW_STATUS && (str || arr.length > 0)) payload.workflow_status = str || arr[0];
-		else if (f.field === FIELD_ENTITY && str) payload.entity = str;
-		else if (f.field === FIELD_ENTITY_ID && str) payload.entity_id = str;
-	}
-	if (params.sort?.[0]) {
-		payload.sort = params.sort[0].field;
-		payload.order = params.sort[0].direction ?? SortDirection.DESC;
-	}
-	return payload;
-}
 
 const sortingOptions: SortOption[] = [
 	{ field: 'start_time', label: 'Start time', direction: SortDirection.DESC },
@@ -63,14 +28,14 @@ const sortingOptions: SortOption[] = [
 
 const filterOptions: FilterField[] = [
 	{
-		field: FIELD_WORKFLOW_ID,
+		field: 'workflow_id',
 		label: 'Workflow ID',
 		fieldType: FilterFieldType.INPUT,
 		operators: DEFAULT_OPERATORS_PER_DATA_TYPE[DataType.STRING],
 		dataType: DataType.STRING,
 	},
 	{
-		field: FIELD_WORKFLOW_TYPE,
+		field: 'workflow_type',
 		label: 'Workflow type',
 		fieldType: FilterFieldType.SELECT,
 		operators: [FilterOperator.EQUAL],
@@ -78,14 +43,14 @@ const filterOptions: FilterField[] = [
 		options: Object.entries(WORKFLOW_TYPE_DISPLAY_NAMES).map(([value, label]) => ({ value, label })),
 	},
 	{
-		field: FIELD_TASK_QUEUE,
+		field: 'task_queue',
 		label: 'Task queue',
 		fieldType: FilterFieldType.INPUT,
 		operators: DEFAULT_OPERATORS_PER_DATA_TYPE[DataType.STRING],
 		dataType: DataType.STRING,
 	},
 	{
-		field: FIELD_WORKFLOW_STATUS,
+		field: 'workflow_status',
 		label: 'Status',
 		fieldType: FilterFieldType.MULTI_SELECT,
 		operators: [FilterOperator.IN, FilterOperator.NOT_IN],
@@ -101,14 +66,14 @@ const filterOptions: FilterField[] = [
 		],
 	},
 	{
-		field: FIELD_ENTITY,
+		field: 'entity',
 		label: 'Entity',
 		fieldType: FilterFieldType.INPUT,
 		operators: DEFAULT_OPERATORS_PER_DATA_TYPE[DataType.STRING],
 		dataType: DataType.STRING,
 	},
 	{
-		field: FIELD_ENTITY_ID,
+		field: 'entity_id',
 		label: 'Entity ID',
 		fieldType: FilterFieldType.INPUT,
 		operators: DEFAULT_OPERATORS_PER_DATA_TYPE[DataType.STRING],
@@ -117,18 +82,17 @@ const filterOptions: FilterField[] = [
 ];
 
 const initialFilters: FilterCondition[] = [];
-const initialSorts: SortOption[] = [{ field: 'start_time', label: 'Start time', direction: SortDirection.DESC }];
+
+const initialSorts: SortOption[] = [
+	{
+		field: 'start_time',
+		label: 'Start time',
+		direction: SortDirection.DESC,
+	},
+];
 
 const WorkflowsPage = () => {
 	const navigate = useNavigate();
-
-	const fetchFn = useCallback(async (params: { limit: number; offset: number; filters: FilterCondition[]; sort: SortOption[] }) => {
-		return WorkflowApi.search(buildSearchPayload(params));
-	}, []);
-
-	const probeFetchFn = useCallback(async () => {
-		return WorkflowApi.search(buildSearchPayload({ limit: 1, offset: 0, filters: [], sort: initialSorts }));
-	}, []);
 
 	const columns: ColumnData<WorkflowExecutionDTO>[] = useMemo(
 		() => [
@@ -142,7 +106,10 @@ const WorkflowsPage = () => {
 				width: 200,
 				render: (row) => <TooltipCell tooltipContent={row.run_id} tooltipText={row.run_id} />,
 			},
-			{ fieldName: 'workflow_type', title: 'Workflow type' },
+			{
+				title: 'Workflow type',
+				render: (row) => WORKFLOW_TYPE_DISPLAY_NAMES[row.workflow_type] ?? row.workflow_type,
+			},
 			{
 				title: 'Status',
 				render: (row) => {
@@ -172,20 +139,28 @@ const WorkflowsPage = () => {
 				}}
 				dataConfig={{
 					queryKey: 'fetchWorkflows',
-					fetchFn,
-					probeFetchFn,
+					fetchFn: async (params) => WorkflowApi.search(params),
+					probeFetchFn: async (params) =>
+						WorkflowApi.search({
+							...params,
+							limit: 1,
+							offset: 0,
+							filters: [],
+							sort: [],
+						}),
 				}}
 				tableConfig={{
 					columns,
-					onRowClick: (row) => {
-						navigate(RouteNames.workflowDetails.replace(':workflowId', row.workflow_id).replace(':runId', row.run_id));
-					},
+					onRowClick: (row) => navigate(RouteNames.workflowDetails.replace(':workflowId', row.workflow_id).replace(':runId', row.run_id)),
 					showEmptyRow: true,
 				}}
-				paginationConfig={{ unit: 'Workflows' }}
+				paginationConfig={{
+					unit: 'Workflows',
+				}}
 				emptyStateConfig={{
 					heading: 'Workflows',
 					description: 'Temporal workflow executions will appear here when runs are recorded.',
+					tags: ['Workflows'],
 				}}
 			/>
 		</Page>

@@ -1,4 +1,5 @@
 import { Pagination } from '@/models';
+import type { TypedBackendFilter, TypedBackendSort } from '@/types/formatters/QueryBuilder';
 
 /** Workflow execution summary (list item from POST /workflows/search) */
 export interface WorkflowExecutionDTO {
@@ -16,20 +17,11 @@ export interface WorkflowExecutionDTO {
 	created_by?: string;
 }
 
-/** Request body for POST /workflows/search */
-export interface SearchWorkflowsRequest {
-	workflow_id?: string;
-	workflow_type?: string;
-	task_queue?: string;
-	workflow_status?: string;
-	entity?: string;
-	entity_id?: string;
-	sort?: string;
-	order?: string;
-	page_size?: number;
-	page?: number;
+export interface WorkflowExecutionFilterRequest {
 	limit?: number;
 	offset?: number;
+	filters?: TypedBackendFilter[];
+	sort?: TypedBackendSort[];
 }
 
 /** Response for POST /workflows/search */
