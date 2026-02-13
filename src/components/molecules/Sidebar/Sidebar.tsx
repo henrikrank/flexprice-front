@@ -118,6 +118,10 @@ const AppSidebar: React.FC<React.ComponentProps<typeof Sidebar>> = ({ ...props }
 					title: 'Webhooks',
 					url: RouteNames.webhooks,
 				},
+				{
+					title: 'Workflows',
+					url: RouteNames.workflows,
+				},
 			],
 		},
 		{

@@ -53,6 +53,7 @@ export const CommandPaletteCommandId = {
 	navDevelopersApiKeys: 'nav-developers-api-keys',
 	navDevelopersServiceAccounts: 'nav-developers-service-accounts',
 	navDevelopersWebhooks: 'nav-developers-webhooks',
+	navDevelopersWorkflows: 'nav-developers-workflows',
 	// Go to - Integrations & Pricing Widget
 	navIntegrations: 'nav-integrations',
 	navIntegrationStripe: 'nav-integration-stripe',
