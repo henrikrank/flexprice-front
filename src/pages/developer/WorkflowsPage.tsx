@@ -29,7 +29,7 @@ function formatDuration(ms: number | null | undefined): string {
 
 const sortingOptions: SortOption[] = [
 	{ field: 'start_time', label: 'Start time', direction: SortDirection.DESC },
-	{ field: 'end_time', label: 'End time', direction: SortDirection.DESC },
+	{ field: 'close_time', label: 'End time', direction: SortDirection.DESC },
 	{ field: 'created_at', label: 'Created at', direction: SortDirection.DESC },
 ];
 
