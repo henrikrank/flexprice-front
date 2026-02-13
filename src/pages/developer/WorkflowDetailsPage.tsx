@@ -108,14 +108,14 @@ const WorkflowDetailsPage = () => {
 					)}
 				</Card>
 
-				{wf.metadata && Object.keys(wf.metadata).length > 0 && (
+				{/* {wf.metadata && Object.keys(wf.metadata).length > 0 && (
 					<Card variant='notched'>
 						<CardHeader title='Metadata' />
 						<div className='p-4'>
 							<pre className='text-sm bg-gray-50 p-3 rounded overflow-auto max-h-48'>{JSON.stringify(wf.metadata, null, 2)}</pre>
 						</div>
 					</Card>
-				)}
+				)} */}
 
 				<Spacer className='!h-20' />
 			</div>
