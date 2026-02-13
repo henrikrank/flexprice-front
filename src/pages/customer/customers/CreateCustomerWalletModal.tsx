@@ -172,12 +172,12 @@ const CreateCustomerWalletModal: FC<Props> = ({ customerId, onSuccess = () => {}
 							{
 								label: 'Pre-Paid',
 								value: WALLET_TYPE.PRE_PAID,
-								description: 'Credits reduce invoice amounts.',
+								description: 'Customers top up credits in advance. Usage deducts from a real-time balance.',
 							},
 							{
 								label: 'Post-Paid',
 								value: WALLET_TYPE.POST_PAID,
-								description: 'Credits pay invoices when due.',
+								description: 'Credits are applied to invoices at the end of the billing cycle.',
 							},
 						]}
 						label='Wallet Type'
