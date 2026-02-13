@@ -487,7 +487,9 @@ const UsageDataTable: React.FC<{ items: UsageAnalyticItem[] }> = ({ items }) => 
 		{
 			title: renderSortableHeader('total_usage', 'Total Usage'),
 			render: (row: UsageAnalyticItem) => {
-				const unit = row.unit ? ` ${row.unit}${row.total_usage !== 1 && row.unit_plural ? 's' : ''}` : '';
+				const unit = row.unit
+					? ` ${row.total_usage === 1 ? row.unit : (row.unit_plural ?? row.unit)}`
+					: '';
 				return (
 					<span>
 						{formatNumber(row.total_usage)}
