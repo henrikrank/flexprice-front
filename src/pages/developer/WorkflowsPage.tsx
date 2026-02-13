@@ -14,11 +14,18 @@ import {
 	SortDirection,
 	FilterCondition,
 } from '@/types/common/QueryBuilder';
-import { useNavigate } from 'react-router';
-import { RouteNames } from '@/core/routes/Routes';
 import formatDate from '@/utils/common/format_date';
 import { WORKFLOW_TYPE_DISPLAY_NAMES } from '@/constants/workflow';
 import type { WorkflowExecutionDTO } from '@/types/dto';
+
+/** Formats duration in milliseconds to a human-readable string with appropriate unit (ms, s, min, hr). */
+function formatDuration(ms: number | null | undefined): string {
+	if (ms == null || typeof ms !== 'number' || !Number.isFinite(ms)) return '—';
+	if (ms < 1000) return `${Math.round(ms)}ms`;
+	if (ms < 60_000) return `${(ms / 1000).toFixed(1)}s`;
+	if (ms < 3_600_000) return `${(ms / 60_000).toFixed(1)}min`;
+	return `${(ms / 3_600_000).toFixed(1)}hr`;
+}
 
 const sortingOptions: SortOption[] = [
 	{ field: 'start_time', label: 'Start time', direction: SortDirection.DESC },
@@ -92,7 +99,6 @@ const initialSorts: SortOption[] = [
 ];
 
 const WorkflowsPage = () => {
-	const navigate = useNavigate();
 
 	const columns: ColumnData<WorkflowExecutionDTO>[] = useMemo(
 		() => [
@@ -121,6 +127,17 @@ const WorkflowsPage = () => {
 			{
 				title: 'Start time',
 				render: (row) => <TooltipCell tooltipContent={formatDate(row.start_time)} tooltipText={row.start_time || '—'} />,
+			},
+			{
+				title: 'End time',
+				render: (row) => <TooltipCell tooltipContent={row.close_time ? formatDate(row.close_time) : '—'} tooltipText={row.close_time || '—'} />,
+			},
+			{
+				title: 'Duration',
+				render: (row) => {
+					const formatted = formatDuration(row.duration_ms);
+					return <TooltipCell tooltipContent={formatted} tooltipText={formatted} />;
+				},
 			},
 		],
 		[],
@@ -151,7 +168,7 @@ const WorkflowsPage = () => {
 				}}
 				tableConfig={{
 					columns,
-					onRowClick: (row) => navigate(RouteNames.workflowDetails.replace(':workflowId', row.workflow_id).replace(':runId', row.run_id)),
+					// onRowClick: (row) => navigate(RouteNames.workflowDetails.replace(':workflowId', row.workflow_id).replace(':runId', row.run_id)),
 					showEmptyRow: true,
 				}}
 				paginationConfig={{
