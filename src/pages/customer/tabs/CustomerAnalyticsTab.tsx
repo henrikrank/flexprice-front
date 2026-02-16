@@ -356,7 +356,12 @@ const CustomerAnalyticsTab = () => {
 					{/* Summary Metrics - Revenue tiles (same structure as CostAnalytics) + custom_analytics (type: feature) from usage API */}
 					{((hasRevenueData && costData) || featureCustomAnalytics.length > 0) && (
 						<div className='pt-9'>
-							<div className='grid grid-cols-2 md:grid-cols-4 gap-3'>
+							<div
+								className={
+									(costData ? 4 : 0) + featureCustomAnalytics.length >= 5
+										? 'grid grid-cols-2 md:grid-cols-5 gap-2 min-w-0'
+										: 'grid grid-cols-2 md:grid-cols-4 gap-3'
+								}>
 								{costData &&
 									(() => {
 										const totalRevenue = parseFloat(costData.total_revenue || '0');
@@ -387,7 +392,7 @@ const CustomerAnalyticsTab = () => {
 								{featureCustomAnalytics.map((item) => (
 									<MetricCard
 										key={item.id}
-										title={item.feature_name}
+										title={`${item.name} ${item.feature_name}`}
 										value={parseFloat(item.value) || 0}
 										currency={usageData?.currency ?? 'usd'}
 									/>
