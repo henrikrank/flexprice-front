@@ -284,6 +284,9 @@ export interface CreateSubscriptionRequest {
 	// True up flag
 	enable_true_up: boolean;
 
+	// Commitment duration (e.g., ANNUAL, MONTHLY) - defaults to billing period if not set
+	commitment_duration?: BILLING_PERIOD;
+
 	// Subscription status
 	subscription_status?: SUBSCRIPTION_STATUS;
 }

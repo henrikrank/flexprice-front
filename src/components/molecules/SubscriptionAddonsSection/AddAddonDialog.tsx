@@ -271,6 +271,7 @@ const AddAddonDialog: React.FC<Props> = ({ isOpen, onOpenChange, subscriptionId,
 						setCommitmentForPrice(priceId, config);
 					}}
 					currentConfig={lineItemCommitments[selectedCommitmentPrice.id]}
+					billingPeriod={billingPeriod}
 				/>
 			)}
 
