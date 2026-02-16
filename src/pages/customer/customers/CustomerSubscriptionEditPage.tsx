@@ -1,4 +1,4 @@
-import { Loader, Page, Spacer, Card, FormHeader, AddButton } from '@/components/atoms';
+import { Loader, Page, Spacer, Card, FormHeader, AddButton, Input, Button, Checkbox } from '@/components/atoms';
 import { DetailsCard, SubscriptionEntitlementsSection, SubscriptionAddonsSection } from '@/components/molecules';
 import { useBreadcrumbsStore } from '@/store/useBreadcrumbsStore';
 import CustomerApi from '@/api/CustomerApi';
@@ -14,7 +14,7 @@ import { LineItem, SUBSCRIPTION_STATUS } from '@/models/Subscription';
 import SubscriptionLineItemTable from '@/components/molecules/SubscriptionLineItemTable/SubscriptionLineItemTable';
 import PriceOverrideDialog from '@/components/molecules/PriceOverrideDialog/PriceOverrideDialog';
 import { getSubscriptionStatus } from '@/components/organisms/Subscription/SubscriptionTable';
-import { UpdateSubscriptionLineItemRequest, DeleteSubscriptionLineItemRequest } from '@/types/dto/Subscription';
+import { UpdateSubscriptionLineItemRequest, DeleteSubscriptionLineItemRequest, UpdateSubscriptionRequest } from '@/types/dto/Subscription';
 import { Price, BILLING_MODEL, TIER_MODE } from '@/models/Price';
 import { ExtendedPriceOverride } from '@/utils/common/price_override_helpers';
 import { RouteNames } from '@/core/routes/Routes';
@@ -42,6 +42,10 @@ const CustomerSubscriptionEditPage: React.FC = () => {
 	const [isAddCreditGrantModalOpen, setIsAddCreditGrantModalOpen] = useState(false);
 	const [isCancelCreditGrantModalOpen, setIsCancelCreditGrantModalOpen] = useState(false);
 	const [selectedCreditGrantToCancel, setSelectedCreditGrantToCancel] = useState<CreditGrant | null>(null);
+
+	// Update subscription form (parent link, cancel at period end)
+	const [updateParentSubscriptionId, setUpdateParentSubscriptionId] = useState<string>('');
+	const [updateCancelAtPeriodEnd, setUpdateCancelAtPeriodEnd] = useState<boolean>(false);
 
 	const { updateBreadcrumb } = useBreadcrumbsStore();
 
@@ -110,6 +114,20 @@ const CustomerSubscriptionEditPage: React.FC = () => {
 		},
 	});
 
+	const { mutate: updateSubscription, isPending: isUpdatingSubscription } = useMutation({
+		mutationFn: async (payload: UpdateSubscriptionRequest) => {
+			return await SubscriptionApi.updateSubscription(subscriptionId!, payload);
+		},
+		onSuccess: () => {
+			toast.success('Subscription updated successfully');
+			refetchQueries(['subscriptionDetails', subscriptionId!]);
+			refetchQueries(['subscriptions']);
+		},
+		onError: (error: { error?: { message?: string } }) => {
+			toast.error(error?.error?.message || 'Failed to update subscription');
+		},
+	});
+
 	const { mutate: createCreditGrant } = useMutation({
 		mutationFn: async (data: any) => {
 			return await CreditGrantApi.Create(data);
@@ -151,6 +169,14 @@ const CustomerSubscriptionEditPage: React.FC = () => {
 			updateBreadcrumb(1, customer.external_id, `${RouteNames.customers}/${customer.id}`);
 		}
 	}, [subscriptionDetails, updateBreadcrumb, customer, subscriptionId]);
+
+	// Sync update-subscription form from subscription details
+	useEffect(() => {
+		if (subscriptionDetails) {
+			setUpdateParentSubscriptionId(subscriptionDetails.parent_subscription_id ?? '');
+			setUpdateCancelAtPeriodEnd(!!subscriptionDetails.cancel_at_period_end);
+		}
+	}, [subscriptionDetails?.id, subscriptionDetails?.parent_subscription_id, subscriptionDetails?.cancel_at_period_end]);
 
 	// Group line items by phase ID
 	const groupedLineItems = useMemo(() => {
@@ -411,6 +437,55 @@ const CustomerSubscriptionEditPage: React.FC = () => {
 		<Page documentTitle='Edit Subscription' heading={`Edit Subscription`}>
 			<div className='space-y-6'>
 				<DetailsCard variant='stacked' title='Subscription Details' data={subscriptionDetailsData} />
+
+				{/* Update subscription (parent link, cancel at period end) */}
+				{subscriptionId && subscriptionDetails?.subscription_status !== SUBSCRIPTION_STATUS.CANCELLED && (
+					<Card variant='notched'>
+						<FormHeader title='Update subscription' variant='sub-header' titleClassName='font-semibold' />
+						<div className='mt-4 space-y-4 max-w-md'>
+							<div>
+								<label className='block text-sm font-medium text-gray-700 mb-1'>Parent subscription ID</label>
+								<Input
+									value={updateParentSubscriptionId}
+									onChange={(value) => setUpdateParentSubscriptionId(value)}
+									placeholder='Leave empty to clear'
+									className='w-full'
+								/>
+								<p className='text-xs text-gray-500 mt-1'>Optional. Set to link this subscription to a parent; clear to unlink.</p>
+							</div>
+							<div className='flex items-center gap-2'>
+								<Checkbox
+									id='cancel-at-period-end'
+									checked={updateCancelAtPeriodEnd}
+									onCheckedChange={(checked) => setUpdateCancelAtPeriodEnd(!!checked)}
+								/>
+								<label htmlFor='cancel-at-period-end' className='text-sm font-medium text-gray-700'>
+									Cancel at period end
+								</label>
+							</div>
+							<Button
+								disabled={
+									isUpdatingSubscription ||
+									(updateParentSubscriptionId === (subscriptionDetails?.parent_subscription_id ?? '') &&
+										updateCancelAtPeriodEnd === !!subscriptionDetails?.cancel_at_period_end)
+								}
+								onClick={() => {
+									const payload: UpdateSubscriptionRequest = {};
+									if (updateParentSubscriptionId.trim() !== (subscriptionDetails?.parent_subscription_id ?? '')) {
+										payload.parent_subscription_id = updateParentSubscriptionId.trim() || null;
+									}
+									if (updateCancelAtPeriodEnd !== !!subscriptionDetails?.cancel_at_period_end) {
+										payload.cancel_at_period_end = updateCancelAtPeriodEnd;
+									}
+									if (Object.keys(payload).length > 0) {
+										updateSubscription(payload);
+									}
+								}}>
+								{isUpdatingSubscription ? 'Saving…' : 'Save changes'}
+							</Button>
+						</div>
+					</Card>
+				)}
 
 				{/* Line Items without Phase (Subscription-level) */}
 				{groupedLineItems.withoutPhase.length > 0 && (

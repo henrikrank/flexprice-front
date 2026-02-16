@@ -146,6 +146,7 @@ export type {
 	SubscriptionPauseResponse,
 	SubscriptionResumeResponse,
 	CreateSubscriptionRequest,
+	UpdateSubscriptionRequest,
 	CancelSubscriptionPayload,
 	ListSubscriptionsPayload,
 	ListSubscriptionsResponse,
