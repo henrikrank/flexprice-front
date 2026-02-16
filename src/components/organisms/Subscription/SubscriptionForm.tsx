@@ -601,7 +601,7 @@ const SubscriptionForm = ({
 							min={0}
 						/>
 						<Select
-							label='Commitment Duration'
+							label='Commitment Period'
 							value={state.commitmentDuration}
 							options={[
 								{ label: 'Monthly', value: 'MONTHLY' },
