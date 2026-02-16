@@ -10,10 +10,6 @@ function getPlanName(sub: SubscriptionResponse): string {
 	return sub.plan?.name ?? '—';
 }
 
-function getCustomerLabel(sub: SubscriptionResponse): string {
-	return sub.customer?.name || sub.customer?.external_id || '—';
-}
-
 export interface UpdateSubscriptionDrawerProps {
 	open: boolean;
 	onOpenChange: (open: boolean) => void;
