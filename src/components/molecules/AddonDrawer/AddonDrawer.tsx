@@ -25,7 +25,7 @@ const AddonDrawer: FC<Props> = ({ data, open, onOpenChange, trigger, refetchQuer
 			name: '',
 			description: '',
 			lookup_key: '',
-			type: ADDON_TYPE.ONETIME,
+			type: ADDON_TYPE.MULTIPLE_INSTANCE,
 		},
 	);
 	const [errors, setErrors] = useState<Partial<Record<keyof Addon, string>>>({});
@@ -57,7 +57,7 @@ const AddonDrawer: FC<Props> = ({ data, open, onOpenChange, trigger, refetchQuer
 				name: '',
 				description: '',
 				lookup_key: '',
-				type: ADDON_TYPE.ONETIME,
+				type: ADDON_TYPE.MULTIPLE_INSTANCE,
 			});
 		}
 	}, [data]);
@@ -86,7 +86,7 @@ const AddonDrawer: FC<Props> = ({ data, open, onOpenChange, trigger, refetchQuer
 
 	const addonTypeOptions = [
 		{ value: ADDON_TYPE.ONETIME, label: 'One Time' },
-		{ value: ADDON_TYPE.MULTIPLE, label: 'Multiple' },
+		{ value: ADDON_TYPE.MULTIPLE_INSTANCE, label: 'Multiple Instance' },
 	];
 
 	return (
@@ -123,13 +123,12 @@ const AddonDrawer: FC<Props> = ({ data, open, onOpenChange, trigger, refetchQuer
 				description={'A system identifier used for API calls and integrations.'}
 			/>
 
-			<Spacer className='hidden' height={'20px'} />
+			<Spacer height={'20px'} />
 			<Select
 				label='Addon Type'
-				value={formData.type}
+				value={formData.type ?? ADDON_TYPE.MULTIPLE_INSTANCE}
 				onChange={(value) => setFormData({ ...formData, type: value as ADDON_TYPE })}
 				options={addonTypeOptions}
-				className='hidden'
 				placeholder='Select addon type'
 				description='Choose whether this addon can be used once or multiple times.'
 			/>

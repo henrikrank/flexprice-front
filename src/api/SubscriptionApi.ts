@@ -11,6 +11,7 @@ import {
 	SubscriptionResumeResponse,
 	CancelSubscriptionPayload,
 	CreateSubscriptionRequest,
+	UpdateSubscriptionRequest,
 	CancelSubscriptionRequest,
 	CancelSubscriptionResponse,
 	SubscriptionResponse,
@@ -68,6 +69,13 @@ class SubscriptionApi {
 	 */
 	public static async createSubscription(payload: CreateSubscriptionRequest): Promise<SubscriptionResponse> {
 		return await AxiosClient.post(this.baseUrl, payload);
+	}
+
+	/**
+	 * Update a subscription (PUT /subscriptions/:id)
+	 */
+	public static async updateSubscription(id: string, payload: UpdateSubscriptionRequest): Promise<SubscriptionResponse> {
+		return await AxiosClient.put<SubscriptionResponse>(`${this.baseUrl}/${id}`, payload);
 	}
 
 	/**

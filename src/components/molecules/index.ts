@@ -45,6 +45,7 @@ export { default as SubscriptionCoupon } from './SubscriptionCoupon/Subscription
 export { SubscriptionDiscountTable } from './SubscriptionDiscountTable';
 export { SubscriptionEntitlementsSection } from './SubscriptionEntitlementsSection';
 export { default as SubscriptionAddonsSection } from './SubscriptionAddonsSection/SubscriptionAddonsSection';
+export { UpdateSubscriptionDrawer } from './UpdateSubscriptionDrawer';
 
 // Invoice & Billing
 export {

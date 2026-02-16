@@ -1,11 +1,12 @@
 import { FC, useState, useEffect } from 'react';
-import { Dialog, Button, Input } from '@/components/atoms';
+import { Dialog, Button, Input, Select } from '@/components/atoms';
 import { Switch } from '@/components/ui';
 import { Price } from '@/models/Price';
 import { LineItemCommitmentConfig, CommitmentType } from '@/types/dto/LineItemCommitmentConfig';
 import { validateCommitment, supportsWindowCommitment } from '@/utils/common/commitment_helpers';
 import { removeFormatting } from '@/components/atoms/Input/Input';
 import { getCurrencySymbol } from '@/utils/common/helper_functions';
+import { BILLING_PERIOD } from '@/constants/constants';
 
 interface CommitmentConfigDialogProps {
 	isOpen: boolean;
@@ -13,6 +14,7 @@ interface CommitmentConfigDialogProps {
 	price: Price;
 	onSave: (priceId: string, config: LineItemCommitmentConfig | null) => void;
 	currentConfig: LineItemCommitmentConfig | undefined;
+	billingPeriod?: string;
 }
 
 const commitmentTypeOptions = [
@@ -28,14 +30,22 @@ const commitmentTypeOptions = [
 	},
 ];
 
-const CommitmentConfigDialog: FC<CommitmentConfigDialogProps> = ({ isOpen, onOpenChange, price, onSave, currentConfig }) => {
+const CommitmentConfigDialog: FC<CommitmentConfigDialogProps> = ({ isOpen, onOpenChange, price, onSave, currentConfig, billingPeriod }) => {
 	const [commitmentType, setCommitmentType] = useState<CommitmentType>(CommitmentType.AMOUNT);
 	const [commitmentAmount, setCommitmentAmount] = useState<string>('');
 	const [commitmentQuantity, setCommitmentQuantity] = useState<string>('');
 	const [overageFactor, setOverageFactor] = useState<string>('1.0');
 	const [enableTrueUp, setEnableTrueUp] = useState<boolean>(false);
 	const [isWindowCommitment, setIsWindowCommitment] = useState<boolean>(() => supportsWindowCommitment(price));
+	const [commitmentDuration, setCommitmentDuration] = useState<string>(billingPeriod?.toUpperCase() || '');
 	const [validationError, setValidationError] = useState<string | null>(null);
+
+	const commitmentDurationOptions = [
+		{ label: 'Monthly', value: BILLING_PERIOD.MONTHLY },
+		{ label: 'Quarterly', value: BILLING_PERIOD.QUARTERLY },
+		{ label: 'Half-Yearly', value: BILLING_PERIOD.HALF_YEARLY },
+		{ label: 'Annual', value: BILLING_PERIOD.ANNUAL },
+	];
 
 	const currencySymbol = getCurrencySymbol(price.currency);
 	const meterDisplayName = price.meter?.name || price.display_name || 'this charge';
@@ -58,6 +68,7 @@ const CommitmentConfigDialog: FC<CommitmentConfigDialogProps> = ({ isOpen, onOpe
 			setOverageFactor(currentConfig.overage_factor?.toString() || '1.0');
 			setEnableTrueUp(currentConfig.enable_true_up ?? false);
 			setIsWindowCommitment(currentConfig.is_window_commitment ?? showWindowCommitment);
+			setCommitmentDuration(currentConfig.commitment_duration || billingPeriod?.toUpperCase() || '');
 		} else {
 			// Reset to defaults when opening without existing config
 			setCommitmentType(CommitmentType.AMOUNT);
@@ -66,6 +77,7 @@ const CommitmentConfigDialog: FC<CommitmentConfigDialogProps> = ({ isOpen, onOpe
 			setOverageFactor('1.0');
 			setEnableTrueUp(false);
 			setIsWindowCommitment(showWindowCommitment);
+			setCommitmentDuration(billingPeriod?.toUpperCase() || '');
 		}
 		setValidationError(null);
 	}, [currentConfig, isOpen, showWindowCommitment]);
@@ -76,6 +88,7 @@ const CommitmentConfigDialog: FC<CommitmentConfigDialogProps> = ({ isOpen, onOpe
 			overage_factor: parseFloat(overageFactor) || 1.0,
 			enable_true_up: enableTrueUp,
 			is_window_commitment: isWindowCommitment,
+			commitment_duration: commitmentDuration ? (commitmentDuration as BILLING_PERIOD) : undefined,
 		};
 
 		if (commitmentType === CommitmentType.AMOUNT) {
@@ -140,42 +153,72 @@ const CommitmentConfigDialog: FC<CommitmentConfigDialogProps> = ({ isOpen, onOpe
 					</div>
 				</div>
 
-				{/* Conditional: Commitment Amount */}
+				{/* Conditional: Commitment Amount + Duration */}
 				{commitmentType === CommitmentType.AMOUNT && (
-					<div className='space-y-2'>
-						<label className='text-sm font-medium text-gray-700'>Commitment Amount ({price.currency})*</label>
-						<Input
-							type='formatted-number'
-							value={commitmentAmount}
-							onChange={(value) => {
-								setCommitmentAmount(value);
-								setValidationError(null);
-							}}
-							placeholder='Enter commitment amount'
-							suffix={currencySymbol}
-							className='w-full'
-							error={validationError && validationError.includes('amount') ? validationError : undefined}
-						/>
-						<p className='text-xs text-gray-500'>The minimum monetary commitment for this billing period</p>
+					<div className='grid grid-cols-2 gap-4 items-start'>
+						<div className='space-y-1'>
+							<label className='text-sm font-medium text-gray-700'>Commitment Amount ({price.currency})*</label>
+							<Input
+								type='formatted-number'
+								value={commitmentAmount}
+								onChange={(value) => {
+									setCommitmentAmount(value);
+									setValidationError(null);
+								}}
+								placeholder='Enter commitment amount'
+								suffix={currencySymbol}
+								className='w-full'
+								error={validationError && validationError.includes('amount') ? validationError : undefined}
+							/>
+							<p className='text-xs text-gray-500'>The minimum monetary commitment</p>
+						</div>
+						<div className='space-y-1'>
+							<label className='text-sm font-medium text-gray-700'>Commitment Period</label>
+							<Select
+								value={commitmentDuration}
+								options={commitmentDurationOptions}
+								onChange={(value) => {
+									setCommitmentDuration(value);
+									setValidationError(null);
+								}}
+								placeholder='Same as billing period'
+							/>
+							<p className='text-xs text-gray-500'>Duration the commitment applies for</p>
+						</div>
 					</div>
 				)}
 
-				{/* Conditional: Commitment Quantity */}
+				{/* Conditional: Commitment Quantity + Duration */}
 				{commitmentType === CommitmentType.QUANTITY && (
-					<div className='space-y-2'>
-						<label className='text-sm font-medium text-gray-700'>Commitment Quantity*</label>
-						<Input
-							type='number'
-							value={commitmentQuantity}
-							onChange={(value) => {
-								setCommitmentQuantity(value);
-								setValidationError(null);
-							}}
-							placeholder='Enter commitment quantity'
-							className='w-full'
-							error={validationError && validationError.includes('quantity') ? validationError : undefined}
-						/>
-						<p className='text-xs text-gray-500'>The minimum usage quantity for this billing period</p>
+					<div className='grid grid-cols-2 gap-4 items-start'>
+						<div className='space-y-1'>
+							<label className='text-sm font-medium text-gray-700'>Commitment Quantity*</label>
+							<Input
+								type='number'
+								value={commitmentQuantity}
+								onChange={(value) => {
+									setCommitmentQuantity(value);
+									setValidationError(null);
+								}}
+								placeholder='Enter commitment quantity'
+								className='w-full'
+								error={validationError && validationError.includes('quantity') ? validationError : undefined}
+							/>
+							<p className='text-xs text-gray-500'>The minimum usage quantity</p>
+						</div>
+						<div className='space-y-1'>
+							<label className='text-sm font-medium text-gray-700'>Commitment Period</label>
+							<Select
+								value={commitmentDuration}
+								options={commitmentDurationOptions}
+								onChange={(value) => {
+									setCommitmentDuration(value);
+									setValidationError(null);
+								}}
+								placeholder='Same as billing period'
+							/>
+							<p className='text-xs text-gray-500'>Duration the commitment applies for</p>
+						</div>
 					</div>
 				)}
 

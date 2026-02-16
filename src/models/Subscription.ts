@@ -53,6 +53,8 @@ export interface Subscription extends BaseModel {
 	// InvoicingCustomerID is the customer ID to use for invoicing
 	// This can differ from the subscription customer (e.g., parent company invoicing for child company)
 	readonly invoicing_customer_id?: string;
+	/** Parent subscription ID when this subscription is a child (e.g. in parent-child subscription hierarchy) */
+	readonly parent_subscription_id?: string;
 	readonly plan_id: string;
 	readonly environment_id: string;
 	readonly tenant_id: string;

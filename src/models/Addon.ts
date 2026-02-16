@@ -2,7 +2,9 @@ import { BaseModel, Metadata } from './base';
 
 export enum ADDON_TYPE {
 	ONETIME = 'onetime',
+	/** @deprecated Use MULTIPLE_INSTANCE for new addons; kept for backward compatibility with API responses */
 	MULTIPLE = 'multiple',
+	MULTIPLE_INSTANCE = 'multiple_instance',
 }
 
 interface Addon extends BaseModel {

@@ -81,6 +81,7 @@ export type SubscriptionFormState = {
 	entitlementOverrides: Record<string, EntitlementOverrideRequest>;
 	creditGrants: InternalCreditGrantRequest[];
 	enable_true_up: boolean;
+	commitmentDuration: string;
 	invoiceBillingConfig?: INVOICE_BILLING;
 	hasModifiedPlanCreditGrants?: boolean;
 };
@@ -251,6 +252,7 @@ const CreateCustomerSubscriptionPage: React.FC = () => {
 		entitlementOverrides: {},
 		creditGrants: [],
 		enable_true_up: false,
+		commitmentDuration: BILLING_PERIOD.MONTHLY.toUpperCase(),
 		invoiceBillingConfig: undefined,
 		hasModifiedPlanCreditGrants: false,
 	});
@@ -364,6 +366,7 @@ const CreateCustomerSubscriptionPage: React.FC = () => {
 					billingPeriodOptions,
 					billingPeriod: selectedBillingPeriod,
 					currency: selectedCurrency,
+					commitmentDuration: selectedBillingPeriod.toUpperCase(),
 				};
 			});
 		}
@@ -536,6 +539,7 @@ const CreateCustomerSubscriptionPage: React.FC = () => {
 			tax_rate_overrides,
 			overageFactor,
 			commitmentAmount,
+			commitmentDuration: subscriptionState.commitmentDuration,
 			entitlementOverrides,
 			creditGrants,
 			invoiceBillingConfig,
@@ -588,6 +592,7 @@ const CreateCustomerSubscriptionPage: React.FC = () => {
 						? sanitized.creditGrants.map(internalToCreateRequest)
 						: undefined,
 			enable_true_up: subscriptionState.enable_true_up,
+			commitment_duration: sanitized.commitmentDuration ? (sanitized.commitmentDuration as BILLING_PERIOD) : undefined,
 			subscription_status: isDraftParam ? SUBSCRIPTION_STATUS.DRAFT : undefined,
 			invoice_billing: sanitized.invoiceBillingConfig,
 		};

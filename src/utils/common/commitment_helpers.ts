@@ -100,6 +100,10 @@ export const formatCommitmentSummary = (config: LineItemCommitmentConfig): strin
 		parts.push('windowed');
 	}
 
+	if (config.commitment_duration) {
+		parts.push(`${config.commitment_duration.toLowerCase().replace('_', ' ')} period`);
+	}
+
 	return parts.join(' • ');
 };
 
