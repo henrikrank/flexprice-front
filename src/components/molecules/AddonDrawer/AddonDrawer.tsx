@@ -25,7 +25,7 @@ const AddonDrawer: FC<Props> = ({ data, open, onOpenChange, trigger, refetchQuer
 			name: '',
 			description: '',
 			lookup_key: '',
-			type: ADDON_TYPE.ONETIME,
+			type: ADDON_TYPE.MULTIPLE_INSTANCE,
 		},
 	);
 	const [errors, setErrors] = useState<Partial<Record<keyof Addon, string>>>({});
@@ -57,7 +57,7 @@ const AddonDrawer: FC<Props> = ({ data, open, onOpenChange, trigger, refetchQuer
 				name: '',
 				description: '',
 				lookup_key: '',
-				type: ADDON_TYPE.ONETIME,
+				type: ADDON_TYPE.MULTIPLE_INSTANCE,
 			});
 		}
 	}, [data]);
@@ -126,7 +126,7 @@ const AddonDrawer: FC<Props> = ({ data, open, onOpenChange, trigger, refetchQuer
 			<Spacer height={'20px'} />
 			<Select
 				label='Addon Type'
-				value={formData.type ?? ADDON_TYPE.ONETIME}
+				value={formData.type ?? ADDON_TYPE.MULTIPLE_INSTANCE}
 				onChange={(value) => setFormData({ ...formData, type: value as ADDON_TYPE })}
 				options={addonTypeOptions}
 				placeholder='Select addon type'
