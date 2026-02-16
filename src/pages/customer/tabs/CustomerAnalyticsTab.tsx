@@ -390,12 +390,7 @@ const CustomerAnalyticsTab = () => {
 										);
 									})()}
 								{featureCustomAnalytics.map((item) => (
-									<MetricCard
-										key={item.id}
-										title={`${item.name} ${item.feature_name}`}
-										value={parseFloat(item.value) || 0}
-										currency={usageData?.currency ?? 'usd'}
-									/>
+									<MetricCard key={item.id} title={`CPM`} value={parseFloat(item.value) || 0} currency={usageData?.currency ?? 'usd'} />
 								))}
 							</div>
 						</div>
