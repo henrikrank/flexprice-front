@@ -1,5 +1,5 @@
-import { Loader, Page, Spacer, Card, FormHeader, AddButton } from '@/components/atoms';
-import { DetailsCard, SubscriptionEntitlementsSection, SubscriptionAddonsSection } from '@/components/molecules';
+import { Loader, Page, Spacer, Card, FormHeader, AddButton, Button } from '@/components/atoms';
+import { DetailsCard, SubscriptionEntitlementsSection, SubscriptionAddonsSection, UpdateSubscriptionDrawer } from '@/components/molecules';
 import { useBreadcrumbsStore } from '@/store/useBreadcrumbsStore';
 import CustomerApi from '@/api/CustomerApi';
 import SubscriptionApi from '@/api/SubscriptionApi';
@@ -9,12 +9,12 @@ import formatDate from '@/utils/common/format_date';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { useEffect, useState, useMemo } from 'react';
 import toast from 'react-hot-toast';
-import { useParams } from 'react-router';
+import { useParams, Link } from 'react-router';
 import { LineItem, SUBSCRIPTION_STATUS } from '@/models/Subscription';
 import SubscriptionLineItemTable from '@/components/molecules/SubscriptionLineItemTable/SubscriptionLineItemTable';
 import PriceOverrideDialog from '@/components/molecules/PriceOverrideDialog/PriceOverrideDialog';
 import { getSubscriptionStatus } from '@/components/organisms/Subscription/SubscriptionTable';
-import { UpdateSubscriptionLineItemRequest, DeleteSubscriptionLineItemRequest } from '@/types/dto/Subscription';
+import { UpdateSubscriptionLineItemRequest, DeleteSubscriptionLineItemRequest, UpdateSubscriptionRequest } from '@/types/dto/Subscription';
 import { Price, BILLING_MODEL, TIER_MODE } from '@/models/Price';
 import { ExtendedPriceOverride } from '@/utils/common/price_override_helpers';
 import { RouteNames } from '@/core/routes/Routes';
@@ -27,6 +27,8 @@ import { formatExpirationPeriod } from '@/utils/common/credit_grant_helpers';
 import { formatBillingPeriodForPrice } from '@/utils/common/helper_functions';
 import { formatAmount } from '@/components/atoms/Input/Input';
 import { ActionButton } from '@/components/atoms';
+import { getTypographyClass } from '@/lib/typography';
+import { Pencil, ExternalLink } from 'lucide-react';
 
 type Params = {
 	id: string;
@@ -42,6 +44,8 @@ const CustomerSubscriptionEditPage: React.FC = () => {
 	const [isAddCreditGrantModalOpen, setIsAddCreditGrantModalOpen] = useState(false);
 	const [isCancelCreditGrantModalOpen, setIsCancelCreditGrantModalOpen] = useState(false);
 	const [selectedCreditGrantToCancel, setSelectedCreditGrantToCancel] = useState<CreditGrant | null>(null);
+
+	const [updateSubscriptionDrawerOpen, setUpdateSubscriptionDrawerOpen] = useState(false);
 
 	const { updateBreadcrumb } = useBreadcrumbsStore();
 
@@ -107,6 +111,21 @@ const CustomerSubscriptionEditPage: React.FC = () => {
 		},
 		onError: (error: { error?: { message?: string } }) => {
 			toast.error(error?.error?.message || 'Failed to terminate line item');
+		},
+	});
+
+	const { mutate: updateSubscription, isPending: isUpdatingSubscription } = useMutation({
+		mutationFn: async (payload: UpdateSubscriptionRequest) => {
+			return await SubscriptionApi.updateSubscription(subscriptionId!, payload);
+		},
+		onSuccess: () => {
+			toast.success('Subscription updated successfully');
+			refetchQueries(['subscriptionDetails', subscriptionId!]);
+			refetchQueries(['subscriptions']);
+			setUpdateSubscriptionDrawerOpen(false);
+		},
+		onError: (error: { error?: { message?: string } }) => {
+			toast.error(error?.error?.message || 'Failed to update subscription');
 		},
 	});
 
@@ -405,12 +424,45 @@ const CustomerSubscriptionEditPage: React.FC = () => {
 		...(subscriptionDetails?.overage_factor && subscriptionDetails?.overage_factor > 1
 			? [{ label: 'Overage Factor', value: subscriptionDetails?.overage_factor.toString() }]
 			: []),
+		{
+			label: 'Parent subscription',
+			value: subscriptionDetails?.parent_subscription_id ? (
+				<Link
+					to={`${RouteNames.subscriptions}/${subscriptionDetails.parent_subscription_id}/edit`}
+					className='inline-flex items-center text-sm gap-1.5 hover:underline transition-colors'>
+					{subscriptionDetails.parent_subscription_id}
+					<ExternalLink className='w-3.5 h-3.5' />
+				</Link>
+			) : (
+				'None'
+			),
+		},
 	];
 
 	return (
 		<Page documentTitle='Edit Subscription' heading={`Edit Subscription`}>
 			<div className='space-y-6'>
-				<DetailsCard variant='stacked' title='Subscription Details' data={subscriptionDetailsData} />
+				<div>
+					<Spacer className='!h-4' />
+					<div className='flex justify-between items-center'>
+						<h3 className={getTypographyClass('card-header') + ' !text-[16px]'}>Subscription Details</h3>
+						{subscriptionDetails?.subscription_status !== SUBSCRIPTION_STATUS.CANCELLED && (
+							<Button variant='outline' size='icon' onClick={() => setUpdateSubscriptionDrawerOpen(true)} title='Update subscription'>
+								<Pencil className='size-4' />
+							</Button>
+						)}
+					</div>
+					<Spacer className='!h-4' />
+					<DetailsCard variant='stacked' data={subscriptionDetailsData} childrenAtTop cardStyle='borderless' />
+					<UpdateSubscriptionDrawer
+						open={updateSubscriptionDrawerOpen}
+						onOpenChange={setUpdateSubscriptionDrawerOpen}
+						subscriptionId={subscriptionId!}
+						subscription={subscriptionDetails}
+						onSave={(payload) => updateSubscription(payload)}
+						isSaving={isUpdatingSubscription}
+					/>
+				</div>
 
 				{/* Line Items without Phase (Subscription-level) */}
 				{groupedLineItems.withoutPhase.length > 0 && (
