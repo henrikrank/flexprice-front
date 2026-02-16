@@ -2,21 +2,30 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { Card, Input, Select, Button } from '@/components/atoms';
 import { getCurrencySymbol } from '@/utils/common/helper_functions';
 
+/** Month-equivalent for each billing period (used for conversion calculations) */
+const PERIOD_MONTHS: Record<string, number> = {
+	DAILY: 1 / 30,
+	WEEKLY: 0.25, // 1 month = 4 weeks
+	MONTHLY: 1,
+	QUARTERLY: 3,
+	HALF_YEARLY: 6,
+	ANNUAL: 12,
+};
+
 /** Period options for contract terms (target display period) */
 export const CONTRACT_TERM_OPTIONS = [
-	{ label: 'Annual', value: 'ANNUAL', months: 12 },
-	{ label: 'Monthly', value: 'MONTHLY', months: 1 },
-	{ label: 'Quarterly', value: 'QUARTERLY', months: 3 },
+	{ label: 'Daily', value: 'DAILY', months: PERIOD_MONTHS.DAILY },
+	{ label: 'Weekly', value: 'WEEKLY', months: PERIOD_MONTHS.WEEKLY },
+	{ label: 'Monthly', value: 'MONTHLY', months: PERIOD_MONTHS.MONTHLY },
+	{ label: 'Quarterly', value: 'QUARTERLY', months: PERIOD_MONTHS.QUARTERLY },
+	{ label: 'Half-Yearly', value: 'HALF_YEARLY', months: PERIOD_MONTHS.HALF_YEARLY },
+	{ label: 'Annual', value: 'ANNUAL', months: PERIOD_MONTHS.ANNUAL },
 ] as const;
 
 export type ContractTermValue = (typeof CONTRACT_TERM_OPTIONS)[number]['value'];
 
-/** Period in months for plan period (billing period) */
-export const PLAN_PERIOD_MONTHS: Record<string, number> = {
-	ANNUAL: 12,
-	MONTHLY: 1,
-	QUARTERLY: 3,
-};
+/** Period in months for plan period (billing period) — re-export for convenience */
+export const PLAN_PERIOD_MONTHS: Record<string, number> = PERIOD_MONTHS;
 
 interface SubscriptionCalculatorProps {
 	currency?: string;
@@ -74,17 +83,15 @@ export const SubscriptionCalculatorContent: React.FC<SubscriptionCalculatorConte
 	const termMonths = termOption.months;
 
 	/**
-	 * Convert amount from plan period to contract term.
-	 * - Same or shorter target (e.g. Annual → Monthly): amount * (termMonths / planMonths).
-	 * - Quarterly → Annual (yearly): amount / 4 (per requirement).
+	 * Convert Contract Amount to Plan Price (Billing Amount).
+	 * Formula: amount * (planMonths / termMonths)
+	 * e.g. Contract=Annual($1200) -> Plan=Monthly: 1200 * (1/12) = 100
+	 * e.g. Contract=Weekly($100) -> Plan=Monthly: 100 * (1/0.25) = 400
 	 */
 	const displayValue = useMemo(() => {
-		if (amountNum == null || planMonths <= 0) return null;
-		if (planPeriod === 'QUARTERLY' && contractTerms === 'ANNUAL') {
-			return amountNum / 4;
-		}
-		return amountNum * (termMonths / planMonths);
-	}, [amountNum, planMonths, termMonths, planPeriod, contractTerms]);
+		if (amountNum == null || termMonths <= 0) return null;
+		return amountNum * (planMonths / termMonths);
+	}, [amountNum, planMonths, termMonths]);
 
 	const currencySymbol = getCurrencySymbol(currency);
 	const selectOptions = CONTRACT_TERM_OPTIONS.map((o) => ({ label: o.label, value: o.value }));
@@ -117,9 +124,12 @@ export const SubscriptionCalculatorContent: React.FC<SubscriptionCalculatorConte
 									{displayValue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
 								</span>
 								<span className='text-gray-600'>
-									{contractTerms === 'ANNUAL' && ' (per year)'}
-									{contractTerms === 'QUARTERLY' && ' (per quarter)'}
-									{contractTerms === 'MONTHLY' && ' (per month)'}
+									{planPeriod === 'DAILY' && ' (per day)'}
+									{planPeriod === 'WEEKLY' && ' (per week)'}
+									{planPeriod === 'MONTHLY' && ' (per month)'}
+									{planPeriod === 'QUARTERLY' && ' (per quarter)'}
+									{planPeriod === 'HALF_YEARLY' && ' (per half-year)'}
+									{planPeriod === 'ANNUAL' && ' (per year)'}
 								</span>
 							</p>
 						)}

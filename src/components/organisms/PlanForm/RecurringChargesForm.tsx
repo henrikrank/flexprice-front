@@ -270,20 +270,8 @@ const RecurringChargesForm = ({
 								<SubscriptionCalculatorContent
 									currency={localPrice.currency || 'USD'}
 									initialAmount={localPrice.amount ?? ''}
-									initialContractTerms={
-										(localPrice.billing_period === BILLING_PERIOD.ANNUAL ||
-										localPrice.billing_period === BILLING_PERIOD.MONTHLY ||
-										localPrice.billing_period === BILLING_PERIOD.QUARTERLY
-											? localPrice.billing_period
-											: BILLING_PERIOD.MONTHLY) as ContractTermValue
-									}
-									planPeriod={
-										(localPrice.billing_period === BILLING_PERIOD.ANNUAL ||
-										localPrice.billing_period === BILLING_PERIOD.MONTHLY ||
-										localPrice.billing_period === BILLING_PERIOD.QUARTERLY
-											? localPrice.billing_period
-											: BILLING_PERIOD.ANNUAL) as ContractTermValue
-									}
+									initialContractTerms={(localPrice.billing_period || BILLING_PERIOD.MONTHLY) as ContractTermValue}
+									planPeriod={(localPrice.billing_period || BILLING_PERIOD.MONTHLY) as ContractTermValue}
 									onApply={(displayAmount) => {
 										setLocalPrice((prev) => ({ ...prev, amount: displayAmount }));
 										setCalculatorOpen(false);
