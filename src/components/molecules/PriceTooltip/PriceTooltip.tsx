@@ -21,6 +21,8 @@ interface Props {
 	data: Price & { pricing_unit?: PriceUnit };
 	appliedCoupon?: Coupon | null;
 	priceOverride?: ExtendedPriceOverride;
+	/** When true (e.g. price.entity_type === SUBSCRIPTION), show orange icon and "Overridden price" content */
+	isSubscriptionOverride?: boolean;
 }
 
 // ===== SUB-COMPONENTS =====
@@ -233,7 +235,8 @@ const PriceTooltipContent: FC<{
 	couponName?: string;
 	originalNormalized?: NormalizedPriceDisplay;
 	originalPrice?: Price;
-}> = ({ normalized, hasOverrides, hasDiscount, discountInfo, couponName, originalNormalized, originalPrice }) => {
+	isSubscriptionOverride?: boolean;
+}> = ({ normalized, hasOverrides, hasDiscount, discountInfo, couponName, originalNormalized, originalPrice, isSubscriptionOverride }) => {
 	const isTiered =
 		(normalized.billingModel === BILLING_MODEL.TIERED || normalized.billingModel === 'SLAB_TIERED') &&
 		Array.isArray(normalized.tiers) &&
@@ -244,8 +247,24 @@ const PriceTooltipContent: FC<{
 			sideOffset={5}
 			className='bg-white border border-gray-200 shadow-lg text-sm text-gray-900 px-4 py-3 rounded-lg max-w-[320px]'>
 			<div className='space-y-3'>
+				{/* Subscription override: Overridden price + same amount/data as standard display */}
+				{isSubscriptionOverride && (
+					<div className='space-y-2'>
+						<div className='font-medium text-gray-900'>Overridden price</div>
+						{isTiered ? (
+							<TierBreakdown normalized={normalized} hasOverrides={false} />
+						) : (
+							<div className='text-sm text-gray-900'>
+								{normalized.billingModel === BILLING_MODEL.FLAT_FEE
+									? `${normalized.symbol}${formatAmount(normalized.amount)} / unit`
+									: formatPriceDisplay(normalized)}
+							</div>
+						)}
+					</div>
+				)}
+
 				{/* Discount Information */}
-				{hasDiscount && discountInfo && (
+				{!isSubscriptionOverride && hasDiscount && discountInfo && (
 					<div className='space-y-2'>
 						<div className='font-medium text-gray-900'>Price</div>
 						<div className='space-y-1'>
@@ -263,7 +282,7 @@ const PriceTooltipContent: FC<{
 				)}
 
 				{/* Override Changes */}
-				{hasOverrides && !isTiered && originalNormalized && originalPrice && (
+				{!isSubscriptionOverride && hasOverrides && !isTiered && originalNormalized && originalPrice && (
 					<div className='space-y-2'>
 						<div className='font-medium text-gray-900'>Price Override Applied</div>
 						<OverrideChanges original={originalNormalized} overridden={normalized} originalPrice={originalPrice} />
@@ -271,14 +290,14 @@ const PriceTooltipContent: FC<{
 				)}
 
 				{/* Tier Breakdown (Volume/Slab header + per unit, flat fee) */}
-				{isTiered && (
+				{!isSubscriptionOverride && isTiered && (
 					<div className='space-y-2'>
 						<TierBreakdown normalized={normalized} hasOverrides={hasOverrides} />
 					</div>
 				)}
 
 				{/* Simple Price Display: Flat Fee = X / unit, Package = X / N units, else formatPriceDisplay */}
-				{!hasDiscount && !hasOverrides && !isTiered && (
+				{!isSubscriptionOverride && !hasDiscount && !hasOverrides && !isTiered && (
 					<div className='space-y-1'>
 						<div className='font-medium text-gray-900'>Price</div>
 						<div className='text-sm text-gray-900'>
@@ -295,7 +314,7 @@ const PriceTooltipContent: FC<{
 
 // ===== MAIN COMPONENT =====
 
-const PriceTooltip: FC<Props> = ({ data, appliedCoupon, priceOverride }) => {
+const PriceTooltip: FC<Props> = ({ data, appliedCoupon, priceOverride, isSubscriptionOverride }) => {
 	// Step 1: Normalize the data
 	const originalNormalized = normalizePriceDisplay(data);
 	const overriddenNormalized = priceOverride ? normalizePriceDisplay(data, priceOverride) : null;
@@ -310,8 +329,8 @@ const PriceTooltip: FC<Props> = ({ data, appliedCoupon, priceOverride }) => {
 	const hasDiscount = !!discountInfo;
 	const couponName = appliedCoupon ? formatCouponName(appliedCoupon) : undefined;
 
-	// Step 4: Determine icon color
-	const iconColor = hasOverrides ? 'text-orange-600' : hasDiscount ? 'text-blue-500' : 'text-gray-500';
+	// Step 4: Determine icon color (orange for override or subscription override, blue for discount, gray default)
+	const iconColor = hasOverrides || isSubscriptionOverride ? 'text-orange-600' : hasDiscount ? 'text-blue-500' : 'text-gray-500';
 
 	// Step 5: Render
 	return (
@@ -328,6 +347,7 @@ const PriceTooltip: FC<Props> = ({ data, appliedCoupon, priceOverride }) => {
 					couponName={couponName}
 					originalNormalized={hasOverrides ? originalNormalized : undefined}
 					originalPrice={hasOverrides ? data : undefined}
+					isSubscriptionOverride={isSubscriptionOverride}
 				/>
 			</Tooltip>
 		</TooltipProvider>

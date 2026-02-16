@@ -12,7 +12,7 @@ import { Feature } from '@/models';
 import { GetUsageAnalyticsRequest, GetCostAnalyticsRequest } from '@/types';
 import { WindowSize } from '@/models';
 import { CustomerUsageChart, FlexpriceTable, RedirectCell, type ColumnData } from '@/components/molecules';
-import { UsageAnalyticItem } from '@/models';
+import { UsageAnalyticItem, PRICE_ENTITY_TYPE } from '@/models';
 import { formatNumber } from '@/utils';
 import { MetricCard, CostDataTable } from '@/components/molecules';
 import { getCurrencySymbol } from '@/utils';
@@ -216,6 +216,12 @@ const CustomerAnalyticsTab = () => {
 		return totalRevenue > 0 || totalCost > 0 || Math.abs(margin) > 0;
 	}, [costData]);
 
+	// Custom analytics of type "feature" from usage API (for 5th+ metric boxes)
+	const featureCustomAnalytics = useMemo(() => {
+		if (!usageData?.custom_analytics) return [];
+		return usageData.custom_analytics.filter((item) => item.type === 'feature');
+	}, [usageData?.custom_analytics]);
+
 	const handleStartDateChange = (date: Date | undefined) => {
 		setStartDate(date);
 		if (date && endDate && endDate <= date) {
@@ -347,36 +353,46 @@ const CustomerAnalyticsTab = () => {
 				</>
 			) : (
 				<>
-					{/* Summary Metrics - Revenue tiles */}
-					{hasRevenueData && costData && (
+					{/* Summary Metrics - Revenue tiles (same structure as CostAnalytics) + custom_analytics (type: feature) from usage API */}
+					{((hasRevenueData && costData) || featureCustomAnalytics.length > 0) && (
 						<div className='pt-9'>
-							{(() => {
-								const totalRevenue = parseFloat(costData.total_revenue || '0');
-								const totalCost = parseFloat(costData.total_cost || '0');
-								const margin = parseFloat(costData.margin || '0');
-								const marginPercent = parseFloat(costData.margin_percent || '0');
-
-								return (
-									<div className='grid grid-cols-2 md:grid-cols-4 gap-3'>
-										<MetricCard title='Revenue' value={totalRevenue} currency={costData.currency} />
-										<MetricCard title='Cost' value={totalCost} currency={costData.currency} />
-										<MetricCard
-											title='Margin'
-											value={margin}
-											currency={costData.currency}
-											showChangeIndicator={true}
-											isNegative={margin < 0}
-										/>
-										<MetricCard
-											title='Margin %'
-											value={marginPercent}
-											isPercent={true}
-											showChangeIndicator={true}
-											isNegative={marginPercent < 0}
-										/>
-									</div>
-								);
-							})()}
+							<div className='grid grid-cols-2 md:grid-cols-4 gap-3'>
+								{costData &&
+									(() => {
+										const totalRevenue = parseFloat(costData.total_revenue || '0');
+										const totalCost = parseFloat(costData.total_cost || '0');
+										const margin = parseFloat(costData.margin || '0');
+										const marginPercent = parseFloat(costData.margin_percent || '0');
+										return (
+											<>
+												<MetricCard title='Revenue' value={totalRevenue} currency={costData.currency} />
+												<MetricCard title='Cost' value={totalCost} currency={costData.currency} />
+												<MetricCard
+													title='Margin'
+													value={margin}
+													currency={costData.currency}
+													showChangeIndicator={true}
+													isNegative={margin < 0}
+												/>
+												<MetricCard
+													title='Margin %'
+													value={marginPercent}
+													isPercent={true}
+													showChangeIndicator={true}
+													isNegative={marginPercent < 0}
+												/>
+											</>
+										);
+									})()}
+								{featureCustomAnalytics.map((item) => (
+									<MetricCard
+										key={item.id}
+										title={item.feature_name}
+										value={parseFloat(item.value) || 0}
+										currency={usageData?.currency ?? 'usd'}
+									/>
+								))}
+							</div>
 						</div>
 					)}
 
@@ -439,13 +455,14 @@ const UsageDataTable: React.FC<{ items: UsageAnalyticItem[] }> = ({ items }) => 
 			render: (row: UsageAnalyticItem) => {
 				if (row.total_cost === 0 || !row.currency) return '-';
 				const currency = getCurrencySymbol(row.currency);
+				const isSubscriptionOverride = row.price?.entity_type === PRICE_ENTITY_TYPE.SUBSCRIPTION;
 				return (
 					<div className='flex items-center gap-2'>
 						<span>
 							{currency}
 							{formatNumber(row.total_cost, 2)}
 						</span>
-						{row.price && <PriceTooltip data={row.price} />}
+						{row.price && <PriceTooltip data={row.price} isSubscriptionOverride={isSubscriptionOverride} />}
 					</div>
 				);
 			},

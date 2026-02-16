@@ -168,10 +168,19 @@ export interface GetUsageAnalyticsRequest {
 	property_filters?: Record<string, string[]>;
 }
 
+export interface CustomAnalyticItem {
+	id: string;
+	name: string;
+	feature_name: string;
+	value: string;
+	type: string;
+}
+
 export interface GetUsageAnalyticsResponse {
 	total_cost: number;
 	currency: string;
 	items: UsageAnalyticItem[];
+	custom_analytics?: CustomAnalyticItem[];
 }
 
 // Monitoring DTOs
