@@ -217,7 +217,7 @@ const AddonDetails = () => {
 	const addonDetails = [
 		{ label: 'Addon Name', value: addonData?.name },
 		{ label: 'Lookup Key', value: addonData?.lookup_key },
-		{ label: 'Type', value: addonData?.type === ADDON_TYPE.ONETIME ? 'One Time' : 'Multiple' },
+		{ label: 'Type', value: addonData?.type === ADDON_TYPE.ONETIME ? 'One Time' : 'Multiple Instance' },
 		{
 			label: 'Status',
 			value: (
