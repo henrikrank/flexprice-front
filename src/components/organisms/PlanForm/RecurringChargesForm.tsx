@@ -270,7 +270,7 @@ const RecurringChargesForm = ({
 									currency={localPrice.currency || 'USD'}
 									initialAmount={localPrice.amount ?? ''}
 									initialContractTerms='ANNUAL'
-									planPeriod='ANNUAL'
+									planPeriod={(localPrice.billing_period as any) || 'ANNUAL'}
 									onApply={(displayAmount) => {
 										setLocalPrice((prev) => ({ ...prev, amount: displayAmount }));
 										setCalculatorOpen(false);
