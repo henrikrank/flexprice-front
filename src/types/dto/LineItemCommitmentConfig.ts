@@ -1,3 +1,5 @@
+import { BILLING_PERIOD } from '@/constants/constants';
+
 export enum CommitmentType {
 	AMOUNT = 'amount',
 	QUANTITY = 'quantity',
@@ -21,6 +23,10 @@ export interface LineItemCommitmentConfig {
 
 	// IsWindowCommitment determines if commitment is applied per window (e.g., per day) rather than per billing period
 	is_window_commitment?: boolean;
+
+	// CommitmentDuration specifies the duration period for the commitment (e.g., ANNUAL, MONTHLY)
+	// If not set, defaults to the subscription's billing period
+	commitment_duration?: BILLING_PERIOD;
 }
 
 export type LineItemCommitmentsMap = Record<string, LineItemCommitmentConfig>;

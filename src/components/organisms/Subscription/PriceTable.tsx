@@ -318,6 +318,7 @@ const PriceTable: FC<Props> = ({
 						onCommitmentChange?.(priceId, config);
 					}}
 					currentConfig={overriddenPrices[selectedCommitmentPrice.id]?.commitment}
+					billingPeriod={billingPeriod}
 				/>
 			)}
 

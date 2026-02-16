@@ -212,6 +212,7 @@ const SubscriptionForm = ({
 			...state,
 			billingPeriod: value as BILLING_PERIOD,
 			currency: defaultCurrency,
+			commitmentDuration: value.toUpperCase(),
 		});
 	};
 
@@ -599,6 +600,22 @@ const SubscriptionForm = ({
 							precision={2}
 							min={0}
 						/>
+						<Select
+							label='Commitment Duration'
+							value={state.commitmentDuration}
+							options={[
+								{ label: 'Monthly', value: 'MONTHLY' },
+								{ label: 'Quarterly', value: 'QUARTERLY' },
+								{ label: 'Half-Yearly', value: 'HALF_YEARLY' },
+								{ label: 'Annual', value: 'ANNUAL' },
+							]}
+							onChange={(value) => setState((prev) => ({ ...prev, commitmentDuration: value }))}
+							placeholder='Same as billing period'
+							disabled={isDisabled}
+						/>
+					</div>
+					{/* Overage Factor + Enable True Up */}
+					<div className='grid grid-cols-1 md:grid-cols-2 gap-4 mt-4'>
 						<DecimalUsageInput
 							label='Overage Factor'
 							value={state.overageFactor}
@@ -608,15 +625,14 @@ const SubscriptionForm = ({
 							precision={2}
 							min={0}
 						/>
-					</div>
-					{/* Enable True Up */}
-					<div className='flex flex-col space-y-2 mt-4'>
-						<Label label='Enable True-up fee' />
-						<Switch
-							checked={state.enable_true_up}
-							onCheckedChange={(checked) => setState((prev) => ({ ...prev, enable_true_up: checked }))}
-							disabled={isDisabled}
-						/>
+						<div className='flex flex-col space-y-2'>
+							<Label label='Enable True-up fee' />
+							<Switch
+								checked={state.enable_true_up}
+								onCheckedChange={(checked) => setState((prev) => ({ ...prev, enable_true_up: checked }))}
+								disabled={isDisabled}
+							/>
+						</div>
 					</div>
 				</>
 			)}

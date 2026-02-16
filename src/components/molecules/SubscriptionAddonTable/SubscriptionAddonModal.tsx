@@ -347,6 +347,7 @@ const SubscriptionAddonModal: React.FC<Props> = ({
 						setCommitmentForPrice(priceId, config);
 					}}
 					currentConfig={commitmentMap[selectedCommitmentPrice.id]}
+					billingPeriod={billingPeriod}
 				/>
 			)}
 
