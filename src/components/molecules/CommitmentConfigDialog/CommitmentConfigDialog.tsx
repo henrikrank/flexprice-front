@@ -173,7 +173,7 @@ const CommitmentConfigDialog: FC<CommitmentConfigDialogProps> = ({ isOpen, onOpe
 							<p className='text-xs text-gray-500'>The minimum monetary commitment</p>
 						</div>
 						<div className='space-y-1'>
-							<label className='text-sm font-medium text-gray-700'>Commitment Duration</label>
+							<label className='text-sm font-medium text-gray-700'>Commitment Period</label>
 							<Select
 								value={commitmentDuration}
 								options={commitmentDurationOptions}
@@ -207,7 +207,7 @@ const CommitmentConfigDialog: FC<CommitmentConfigDialogProps> = ({ isOpen, onOpe
 							<p className='text-xs text-gray-500'>The minimum usage quantity</p>
 						</div>
 						<div className='space-y-1'>
-							<label className='text-sm font-medium text-gray-700'>Commitment Duration</label>
+							<label className='text-sm font-medium text-gray-700'>Commitment Period</label>
 							<Select
 								value={commitmentDuration}
 								options={commitmentDurationOptions}

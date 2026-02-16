@@ -101,7 +101,7 @@ export const formatCommitmentSummary = (config: LineItemCommitmentConfig): strin
 	}
 
 	if (config.commitment_duration) {
-		parts.push(`${config.commitment_duration.toLowerCase().replace('_', ' ')} duration`);
+		parts.push(`${config.commitment_duration.toLowerCase().replace('_', ' ')} period`);
 	}
 
 	return parts.join(' • ');
