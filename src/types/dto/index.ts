@@ -25,6 +25,7 @@ export type {
 	FireEventsPayload,
 	GetUsageAnalyticsRequest,
 	GetUsageAnalyticsResponse,
+	CustomAnalyticItem,
 	GetMonitoringDataRequest,
 	GetMonitoringDataResponse,
 	EventCountPoint,
