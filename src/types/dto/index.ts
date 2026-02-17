@@ -152,6 +152,7 @@ export type {
 	ListSubscriptionsPayload,
 	ListSubscriptionsResponse,
 	EntitlementOverrideRequest,
+	SubscriptionPriceCreateRequest,
 } from './Subscription';
 
 export type { GetBillingdetailsResponse, UpdateTenantRequest } from './Tenant';

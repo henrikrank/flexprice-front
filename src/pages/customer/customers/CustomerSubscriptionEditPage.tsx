@@ -15,11 +15,11 @@ import SubscriptionLineItemTable from '@/components/molecules/SubscriptionLineIt
 import PriceOverrideDialog from '@/components/molecules/PriceOverrideDialog/PriceOverrideDialog';
 import { getSubscriptionStatus } from '@/components/organisms/Subscription/SubscriptionTable';
 import { UpdateSubscriptionLineItemRequest, DeleteSubscriptionLineItemRequest, UpdateSubscriptionRequest } from '@/types/dto/Subscription';
-import { Price, BILLING_MODEL, TIER_MODE } from '@/models/Price';
+import { Price, BILLING_MODEL, TIER_MODE, PRICE_ENTITY_TYPE, PRICE_TYPE, PRICE_UNIT_TYPE, BILLING_PERIOD } from '@/models/Price';
 import { ExtendedPriceOverride } from '@/utils/common/price_override_helpers';
 import { RouteNames } from '@/core/routes/Routes';
 import { refetchQueries } from '@/core/services/tanstack/ReactQueryProvider';
-import { ENTITY_STATUS, CreditGrant } from '@/models';
+import { ENTITY_STATUS, CreditGrant, BILLING_CADENCE } from '@/models';
 import EditSubscriptionCreditGrantModal from '@/components/molecules/CreditGrant/EditSubscriptionCreditGrantModal';
 import CancelCreditGrantModal from '@/components/molecules/CreditGrant/CancelCreditGrantModal';
 import FlexpriceTable, { ColumnData } from '@/components/molecules/Table';
@@ -357,6 +357,15 @@ const CustomerSubscriptionEditPage: React.FC = () => {
 			return lineItem.price;
 		}
 
+		// Use entity_type and entity_id from line item; fall back to plan_id or subscription for legacy/API shape
+		const entityType =
+			lineItem.entity_type != null
+				? (lineItem.entity_type.toUpperCase() as PRICE_ENTITY_TYPE)
+				: lineItem.plan_id
+					? PRICE_ENTITY_TYPE.PLAN
+					: PRICE_ENTITY_TYPE.SUBSCRIPTION;
+		const entityId = lineItem.entity_id ?? lineItem.plan_id ?? lineItem.subscription_id;
+
 		return {
 			id: lineItem.price_id,
 			amount: lineItem.quantity?.toString() || '0',
@@ -367,22 +376,21 @@ const CustomerSubscriptionEditPage: React.FC = () => {
 			transform_quantity: { divide_by: 1 },
 			description: lineItem.display_name,
 			meter: { name: lineItem.meter_display_name },
-			type: 'USAGE' as const,
+			type: PRICE_TYPE.USAGE,
 			display_amount: lineItem.quantity?.toString() || '0',
-			entity_type: 'SUBSCRIPTION',
-			entity_id: lineItem.subscription_id,
-			price_unit_type: 'UNIT',
+			entity_type: entityType,
+			entity_id: entityId,
+			price_unit_type: PRICE_UNIT_TYPE.FIAT,
 			created_at: lineItem.created_at,
 			updated_at: lineItem.updated_at,
-			status: 'ACTIVE',
+			status: ENTITY_STATUS.PUBLISHED,
 			environment_id: lineItem.environment_id,
 			tenant_id: lineItem.tenant_id,
-			plan_id: lineItem.plan_id,
 			meter_id: lineItem.meter_id,
 			metadata: lineItem.metadata,
-			billing_period: 'MONTHLY',
+			billing_period: BILLING_PERIOD.MONTHLY,
 			billing_period_count: 1,
-			billing_cadence: 'ADVANCE',
+			billing_cadence: BILLING_CADENCE.RECURRING,
 			filter_values: {},
 			unit_amount: lineItem.quantity?.toString() || '0',
 			flat_amount: '0',

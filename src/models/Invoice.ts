@@ -49,13 +49,20 @@ export interface Invoice extends BaseModel {
 	readonly total_prepaid_credits_applied: number;
 }
 
+/** Entity type of an invoice line item (plan, addon, or subscription) */
+export enum INVOICE_LINE_ITEM_ENTITY_TYPE {
+	PLAN = 'plan',
+	ADDON = 'addon',
+	SUBSCRIPTION = 'subscription',
+}
+
 export interface LineItem extends BaseModel {
 	readonly id: string;
 	readonly invoice_id: string;
 	readonly customer_id: string;
 	readonly subscription_id?: string;
 	readonly entity_id?: string;
-	readonly entity_type?: string;
+	readonly entity_type?: INVOICE_LINE_ITEM_ENTITY_TYPE;
 	readonly plan_display_name?: string;
 	readonly price_id?: string;
 	readonly price_type?: PRICE_TYPE;

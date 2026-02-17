@@ -18,7 +18,11 @@ import {
 	CreatePriceTier,
 	TransformQuantity,
 	INVOICE_BILLING,
+	PRICE_TYPE,
+	PRICE_UNIT_TYPE,
+	INVOICE_CADENCE,
 } from '@/models';
+import { PriceUnitConfig } from '@/types/dto/Price';
 import { BILLING_PERIOD } from '@/constants/constants';
 import { QueryFilter, TimeRangeFilter } from './base';
 import { AddAddonToSubscriptionRequest } from './Addon';
@@ -294,6 +298,12 @@ export interface CreateSubscriptionRequest {
 
 	// Subscription status
 	subscription_status?: SUBSCRIPTION_STATUS;
+
+	// Extra line items at creation (in addition to plan prices). Each has price_id or inline price.
+	line_items?: CreateSubscriptionLineItemRequest[];
+
+	// Parent subscription ID when this subscription is a child in a hierarchy
+	parent_subscription_id?: string | null;
 }
 
 export interface SubscriptionPhaseCreateRequest {
@@ -309,9 +319,6 @@ export interface SubscriptionPhaseCreateRequest {
 	// OverrideLineItems allows customizing specific prices for this phase
 	// If not provided, phase will use the same line items as the subscription (plan prices)
 	override_line_items?: OverrideLineItemRequest[];
-
-	// Line item commitments for this phase
-	line_item_commitments?: LineItemCommitmentsMap;
 
 	metadata?: Metadata;
 }
@@ -494,13 +501,51 @@ export interface ListAddonAssociationsResponse {
 // SUBSCRIPTION LINE ITEM TYPES
 // =============================================================================
 
+/** Inline price for subscription-scoped line items. Currency/entity_type/entity_id are set server-side from subscription. */
+export interface SubscriptionPriceCreateRequest {
+	type: PRICE_TYPE;
+	price_unit_type: PRICE_UNIT_TYPE;
+	billing_period: BILLING_PERIOD;
+	billing_period_count?: number;
+	billing_model: BILLING_MODEL;
+	billing_cadence: BILLING_CADENCE;
+	invoice_cadence: INVOICE_CADENCE;
+	amount?: string;
+	meter_id?: string;
+	filter_values?: Record<string, string[]>;
+	lookup_key?: string;
+	trial_period?: number;
+	description?: string;
+	metadata?: Metadata;
+	tier_mode?: TIER_MODE;
+	tiers?: CreatePriceTier[];
+	transform_quantity?: TransformQuantity;
+	price_unit_config?: PriceUnitConfig;
+	start_date?: string;
+	end_date?: string;
+	display_name?: string;
+	min_quantity?: number;
+}
+
 export interface CreateSubscriptionLineItemRequest {
-	price_id: string;
+	/** Existing price ID. Exactly one of price_id or price must be set. */
+	price_id?: string;
+	/** Inline price; server creates subscription-scoped price. Exactly one of price_id or price must be set. */
+	price?: SubscriptionPriceCreateRequest;
 	quantity?: number;
 	start_date?: string;
 	end_date?: string;
 	metadata?: Metadata;
 	display_name?: string;
+	subscription_phase_id?: string;
+	// Commitment fields
+	commitment_amount?: number;
+	commitment_quantity?: number;
+	commitment_type?: string;
+	commitment_overage_factor?: number;
+	commitment_true_up_enabled?: boolean;
+	commitment_windowed?: boolean;
+	commitment_duration?: BILLING_PERIOD;
 }
 
 export interface UpdateSubscriptionLineItemRequest {
@@ -511,6 +556,16 @@ export interface UpdateSubscriptionLineItemRequest {
 	tiers?: CreatePriceTier[];
 	transform_quantity?: TransformQuantity;
 	metadata?: Metadata;
+	price_unit_amount?: string;
+	price_unit_tiers?: CreatePriceTier[];
+	// Commitment fields
+	commitment_amount?: number;
+	commitment_quantity?: number;
+	commitment_type?: string;
+	commitment_overage_factor?: number;
+	commitment_true_up_enabled?: boolean;
+	commitment_windowed?: boolean;
+	commitment_duration?: BILLING_PERIOD;
 }
 
 export interface DeleteSubscriptionLineItemRequest {
