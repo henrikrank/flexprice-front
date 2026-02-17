@@ -21,6 +21,7 @@ export const getAddonTypeChips = (type: string) => {
 			return <Chip textColor='#4B5563' bgColor='#F3F4F6' label={toSentenceCase(type)} className='text-xs' />;
 		}
 		case ADDON_TYPE.MULTIPLE:
+		case ADDON_TYPE.MULTIPLE_INSTANCE:
 			return <Chip textColor='#1E40AF' bgColor='#DBEAFE' label={toSentenceCase(type)} className='text-xs' />;
 		default:
 			return <Chip textColor='#6B7280' bgColor='#F9FAFB' label={toSentenceCase(type)} className='text-xs' />;

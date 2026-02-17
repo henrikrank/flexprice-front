@@ -1,11 +1,12 @@
 import { Card, CardHeader, NoDataCard, Chip, Tooltip } from '@/components/atoms';
 import { ChargeValueCell, ColumnData, FlexpriceTable, TerminateLineItemModal, DropdownMenu } from '@/components/molecules';
+import { PriceTooltip } from '@/components/molecules/PriceTooltip';
 import { LineItem } from '@/models/Subscription';
 import { FC, useState, useCallback, useMemo } from 'react';
 import { Trash2, Pencil } from 'lucide-react';
 import { ENTITY_STATUS } from '@/models/base';
 import { formatBillingPeriodForDisplay, getPriceTypeLabel } from '@/utils/common/helper_functions';
-import { PRICE_TYPE, PRICE_STATUS } from '@/models/Price';
+import { PRICE_ENTITY_TYPE, PRICE_TYPE, PRICE_STATUS } from '@/models/Price';
 import { formatDateTimeWithSecondsAndTimezone } from '@/utils/common/format_date';
 
 interface Props {
@@ -255,7 +256,16 @@ const SubscriptionLineItemTable: FC<Props> = ({ data, onEdit, onTerminate, isLoa
 		},
 		{
 			title: 'Charge',
-			render: (row) => <div className='flex items-center gap-2'>{row.price ? <ChargeValueCell data={row.price} /> : '--'}</div>,
+			render: (row) => {
+				if (!row.price) return '--';
+				const isSubscriptionOverride = row.price.entity_type === PRICE_ENTITY_TYPE.SUBSCRIPTION;
+				return (
+					<div className='flex items-center gap-2'>
+						<ChargeValueCell data={row.price} />
+						{isSubscriptionOverride && <PriceTooltip data={row.price} isSubscriptionOverride={true} />}
+					</div>
+				);
+			},
 		},
 		{
 			fieldVariant: 'interactive',

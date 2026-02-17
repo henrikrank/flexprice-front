@@ -213,6 +213,21 @@ const CustomerSubscriptionDetailsPage: FC = () => {
 					</>
 				)}
 
+				{subscriptionDetails?.parent_subscription_id && (
+					<>
+						<div className='w-full flex justify-between items-center'>
+							<p className='text-[#71717A] text-sm'>Parent subscription</p>
+							<Link
+								to={`${RouteNames.subscriptions}/${subscriptionDetails.parent_subscription_id}/edit`}
+								className='inline-flex items-center text-sm gap-1.5 hover:underline transition-colors'>
+								{subscriptionDetails.parent_subscription_id}
+								<ExternalLink className='w-3.5 h-3.5' />
+							</Link>
+						</div>
+						<Spacer className='!my-4' />
+					</>
+				)}
+
 				{subscriptionDetails?.commitment_amount && (
 					<div className='w-full flex justify-between items-center'>
 						<p className='text-[#71717A] text-sm'>Commitment Amount</p>

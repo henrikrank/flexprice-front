@@ -58,12 +58,13 @@ const BreadCrumbs: FC = () => {
 					</div>
 
 					{breadcrumbs.map((breadcrumb, index) => (
-						<span key={index} className='flex items-center space-x-2'>
+						<span key={index} className='flex items-center space-x-2 min-w-0'>
 							{breadcrumb.isLoading ? (
 								<div className='h-5 w-20 animate-pulse bg-gray-200 rounded'></div>
 							) : index === breadcrumbs.length - 1 || index === 0 ? (
 								<div
-									className={`hover:text-gray-800 capitalize select-none ${
+									title={breadcrumb.label}
+									className={`hover:text-gray-800 capitalize select-none max-w-[140px] truncate ${
 										index === breadcrumbs.length - 1 ? 'font-normal text-[#020617]' : ''
 									}`}>
 									{breadcrumb.label}
@@ -71,12 +72,13 @@ const BreadCrumbs: FC = () => {
 							) : (
 								<Link
 									to={breadcrumb.path}
-									className={`hover:text-gray-800 capitalize ${index === breadcrumbs.length - 1 ? 'font-normal text-[#020617]' : ''}`}>
+									title={breadcrumb.label}
+									className={`hover:text-gray-800 capitalize max-w-[140px] truncate block ${index === breadcrumbs.length - 1 ? 'font-normal text-[#020617]' : ''}`}>
 									{breadcrumb.label}
 								</Link>
 							)}
 							{index < breadcrumbs.length - 1 && (
-								<span>
+								<span className='shrink-0'>
 									<BsChevronRight />
 								</span>
 							)}

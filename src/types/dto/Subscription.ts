@@ -33,6 +33,7 @@ export { BILLING_PERIOD } from '@/constants/constants';
 export interface ListSubscriptionsPayload extends QueryFilter, TimeRangeFilter {
 	subscription_ids?: string[];
 	customer_id?: string;
+	external_customer_id?: string;
 	plan_id?: string;
 	subscription_status?: SUBSCRIPTION_STATUS[];
 	billing_cadence?: BILLING_CADENCE[];
@@ -43,6 +44,10 @@ export interface ListSubscriptionsPayload extends QueryFilter, TimeRangeFilter {
 	expand?: string;
 	sort?: TypedBackendSort[];
 	filters?: TypedBackendFilter[];
+	/** Filters by parent subscription IDs (backend: parent_subscription_ids) */
+	parent_subscription_ids?: string[];
+	/** Filters by invoicing customer IDs (backend: invoicing_customer_ids) */
+	invoicing_customer_ids?: string[];
 }
 
 import { TaxRateOverride } from './tax';
@@ -284,6 +289,9 @@ export interface CreateSubscriptionRequest {
 	// True up flag
 	enable_true_up: boolean;
 
+	// Commitment duration (e.g., ANNUAL, MONTHLY) - defaults to billing period if not set
+	commitment_duration?: BILLING_PERIOD;
+
 	// Subscription status
 	subscription_status?: SUBSCRIPTION_STATUS;
 }
@@ -344,6 +352,15 @@ export interface OverrideLineItemRequest {
 
 	// PriceUnitTiers are the tiers for the price unit (for CUSTOM type, TIERED billing model)
 	price_unit_tiers?: CreatePriceTier[];
+}
+
+/** Request to update a subscription (PUT /subscriptions/:id). Omitted fields are unchanged; send "" or null to clear where supported. */
+export interface UpdateSubscriptionRequest {
+	status?: SUBSCRIPTION_STATUS;
+	cancel_at?: string | null;
+	cancel_at_period_end?: boolean;
+	/** Set to another subscription ID to link as child; "" or null to clear; omit to leave unchanged */
+	parent_subscription_id?: string | null;
 }
 
 export interface CancelSubscriptionRequest {
@@ -544,6 +561,10 @@ export interface SubscriptionFilter extends QueryFilter, TimeRangeFilter {
 	expand?: string;
 	sort?: TypedBackendSort[];
 	filters?: TypedBackendFilter[];
+	/** Filters by parent subscription IDs (backend: parent_subscription_ids) */
+	parent_subscription_ids?: string[];
+	/** Filters by invoicing customer IDs (backend: invoicing_customer_ids) */
+	invoicing_customer_ids?: string[];
 }
 
 // =============================================================================

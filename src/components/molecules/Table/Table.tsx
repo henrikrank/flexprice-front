@@ -4,7 +4,7 @@ import { cn } from '@/lib/utils';
 
 // Types and Interfaces
 interface BaseColumnData<T> {
-	title?: string;
+	title?: ReactNode;
 	flex?: number;
 	width?: number | string;
 	color?: string;

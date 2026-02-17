@@ -25,6 +25,7 @@ export type {
 	FireEventsPayload,
 	GetUsageAnalyticsRequest,
 	GetUsageAnalyticsResponse,
+	CustomAnalyticItem,
 	GetMonitoringDataRequest,
 	GetMonitoringDataResponse,
 	EventCountPoint,
@@ -146,6 +147,7 @@ export type {
 	SubscriptionPauseResponse,
 	SubscriptionResumeResponse,
 	CreateSubscriptionRequest,
+	UpdateSubscriptionRequest,
 	CancelSubscriptionPayload,
 	ListSubscriptionsPayload,
 	ListSubscriptionsResponse,
@@ -299,3 +301,18 @@ export type {
 	ListPriceUnitsResponse,
 	PriceUnitFilter,
 } from './PriceUnit';
+
+export type {
+	WorkflowExecutionDTO,
+	WorkflowExecutionFilterRequest,
+	ListWorkflowsResponse,
+	WorkflowActivityDTO,
+	ActivityErrorDTO,
+	WorkflowTimelineItemDTO,
+	WorkflowDetailsResponse,
+	WorkflowSummaryResponse,
+	WorkflowTimelineResponse,
+	WorkflowIdentifier,
+	BatchWorkflowsRequest,
+	BatchWorkflowsResponse,
+} from './Workflow';

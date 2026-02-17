@@ -12,7 +12,7 @@ import { Feature } from '@/models';
 import { GetUsageAnalyticsRequest, GetCostAnalyticsRequest } from '@/types';
 import { WindowSize } from '@/models';
 import { CustomerUsageChart, FlexpriceTable, RedirectCell, type ColumnData } from '@/components/molecules';
-import { UsageAnalyticItem } from '@/models';
+import { UsageAnalyticItem, PRICE_ENTITY_TYPE } from '@/models';
 import { formatNumber } from '@/utils';
 import { MetricCard, CostDataTable } from '@/components/molecules';
 import { getCurrencySymbol } from '@/utils';
@@ -21,6 +21,7 @@ import { Skeleton } from '@/components/ui';
 import { ENTITY_STATUS } from '@/models/base';
 import { RouteNames } from '@/core/routes/Routes';
 import { PremiumFeatureIcon } from '@/components/molecules/PremiumFeature/PremiumFeature';
+import { ChevronDown, ChevronUp, ChevronsUpDown } from 'lucide-react';
 
 const CustomerAnalyticsTab = () => {
 	const { id: customerId } = useParams();
@@ -216,6 +217,12 @@ const CustomerAnalyticsTab = () => {
 		return totalRevenue > 0 || totalCost > 0 || Math.abs(margin) > 0;
 	}, [costData]);
 
+	// Custom analytics of type "feature" from usage API (for 5th+ metric boxes)
+	const featureCustomAnalytics = useMemo(() => {
+		if (!usageData?.custom_analytics) return [];
+		return usageData.custom_analytics.filter((item) => item.type === 'feature');
+	}, [usageData?.custom_analytics]);
+
 	const handleStartDateChange = (date: Date | undefined) => {
 		setStartDate(date);
 		if (date && endDate && endDate <= date) {
@@ -347,36 +354,46 @@ const CustomerAnalyticsTab = () => {
 				</>
 			) : (
 				<>
-					{/* Summary Metrics - Revenue tiles */}
-					{hasRevenueData && costData && (
+					{/* Summary Metrics - Revenue tiles (same structure as CostAnalytics) + custom_analytics (type: feature) from usage API */}
+					{((hasRevenueData && costData) || featureCustomAnalytics.length > 0) && (
 						<div className='pt-9'>
-							{(() => {
-								const totalRevenue = parseFloat(costData.total_revenue || '0');
-								const totalCost = parseFloat(costData.total_cost || '0');
-								const margin = parseFloat(costData.margin || '0');
-								const marginPercent = parseFloat(costData.margin_percent || '0');
-
-								return (
-									<div className='grid grid-cols-2 md:grid-cols-4 gap-3'>
-										<MetricCard title='Revenue' value={totalRevenue} currency={costData.currency} />
-										<MetricCard title='Cost' value={totalCost} currency={costData.currency} />
-										<MetricCard
-											title='Margin'
-											value={margin}
-											currency={costData.currency}
-											showChangeIndicator={true}
-											isNegative={margin < 0}
-										/>
-										<MetricCard
-											title='Margin %'
-											value={marginPercent}
-											isPercent={true}
-											showChangeIndicator={true}
-											isNegative={marginPercent < 0}
-										/>
-									</div>
-								);
-							})()}
+							<div
+								className={
+									(costData ? 4 : 0) + featureCustomAnalytics.length >= 5
+										? 'grid grid-cols-2 md:grid-cols-5 gap-2 min-w-0'
+										: 'grid grid-cols-2 md:grid-cols-4 gap-3'
+								}>
+								{costData &&
+									(() => {
+										const totalRevenue = parseFloat(costData.total_revenue || '0');
+										const totalCost = parseFloat(costData.total_cost || '0');
+										const margin = parseFloat(costData.margin || '0');
+										const marginPercent = parseFloat(costData.margin_percent || '0');
+										return (
+											<>
+												<MetricCard title='Revenue' value={totalRevenue} currency={costData.currency} />
+												<MetricCard title='Cost' value={totalCost} currency={costData.currency} />
+												<MetricCard
+													title='Margin'
+													value={margin}
+													currency={costData.currency}
+													showChangeIndicator={true}
+													isNegative={margin < 0}
+												/>
+												<MetricCard
+													title='Margin %'
+													value={marginPercent}
+													isPercent={true}
+													showChangeIndicator={true}
+													isNegative={marginPercent < 0}
+												/>
+											</>
+										);
+									})()}
+								{featureCustomAnalytics.map((item) => (
+									<MetricCard key={item.id} title={`CPM`} value={parseFloat(item.value) || 0} currency={usageData?.currency ?? 'usd'} />
+								))}
+							</div>
 						</div>
 					)}
 
@@ -407,6 +424,67 @@ const CustomerAnalyticsTab = () => {
 };
 
 const UsageDataTable: React.FC<{ items: UsageAnalyticItem[] }> = ({ items }) => {
+	type UsageSortField = 'total_usage' | 'total_cost';
+	type SortDirection = 'asc' | 'desc';
+
+	const [sortField, setSortField] = useState<UsageSortField>('total_cost');
+	const [sortDirection, setSortDirection] = useState<SortDirection>('desc');
+
+	const handleSortToggle = (field: UsageSortField) => {
+		if (sortField !== field) {
+			setSortField(field);
+			setSortDirection('desc');
+			return;
+		}
+
+		setSortDirection((prev) => (prev === 'asc' ? 'desc' : 'asc'));
+	};
+
+	const sortedItems = useMemo(() => {
+		const sorted = [...items];
+		const directionMultiplier = sortDirection === 'asc' ? 1 : -1;
+
+		sorted.sort((a, b) => {
+			switch (sortField) {
+				case 'total_usage': {
+					const valueA = a.total_usage ?? 0;
+					const valueB = b.total_usage ?? 0;
+					return (valueA - valueB) * directionMultiplier;
+				}
+				case 'total_cost': {
+					const valueA = a.total_cost ?? 0;
+					const valueB = b.total_cost ?? 0;
+					return (valueA - valueB) * directionMultiplier;
+				}
+				default:
+					return 0;
+			}
+		});
+
+		return sorted;
+	}, [items, sortDirection, sortField]);
+
+	const renderSortableHeader = (field: UsageSortField, label: string) => {
+		const isActive = sortField === field;
+		return (
+			<button
+				type='button'
+				className={`group -ml-1 inline-flex h-7 items-center gap-1 rounded-md px-1.5 text-left transition-colors ${
+					isActive ? 'text-gray-900' : 'text-gray-500 hover:text-gray-700'
+				}`}
+				onClick={() => handleSortToggle(field)}>
+				<span className='leading-none'>{label}</span>
+				{sortDirection === 'asc' && isActive ? (
+					<ChevronUp className='h-3.5 w-3.5 shrink-0 text-gray-900' />
+				) : isActive ? (
+					<ChevronDown className='h-3.5 w-3.5 shrink-0 text-gray-900' />
+				) : (
+					<ChevronsUpDown className='h-3.5 w-3.5 shrink-0 text-gray-400 group-hover:text-gray-500' />
+				)}
+			</button>
+		);
+	};
+
 	// Define table columns
 	const columns: ColumnData<UsageAnalyticItem>[] = [
 		{
@@ -423,9 +501,9 @@ const UsageDataTable: React.FC<{ items: UsageAnalyticItem[] }> = ({ items }) => 
 			},
 		},
 		{
-			title: 'Total Usage',
+			title: renderSortableHeader('total_usage', 'Total Usage'),
 			render: (row: UsageAnalyticItem) => {
-				const unit = row.unit ? ` ${row.unit}${row.total_usage !== 1 && row.unit_plural ? 's' : ''}` : '';
+				const unit = row.unit ? ` ${row.total_usage === 1 ? row.unit : (row.unit_plural ?? row.unit)}` : '';
 				return (
 					<span>
 						{formatNumber(row.total_usage)}
@@ -435,17 +513,18 @@ const UsageDataTable: React.FC<{ items: UsageAnalyticItem[] }> = ({ items }) => 
 			},
 		},
 		{
-			title: 'Total Cost',
+			title: renderSortableHeader('total_cost', 'Total Cost'),
 			render: (row: UsageAnalyticItem) => {
 				if (row.total_cost === 0 || !row.currency) return '-';
 				const currency = getCurrencySymbol(row.currency);
+				const isSubscriptionOverride = row.price?.entity_type === PRICE_ENTITY_TYPE.SUBSCRIPTION;
 				return (
 					<div className='flex items-center gap-2'>
 						<span>
 							{currency}
 							{formatNumber(row.total_cost, 2)}
 						</span>
-						{row.price && <PriceTooltip data={row.price} />}
+						{row.price && <PriceTooltip data={row.price} isSubscriptionOverride={isSubscriptionOverride} />}
 					</div>
 				);
 			},
@@ -453,7 +532,7 @@ const UsageDataTable: React.FC<{ items: UsageAnalyticItem[] }> = ({ items }) => 
 	];
 
 	// Prepare data for the table
-	const tableData = items.map((item) => ({
+	const tableData = sortedItems.map((item) => ({
 		...item,
 		// Ensure we have all required fields for the table
 		id: item.feature_id || item.source || 'unknown',

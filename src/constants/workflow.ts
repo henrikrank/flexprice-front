@@ -1,0 +1,23 @@
+/** API workflow_type → display name for UI. Usage: display = WORKFLOW_TYPE_DISPLAY_NAMES[workflow_type] ?? workflow_type */
+export const WORKFLOW_TYPE_DISPLAY_NAMES: Record<string, string> = {
+	PriceSyncWorkflow: 'Price sync',
+	QuickBooksPriceSyncWorkflow: 'QuickBooks price sync',
+	TaskProcessingWorkflow: 'Task processing',
+	SubscriptionChangeWorkflow: 'Subscription change',
+	SubscriptionCreationWorkflow: 'Subscription creation',
+	StripeIntegrationWorkflow: 'Stripe integration',
+	ExecuteExportWorkflow: 'Data export',
+	HubSpotDealSyncWorkflow: 'HubSpot deal sync',
+	HubSpotInvoiceSyncWorkflow: 'HubSpot invoice sync',
+	HubSpotQuoteSyncWorkflow: 'HubSpot quote sync',
+	NomodInvoiceSyncWorkflow: 'Nomod invoice sync',
+	MoyasarInvoiceSyncWorkflow: 'Moyasar invoice sync',
+	CustomerOnboardingWorkflow: 'Customer onboarding',
+	PrepareProcessedEventsWorkflow: 'Prepare processed events',
+	ScheduleSubscriptionBillingWorkflow: 'Schedule subscription billing',
+	ProcessSubscriptionBillingWorkflow: 'Process subscription billing',
+	ProcessInvoiceWorkflow: 'Process invoice',
+	ReprocessEventsWorkflow: 'Reprocess events',
+	ReprocessRawEventsWorkflow: 'Reprocess raw events',
+	ReprocessEventsForPlanWorkflow: 'Reprocess events for plan',
+};
