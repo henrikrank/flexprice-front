@@ -35,6 +35,7 @@ import {
 } from '@/types/dto';
 import { FilterOperator, DataType } from '@/types/common/QueryBuilder';
 import { OverrideLineItemRequest, SubscriptionPhaseCreateRequest } from '@/types/dto/Subscription';
+import type { AddedSubscriptionLineItem } from '@/components/organisms/Subscription/AddSubscriptionChargeDialog';
 
 import { cn } from '@/lib/utils';
 import { toSentenceCase } from '@/utils/common/helper_functions';
@@ -84,6 +85,7 @@ export type SubscriptionFormState = {
 	commitmentDuration: string;
 	invoiceBillingConfig?: INVOICE_BILLING;
 	hasModifiedPlanCreditGrants?: boolean;
+	addedSubscriptionLineItems: AddedSubscriptionLineItem[];
 };
 
 const usePlans = () => {
@@ -255,6 +257,7 @@ const CreateCustomerSubscriptionPage: React.FC = () => {
 		commitmentDuration: BILLING_PERIOD.MONTHLY.toUpperCase(),
 		invoiceBillingConfig: undefined,
 		hasModifiedPlanCreditGrants: false,
+		addedSubscriptionLineItems: [],
 	});
 
 	const { data: plans, isLoading: plansLoading, isError: plansError } = usePlans();
@@ -446,6 +449,7 @@ const CreateCustomerSubscriptionPage: React.FC = () => {
 			entitlementOverrides,
 			creditGrants,
 			invoiceBillingConfig,
+			addedSubscriptionLineItems,
 		} = subscriptionState;
 
 		let finalStartDate: string;
@@ -542,6 +546,7 @@ const CreateCustomerSubscriptionPage: React.FC = () => {
 			creditGrants,
 			invoiceBillingConfig,
 			sanitizedAddons,
+			addedSubscriptionLineItems,
 		};
 	};
 
@@ -593,6 +598,10 @@ const CreateCustomerSubscriptionPage: React.FC = () => {
 			commitment_duration: sanitized.commitmentDuration ? (sanitized.commitmentDuration as BILLING_PERIOD) : undefined,
 			subscription_status: isDraftParam ? SUBSCRIPTION_STATUS.DRAFT : undefined,
 			invoice_billing: sanitized.invoiceBillingConfig,
+			line_items:
+				!sanitized.sanitizedPhases && sanitized.addedSubscriptionLineItems && sanitized.addedSubscriptionLineItems.length > 0
+					? sanitized.addedSubscriptionLineItems.map(({ tempId, ...req }) => req)
+					: undefined,
 		};
 
 		setIsDraft(isDraftParam);

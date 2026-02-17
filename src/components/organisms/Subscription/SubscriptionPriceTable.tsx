@@ -3,16 +3,21 @@ import type { ReactNode } from 'react';
 import { ColumnData, FlexpriceTable, LineItemCoupon } from '@/components/molecules';
 import PriceOverrideDialog from '@/components/molecules/PriceOverrideDialog/PriceOverrideDialog';
 import CommitmentConfigDialog from '@/components/molecules/CommitmentConfigDialog';
-import { Price, PRICE_TYPE } from '@/models';
-import { ChevronDownIcon, ChevronUpIcon, Pencil, RotateCcw, Tag, Target } from 'lucide-react';
-import { FormHeader, DecimalUsageInput } from '@/components/atoms';
+import { Price, PRICE_TYPE, PRICE_UNIT_TYPE } from '@/models';
+import { ChevronDownIcon, ChevronUpIcon, Pencil, RotateCcw, Tag, Target, Trash2 } from 'lucide-react';
+import { FormHeader, DecimalUsageInput, AddButton } from '@/components/atoms';
 import { ChargeValueCell } from '@/components/molecules';
 import { capitalize } from 'es-toolkit';
 import { Coupon } from '@/models';
 import { BsThreeDots } from 'react-icons/bs';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui';
+import OptionsDropdownMenu from '@/components/molecules/DropdownMenu';
 import { ExtendedPriceOverride } from '@/utils';
 import { LineItemCommitmentConfig } from '@/types/dto/LineItemCommitmentConfig';
+import type { AddedSubscriptionLineItem } from './AddSubscriptionChargeDialog';
+import { getCurrencySymbol } from '@/utils/common/helper_functions';
+import { formatBillingPeriodForPrice } from '@/utils/common/helper_functions';
+import { formatAmount } from '@/components/atoms/Input/Input';
 
 const DEFAULT_ROW_LIMIT = 5;
 
@@ -179,6 +184,27 @@ export interface Props {
 	onCommitmentChange?: (priceId: string, config: LineItemCommitmentConfig | null) => void;
 	disabled?: boolean;
 	subscriptionLevelCoupon?: Coupon | null;
+	/** Subscription-level added line items (entity type SUBSCRIPTION). Shown with delete-only actions. */
+	addedLineItems?: AddedSubscriptionLineItem[];
+	/** Called when user clicks Add charge; parent should open the add-charge dialog. */
+	onAddCharge?: () => void;
+	/** Called when user removes an added subscription line item. */
+	onRemoveAddedCharge?: (tempId: string) => void;
+	/** Called when user clicks Edit on an added subscription line item; parent should open the edit dialog. */
+	onEditAddedCharge?: (item: AddedSubscriptionLineItem) => void;
+}
+
+function formatAddedLineItemPrice(item: AddedSubscriptionLineItem, fallbackCurrency?: string): string {
+	const p = item.price;
+	if (!p) return '--';
+	const currency =
+		p.price_unit_type === PRICE_UNIT_TYPE.CUSTOM
+			? p.price_unit_config?.price_unit
+			: ((p as { currency?: string }).currency ?? fallbackCurrency);
+	const symbol = currency ? getCurrencySymbol(currency) : '';
+	const amount = p.amount ?? p.price_unit_config?.amount ?? '0';
+	const period = p.billing_period ? formatBillingPeriodForPrice(p.billing_period) : '';
+	return `${symbol}${formatAmount(amount)}${period ? ` / ${period}` : ''}`;
 }
 
 const SubscriptionPriceTable: FC<Props> = ({
@@ -193,8 +219,13 @@ const SubscriptionPriceTable: FC<Props> = ({
 	onCommitmentChange,
 	disabled = false,
 	subscriptionLevelCoupon = null,
+	addedLineItems = [],
+	onAddCharge,
+	onRemoveAddedCharge,
+	onEditAddedCharge,
 }) => {
 	const [showAllRows, setShowAllRows] = useState(false);
+	const [openAddedMenuTempId, setOpenAddedMenuTempId] = useState<string | null>(null);
 	const [selectedPrice, setSelectedPrice] = useState<Price | null>(null);
 	const [isDialogOpen, setIsDialogOpen] = useState(false);
 	const [selectedCommitmentPrice, setSelectedCommitmentPrice] = useState<Price | null>(null);
@@ -290,13 +321,63 @@ const SubscriptionPriceTable: FC<Props> = ({
 		onLineItemCouponsChange,
 	]);
 
-	const displayedData = showAllRows ? mappedData : mappedData.slice(0, DEFAULT_ROW_LIMIT);
-	const hasMore = mappedData.length > DEFAULT_ROW_LIMIT;
+	const addedRows = useMemo<ChargeTableData[]>(() => {
+		return addedLineItems.map((item) => ({
+			priceId: item.tempId,
+			charge: (
+				<div>
+					<div>{item.display_name || item.price?.display_name || 'Charge'}</div>
+				</div>
+			),
+			quantity: <span>{item.quantity ?? 1}</span>,
+			price: <span>{formatAddedLineItemPrice(item, currency)}</span>,
+			invoice_cadence: item.price?.invoice_cadence ?? '--',
+			actions:
+				onRemoveAddedCharge || onEditAddedCharge ? (
+					<OptionsDropdownMenu
+						options={[
+							...(onEditAddedCharge
+								? [
+										{
+											label: 'Edit',
+											icon: <Pencil className='h-4 w-4' />,
+											onSelect: () => onEditAddedCharge(item),
+										},
+									]
+								: []),
+							...(onRemoveAddedCharge
+								? [
+										{
+											label: 'Delete',
+											icon: <Trash2 className='h-4 w-4' />,
+											onSelect: () => onRemoveAddedCharge(item.tempId),
+											className: 'text-red-600 focus:text-red-600',
+										},
+									]
+								: []),
+						]}
+						isOpen={openAddedMenuTempId === item.tempId}
+						onOpenChange={(open) => setOpenAddedMenuTempId(open ? item.tempId : null)}
+						trigger={
+							<button type='button' disabled={disabled}>
+								<BsThreeDots className='text-base size-4' />
+							</button>
+						}
+						align='end'
+					/>
+				) : undefined,
+		}));
+	}, [addedLineItems, currency, disabled, onRemoveAddedCharge, onEditAddedCharge, openAddedMenuTempId]);
+
+	const combinedData = useMemo(() => [...mappedData, ...addedRows], [mappedData, addedRows]);
+	const displayedData = showAllRows ? combinedData : combinedData.slice(0, DEFAULT_ROW_LIMIT);
+	const hasMore = combinedData.length > DEFAULT_ROW_LIMIT;
 
 	return (
 		<div className='space-y-4'>
-			<div>
+			<div className='flex items-center justify-between gap-2'>
 				<FormHeader title='Charges' variant='sub-header' />
+				{onAddCharge && <AddButton onClick={onAddCharge} disabled={disabled} className='w-fit'></AddButton>}
 			</div>
 			<div className='rounded-[6px] border border-gray-300'>
 				<div style={{ overflow: 'hidden' }}>
