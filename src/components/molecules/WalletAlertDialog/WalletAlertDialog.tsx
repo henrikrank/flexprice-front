@@ -1,68 +1,239 @@
 import React, { useState, useEffect } from 'react';
 import { Dialog, Button, Input, Toggle, Select } from '@/components/atoms';
-import { toast } from 'react-hot-toast';
-
-interface WalletAlertConfig {
-	threshold: {
-		type: 'amount' | 'percentage';
-		value: string;
-	};
-}
+import toast from 'react-hot-toast';
+import { WalletAlertSettings, WalletAlertThreshold, WalletAlertLevel } from '@/models/Wallet';
 
 interface WalletAlertDialogProps {
 	open: boolean;
-	alertEnabled: boolean;
-	alertConfig: WalletAlertConfig | undefined;
-	onSave: (alertEnabled: boolean, alertConfig: WalletAlertConfig | undefined) => void;
+	alertSettings?: WalletAlertSettings;
+	onSave: (alertSettings: WalletAlertSettings) => void | Promise<void>;
 	onClose: () => void;
 	currency?: string;
 }
 
-const WalletAlertDialog: React.FC<WalletAlertDialogProps> = ({ open, alertEnabled, alertConfig, onSave, onClose, currency = 'USD' }) => {
-	const [localAlertEnabled, setLocalAlertEnabled] = useState(alertEnabled);
-	const [localAlertConfig, setLocalAlertConfig] = useState<WalletAlertConfig>(
-		alertConfig || {
-			threshold: {
-				type: 'amount',
-				value: '0.00',
-			},
-		},
-	);
+const WalletAlertDialog: React.FC<WalletAlertDialogProps> = ({ open, alertSettings, onSave, onClose, currency }) => {
+	const [localAlertSettings, setLocalAlertSettings] = useState<WalletAlertSettings>({
+		alert_enabled: false,
+		critical: null,
+		warning: null,
+		info: null,
+	});
+	const [isSaving, setIsSaving] = useState(false);
 
 	// Sync local state with props
 	useEffect(() => {
-		setLocalAlertEnabled(alertEnabled);
-		setLocalAlertConfig(
-			alertConfig || {
-				threshold: {
-					type: 'amount',
-					value: '0.00',
-				},
-			},
-		);
-	}, [alertEnabled, alertConfig, open]);
+		if (alertSettings) {
+			setLocalAlertSettings({
+				alert_enabled: alertSettings.alert_enabled || false,
+				critical: alertSettings.critical || null,
+				warning: alertSettings.warning || null,
+				info: alertSettings.info || null,
+			});
+		} else {
+			setLocalAlertSettings({
+				alert_enabled: false,
+				critical: null,
+				warning: null,
+				info: null,
+			});
+		}
+	}, [alertSettings]);
 
-	const handleSave = () => {
-		if (localAlertEnabled && (!localAlertConfig.threshold.value || parseFloat(localAlertConfig.threshold.value) <= 0)) {
-			toast.error('Please enter a valid threshold value');
-			return;
+	// Determine the master condition - prioritize critical, then any existing threshold
+	const getMasterCondition = (): 'above' | 'below' | undefined => {
+		if (localAlertSettings.critical) return localAlertSettings.critical.condition;
+		if (localAlertSettings.warning) return localAlertSettings.warning.condition;
+		if (localAlertSettings.info) return localAlertSettings.info.condition;
+		return undefined;
+	};
+
+	// Check if condition selector should be disabled for a given level
+	const isConditionDisabled = (level: WalletAlertLevel): boolean => {
+		const threshold = localAlertSettings[level];
+		if (!threshold) return false;
+
+		// Critical always controls the condition if it exists
+		if (level !== WalletAlertLevel.CRITICAL && localAlertSettings.critical) {
+			return true;
 		}
 
-		onSave(localAlertEnabled, localAlertEnabled ? localAlertConfig : undefined);
+		// If warning exists and this is info, warning controls (when no critical)
+		if (level === WalletAlertLevel.INFO && localAlertSettings.warning && !localAlertSettings.critical) {
+			return true;
+		}
+
+		// If info exists and this is warning, info controls (when no critical)
+		if (level === WalletAlertLevel.WARNING && localAlertSettings.info && !localAlertSettings.critical) {
+			return true;
+		}
+
+		return false;
+	};
+
+	const handleSave = async () => {
+		// Prevent double-submit
+		if (isSaving) return;
+
+		// SINGLE VALIDATION: If alerts enabled, at least one threshold must be set with valid values
+		if (localAlertSettings.alert_enabled) {
+			const hasAnyThreshold = localAlertSettings.critical || localAlertSettings.warning || localAlertSettings.info;
+
+			if (!hasAnyThreshold) {
+				toast.error('Please configure at least one threshold level');
+				return;
+			}
+
+			// Validate threshold values - only check if they exist and are valid numbers
+			const validateValue = (threshold: WalletAlertThreshold | null | undefined, name: string): boolean => {
+				if (threshold) {
+					const value = parseFloat(threshold.threshold);
+					if (isNaN(value)) {
+						toast.error(`Please enter a valid ${name} threshold value`);
+						return false;
+					}
+				}
+				return true;
+			};
+
+			if (!validateValue(localAlertSettings.critical, 'critical')) return;
+			if (!validateValue(localAlertSettings.warning, 'warning')) return;
+			if (!validateValue(localAlertSettings.info, 'info')) return;
+		}
+
+		// COMPLETE OVERWRITE - send exactly what's in the form
+		const settingsToSave: WalletAlertSettings = {
+			alert_enabled: localAlertSettings.alert_enabled,
+			critical: localAlertSettings.critical,
+			warning: localAlertSettings.warning,
+			info: localAlertSettings.info,
+		};
+
+		try {
+			setIsSaving(true);
+			await onSave(settingsToSave);
+		} finally {
+			setIsSaving(false);
+		}
 	};
 
 	const handleClose = () => {
+		// Prevent closing during save
+		if (isSaving) return;
 		// Reset to original values
-		setLocalAlertEnabled(alertEnabled);
-		setLocalAlertConfig(
-			alertConfig || {
-				threshold: {
-					type: 'amount',
-					value: '0.00',
-				},
-			},
-		);
+		if (alertSettings) {
+			setLocalAlertSettings({
+				alert_enabled: alertSettings.alert_enabled || false,
+				critical: alertSettings.critical || null,
+				warning: alertSettings.warning || null,
+				info: alertSettings.info || null,
+			});
+		}
 		onClose();
+	};
+
+	const handleThresholdChange = (level: WalletAlertLevel, field: 'threshold' | 'condition', value: string) => {
+		const currentThreshold = localAlertSettings[level] || { threshold: '0', condition: 'below' as const };
+
+		// If condition is being changed, sync all other thresholds to use the same condition
+		if (field === 'condition') {
+			const newCondition = value as 'above' | 'below';
+			const newState: WalletAlertSettings = {
+				...localAlertSettings,
+				critical: localAlertSettings.critical ? { ...localAlertSettings.critical, condition: newCondition } : null,
+				warning: localAlertSettings.warning ? { ...localAlertSettings.warning, condition: newCondition } : null,
+				info: localAlertSettings.info ? { ...localAlertSettings.info, condition: newCondition } : null,
+			};
+			setLocalAlertSettings(newState);
+		} else {
+			const newState: WalletAlertSettings = {
+				...localAlertSettings,
+				[level]: {
+					...currentThreshold,
+					[field]: value,
+				},
+			};
+			setLocalAlertSettings(newState);
+		}
+	};
+
+	const handleRemoveThreshold = (level: WalletAlertLevel) => {
+		const newState: WalletAlertSettings = {
+			...localAlertSettings,
+			[level]: null, // Explicitly set to null for removal
+		};
+		setLocalAlertSettings(newState);
+	};
+
+	const handleAddThreshold = (level: WalletAlertLevel) => {
+		// Use the master condition (prioritize critical, then any existing)
+		const masterCondition = getMasterCondition() || 'below';
+
+		const newState: WalletAlertSettings = {
+			...localAlertSettings,
+			[level]: {
+				threshold: '0',
+				condition: masterCondition,
+			},
+		};
+		setLocalAlertSettings(newState);
+	};
+
+	const renderThresholdInput = (level: WalletAlertLevel, label: string, description: string) => {
+		const threshold = localAlertSettings[level];
+		const conditionDisabled = isConditionDisabled(level);
+
+		return (
+			<div className='space-y-3 p-4 border rounded-lg bg-gray-50'>
+				<div className='flex items-center justify-between'>
+					<div>
+						<label className='text-sm font-medium text-gray-900'>{label}</label>
+						<p className='text-xs text-gray-500 mt-0.5'>{description}</p>
+					</div>
+					{threshold ? (
+						<Button variant='ghost' size='sm' onClick={() => handleRemoveThreshold(level)} disabled={isSaving}>
+							Remove
+						</Button>
+					) : (
+						<Button variant='outline' size='sm' onClick={() => handleAddThreshold(level)} disabled={isSaving}>
+							Add
+						</Button>
+					)}
+				</div>
+
+				{threshold && (
+					<div className='grid grid-cols-2 gap-3'>
+						<div className='space-y-1'>
+							<label className='text-xs font-medium text-gray-700'>Threshold Value{currency ? ` (${currency})` : ''}</label>
+							<Input
+								placeholder='0.00'
+								value={threshold.threshold}
+								onChange={(value) => handleThresholdChange(level, 'threshold', value)}
+								type='number'
+								step='0.01'
+								disabled={isSaving}
+							/>
+						</div>
+						<div className='space-y-1'>
+							<label className='text-xs font-medium text-gray-700'>Condition</label>
+							<Select
+								options={[
+									{ label: 'Below', value: 'below' },
+									{ label: 'Above', value: 'above' },
+								]}
+								value={threshold.condition}
+								onChange={(value) => handleThresholdChange(level, 'condition', value)}
+								disabled={conditionDisabled || isSaving}
+							/>
+						</div>
+					</div>
+				)}
+			</div>
+		);
+	};
+
+	const handleToggleChange = (enabled: boolean) => {
+		const newState: WalletAlertSettings = { ...localAlertSettings, alert_enabled: enabled };
+		setLocalAlertSettings(newState);
 	};
 
 	return (
@@ -74,69 +245,34 @@ const WalletAlertDialog: React.FC<WalletAlertDialogProps> = ({ open, alertEnable
 			}}
 			title='Wallet Alert Settings'
 			showCloseButton>
-			<div className='flex flex-col gap-6 min-w-[500px]'>
+			<div className='flex flex-col gap-6 min-w-[600px]'>
 				{/* Alert Toggle */}
 				<Toggle
 					title='Enable Alerts'
-					label='Receive notifications when wallet balance is low'
-					description='Get notified when your wallet balance falls below the specified threshold'
-					checked={localAlertEnabled}
-					onChange={setLocalAlertEnabled}
+					label='Monitor wallet balance against configured thresholds'
+					description='Get notified when balance crosses configured thresholds for this wallet'
+					checked={localAlertSettings.alert_enabled || false}
+					onChange={handleToggleChange}
+					disabled={isSaving}
 				/>
 
 				{/* Alert Configuration */}
-				{localAlertEnabled && (
+				{localAlertSettings.alert_enabled && (
 					<div className='space-y-4'>
-						<div className='space-y-2 hidden'>
-							<label className='text-sm font-medium text-gray-700'>Threshold Type</label>
-							<Select
-								options={[
-									{ label: 'Amount', value: 'amount' },
-									{ label: 'Percentage', value: 'percentage' },
-								]}
-								value={localAlertConfig.threshold.type}
-								onChange={(value) =>
-									setLocalAlertConfig({
-										...localAlertConfig,
-										threshold: {
-											...localAlertConfig.threshold,
-											type: value as 'amount' | 'percentage',
-										},
-									})
-								}
-							/>
-						</div>
-
-						<div className='space-y-2'>
-							<label className='text-sm font-medium text-gray-700'>
-								Threshold Value {localAlertConfig.threshold.type === 'amount' ? `(${currency})` : '(%)'}
-							</label>
-							<Input
-								placeholder={localAlertConfig.threshold.type === 'amount' ? '0.00' : '10'}
-								value={localAlertConfig.threshold.value}
-								onChange={(value) =>
-									setLocalAlertConfig({
-										...localAlertConfig,
-										threshold: {
-											...localAlertConfig.threshold,
-											value,
-										},
-									})
-								}
-								type='number'
-								step={localAlertConfig.threshold.type === 'amount' ? '0.01' : '1'}
-								min='0'
-							/>
-						</div>
+						{renderThresholdInput(WalletAlertLevel.CRITICAL, 'Critical Threshold', 'Alert when balance reaches critical level')}
+						{renderThresholdInput(WalletAlertLevel.WARNING, 'Warning Threshold', 'Alert when balance reaches warning level')}
+						{renderThresholdInput(WalletAlertLevel.INFO, 'Info Threshold', 'Alert when balance reaches info level')}
 					</div>
 				)}
 
 				{/* Action Buttons */}
 				<div className='flex justify-end gap-2 mt-6'>
-					<Button variant='outline' onClick={handleClose}>
+					<Button variant='outline' onClick={handleClose} disabled={isSaving}>
 						Cancel
 					</Button>
-					<Button onClick={handleSave}>Save Changes</Button>
+					<Button onClick={handleSave} disabled={isSaving}>
+						{isSaving ? 'Saving...' : 'Save Changes'}
+					</Button>
 				</div>
 			</div>
 		</Dialog>

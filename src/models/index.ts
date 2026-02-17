@@ -153,7 +153,7 @@ export { TenantMetadataKey } from './Tenant';
 export type { User } from './User';
 
 // Wallet
-export type { Wallet } from './Wallet';
+export type { Wallet, WalletAlertSettings, WalletAlertThreshold, WalletAlertState } from './Wallet';
 export {
 	WALLET_STATUS,
 	WALLET_TX_REFERENCE_TYPE,
@@ -162,6 +162,7 @@ export {
 	WALLET_TYPE,
 	WALLET_AUTO_TOPUP_TRIGGER,
 	WALLET_CONFIG_PRICE_TYPE,
+	WalletAlertLevel,
 } from './Wallet';
 
 // WalletBalance
