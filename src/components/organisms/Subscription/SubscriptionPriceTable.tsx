@@ -37,7 +37,7 @@ type ChargeTableData = {
 	priceId: string;
 };
 
-const PriceTable: FC<Props> = ({
+const SubscriptionPriceTable: FC<Props> = ({
 	data,
 	billingPeriod,
 	currency,
@@ -344,4 +344,4 @@ const PriceTable: FC<Props> = ({
 	);
 };
 
-export default PriceTable;
+export default SubscriptionPriceTable;

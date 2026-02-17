@@ -25,7 +25,7 @@ import { SubscriptionDiscountTable, EntitlementOverridesTable } from '@/componen
 import SubscriptionTaxAssociationTable from '@/components/molecules/SubscriptionTaxAssociationTable';
 import PhaseList from './PhaseList';
 import { SubscriptionPhaseCreateRequest, EntitlementOverrideRequest } from '@/types/dto/Subscription';
-import PriceTable from './PriceTable';
+import SubscriptionPriceTable from './SubscriptionPriceTable';
 import { usePriceOverrides } from '@/hooks/usePriceOverrides';
 import { Coupon } from '@/models/Coupon';
 import { InternalCreditGrantRequest, creditGrantToInternal } from '@/types/dto/CreditGrant';
@@ -476,7 +476,7 @@ const SubscriptionForm = ({
 					{/* Subscription Level Price Table */}
 					{currentPrices.length > 0 && (
 						<div className='mt-6 pt-6 border-t border-gray-200'>
-							<PriceTable
+							<SubscriptionPriceTable
 								data={currentPrices}
 								billingPeriod={state.billingPeriod}
 								currency={state.currency}

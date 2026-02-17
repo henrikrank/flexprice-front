@@ -1,6 +1,6 @@
 import { FC, useState } from 'react';
 import { Price } from '@/models/Price';
-import { PriceTable } from './';
+import SubscriptionPriceTable from './SubscriptionPriceTable';
 import { usePriceOverrides } from '@/hooks/usePriceOverrides';
 import { SubscriptionLineItemOverrideRequest, getPriceOverridesSummary } from '@/utils/common/price_override_helpers';
 import { Button, Chip } from '@/components/atoms';
@@ -62,7 +62,12 @@ const SubscriptionWithOverrides: FC<Props> = ({ prices, onCreateSubscription, cl
 			</div>
 
 			{/* Price table with override functionality */}
-			<PriceTable data={prices} onPriceOverride={overridePrice} onResetOverride={resetOverride} overriddenPrices={overriddenPrices} />
+			<SubscriptionPriceTable
+				data={prices}
+				onPriceOverride={overridePrice}
+				onResetOverride={resetOverride}
+				overriddenPrices={overriddenPrices}
+			/>
 
 			{/* Override information */}
 			{hasAnyOverrides() && (
