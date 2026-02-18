@@ -9,6 +9,7 @@ import {
 	SUBSCRIPTION_CANCEL_IMMEDIATELY_INVOICE_POLICY,
 	PAYMENT_BEHAVIOR,
 	COLLECTION_METHOD,
+	PAYMENT_TERMS,
 	SUBSCRIPTION_LINE_ITEM_ENTITY_TYPE,
 	Metadata,
 	Subscription,
@@ -273,6 +274,9 @@ export interface CreateSubscriptionRequest {
 	payment_behavior?: PAYMENT_BEHAVIOR;
 	gateway_payment_method_id?: string;
 	collection_method?: COLLECTION_METHOD;
+
+	// PaymentTerms (e.g. 15 NET, 30 NET) used to compute invoice due date from period end
+	payment_terms?: PAYMENT_TERMS;
 
 	// Proration behavior
 	proration_behavior?: SUBSCRIPTION_PRORATION_BEHAVIOR;

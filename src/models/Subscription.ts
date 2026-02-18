@@ -88,6 +88,8 @@ export interface Subscription extends BaseModel {
 	credit_grants?: CreditGrant[];
 	commitment_amount?: number;
 	overage_factor?: number;
+	/** Payment terms (e.g. 15 NET, 30 NET) used to compute invoice due date from period end */
+	readonly payment_terms?: string;
 
 	// Subscription phases
 	readonly phases?: SubscriptionPhase[];
@@ -203,6 +205,16 @@ export enum COLLECTION_METHOD {
 	CHARGE_AUTOMATICALLY = 'charge_automatically',
 	// Send invoice to customer for manual payment
 	SEND_INVOICE = 'send_invoice',
+}
+
+// PaymentTerms (e.g. 15 NET, 30 NET) used to compute invoice due date from period end
+export enum PAYMENT_TERMS {
+	NET_15 = '15 NET',
+	NET_30 = '30 NET',
+	NET_45 = '45 NET',
+	NET_60 = '60 NET',
+	NET_75 = '75 NET',
+	NET_90 = '90 NET',
 }
 
 // SubscriptionLineItemEntityType is the type of the source of a subscription line item
