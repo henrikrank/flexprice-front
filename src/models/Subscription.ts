@@ -9,7 +9,8 @@ import { Price } from './Price';
 export interface LineItem extends BaseModel {
 	readonly subscription_id: string;
 	readonly customer_id: string;
-	readonly plan_id: string;
+	/** @deprecated Prefer entity_type + entity_id. When entity_type === 'plan', entity_id is the plan ID. */
+	readonly plan_id?: string;
 	readonly price_id: string;
 	readonly meter_id: string;
 	readonly environment_id: string;
@@ -26,6 +27,10 @@ export interface LineItem extends BaseModel {
 	readonly metadata: Metadata;
 	readonly price?: Price;
 	readonly subscription_phase_id?: string;
+	/** Source of the line item: plan, addon, or subscription (subscription-scoped price) */
+	readonly entity_type?: SUBSCRIPTION_LINE_ITEM_ENTITY_TYPE;
+	/** ID of the source entity (plan_id, addon_id, or subscription_id) */
+	readonly entity_id?: string;
 }
 
 export interface Pause extends BaseModel {
@@ -209,6 +214,7 @@ export enum COLLECTION_METHOD {
 export enum SUBSCRIPTION_LINE_ITEM_ENTITY_TYPE {
 	PLAN = 'plan',
 	ADDON = 'addon',
+	SUBSCRIPTION = 'subscription',
 }
 
 // SubscriptionChangeType defines the type of subscription change

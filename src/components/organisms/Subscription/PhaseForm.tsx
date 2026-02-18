@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { DatePicker, Label, Button } from '@/components/atoms';
 import { SubscriptionDiscountTable } from '@/components/molecules';
-import PriceTable from '@/components/organisms/Subscription/PriceTable';
+import SubscriptionPriceTable from '@/components/organisms/Subscription/SubscriptionPriceTable';
 import { Coupon } from '@/models/Coupon';
 import { Price } from '@/models/Price';
 import { usePriceOverrides } from '@/hooks/usePriceOverrides';
@@ -147,7 +147,7 @@ const PhaseForm: React.FC<PhaseFormProps> = ({
 			{/* Price Table with Line Item Coupons */}
 			{prices.length > 0 && (
 				<div className='pt-6 border-t border-gray-200'>
-					<PriceTable
+					<SubscriptionPriceTable
 						data={prices}
 						billingPeriod={billingPeriod}
 						currency={currency}
