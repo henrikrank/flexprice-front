@@ -53,7 +53,7 @@ function getEmptyPrice(
 ): Partial<InternalPrice> {
 	const base = {
 		currency: defaultCurrency ?? 'USD',
-		billing_period: (defaultBillingPeriod as BILLING_PERIOD) ?? BILLING_PERIOD.MONTHLY,
+		billing_period: defaultBillingPeriod ? (defaultBillingPeriod as BILLING_PERIOD) : BILLING_PERIOD.MONTHLY,
 		billing_period_count: 1,
 		invoice_cadence: INVOICE_CADENCE.ARREAR,
 		billing_cadence: BILLING_CADENCE.RECURRING,

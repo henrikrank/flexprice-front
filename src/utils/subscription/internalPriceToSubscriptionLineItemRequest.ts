@@ -61,10 +61,11 @@ export function internalPriceToSubscriptionLineItemRequest(
 	};
 
 	if (partial.price_unit_type === PRICE_UNIT_TYPE.CUSTOM && partial.price_unit_config) {
-		price.price_unit_config = partial.price_unit_config;
-		if (partial.amount && price.price_unit_config) {
-			price.price_unit_config = { ...price.price_unit_config, amount: partial.amount };
+		price.price_unit_config = { ...partial.price_unit_config };
+		if (partial.amount !== undefined) {
+			price.price_unit_config.amount = partial.amount;
 		}
+		delete price.amount;
 	} else {
 		price.amount = partial.amount;
 	}

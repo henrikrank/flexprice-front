@@ -396,7 +396,7 @@ const SubscriptionPriceTable: FC<Props> = ({
 							</>
 						) : (
 							<>
-								<span>Show {mappedData.length - DEFAULT_ROW_LIMIT} more</span>
+								<span>Show {Math.max(0, combinedData.length - DEFAULT_ROW_LIMIT)} more</span>
 								<ChevronDownIcon className='w-4 h-4' />
 							</>
 						)}

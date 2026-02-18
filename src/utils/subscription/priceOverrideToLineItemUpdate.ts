@@ -10,8 +10,11 @@ export function convertPriceOverrideToLineItemUpdate(
 ): UpdateSubscriptionLineItemRequest {
 	const updateData: UpdateSubscriptionLineItemRequest = {};
 
-	if (override.amount) {
-		updateData.amount = parseFloat(override.amount);
+	if (override.amount != null && override.amount !== '') {
+		const parsed = parseFloat(String(override.amount));
+		if (Number.isFinite(parsed)) {
+			updateData.amount = parsed;
+		}
 	}
 
 	if (override.billing_model && override.billing_model !== 'SLAB_TIERED') {
