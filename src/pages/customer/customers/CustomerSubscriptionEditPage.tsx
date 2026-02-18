@@ -331,6 +331,7 @@ const CustomerSubscriptionEditPage: React.FC = () => {
 					defaultCurrency={subscriptionDetails?.currency}
 					defaultBillingPeriod={subscriptionDetails?.billing_period}
 					defaultStartDate={subscriptionDetails?.start_date}
+					subscriptionId={subscriptionId}
 				/>
 
 				<Spacer className='!h-20' />

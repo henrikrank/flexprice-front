@@ -1,4 +1,4 @@
-import { BILLING_CADENCE, BILLING_MODEL, BILLING_PERIOD, INVOICE_CADENCE, PRICE_TYPE, PRICE_UNIT_TYPE } from '@/models';
+import { BILLING_CADENCE, BILLING_MODEL, BILLING_PERIOD, INVOICE_CADENCE, PRICE_TYPE, TIER_MODE, PRICE_UNIT_TYPE } from '@/models';
 import type { CreateSubscriptionLineItemRequest, SubscriptionPriceCreateRequest } from '@/types/dto/Subscription';
 import type { InternalPrice } from '@/components/organisms/PlanForm/SetupChargesSection';
 import { PriceInternalState } from '@/components/organisms/PlanForm/UsagePricingForm';
@@ -7,14 +7,45 @@ import { PriceInternalState } from '@/components/organisms/PlanForm/UsagePricing
 export type AddedSubscriptionLineItemLike = CreateSubscriptionLineItemRequest & { tempId: string };
 
 /**
- * Converts form state from RecurringChargesForm (InternalPrice) into
+ * Converts form state (InternalPrice from RecurringChargesForm or UsagePricingForm) into
  * CreateSubscriptionLineItemRequest for subscription-level line items.
- * Used when adding a recurring charge via Add Subscription Charge dialog.
  */
 export function internalPriceToSubscriptionLineItemRequest(
 	partial: Partial<InternalPrice>,
 	quantity?: number,
 ): CreateSubscriptionLineItemRequest {
+	const isUsage = partial.type === PRICE_TYPE.USAGE;
+
+	if (isUsage) {
+		const price: SubscriptionPriceCreateRequest = {
+			type: PRICE_TYPE.USAGE,
+			price_unit_type: partial.price_unit_type ?? PRICE_UNIT_TYPE.FIAT,
+			billing_period: (partial.billing_period as BILLING_PERIOD) ?? BILLING_PERIOD.MONTHLY,
+			billing_period_count: partial.billing_period_count ?? 1,
+			billing_model: (partial.billing_model as BILLING_MODEL) ?? BILLING_MODEL.FLAT_FEE,
+			billing_cadence: partial.billing_cadence ?? BILLING_CADENCE.RECURRING,
+			invoice_cadence: (partial.invoice_cadence as INVOICE_CADENCE) ?? INVOICE_CADENCE.ARREAR,
+			display_name: partial.display_name,
+			start_date: partial.start_date,
+			meter_id: partial.meter_id,
+			filter_values: partial.filter_values ?? undefined,
+		};
+		if (partial.amount != null) price.amount = partial.amount;
+		if (partial.tier_mode != null) price.tier_mode = partial.tier_mode as TIER_MODE;
+		if (partial.tiers?.length) price.tiers = partial.tiers;
+		if (partial.transform_quantity) price.transform_quantity = partial.transform_quantity;
+		if (partial.price_unit_type === PRICE_UNIT_TYPE.CUSTOM && partial.price_unit_config) {
+			price.price_unit_config = partial.price_unit_config;
+		}
+		return {
+			price,
+			quantity: 0,
+			display_name: partial.display_name,
+			start_date: partial.start_date,
+		};
+	}
+
+	// FIXED (recurring)
 	const price: SubscriptionPriceCreateRequest = {
 		type: partial.type ?? PRICE_TYPE.FIXED,
 		price_unit_type: partial.price_unit_type ?? PRICE_UNIT_TYPE.FIAT,
@@ -31,7 +62,6 @@ export function internalPriceToSubscriptionLineItemRequest(
 
 	if (partial.price_unit_type === PRICE_UNIT_TYPE.CUSTOM && partial.price_unit_config) {
 		price.price_unit_config = partial.price_unit_config;
-		// For CUSTOM FLAT_FEE, amount lives in price_unit_config
 		if (partial.amount && price.price_unit_config) {
 			price.price_unit_config = { ...price.price_unit_config, amount: partial.amount };
 		}
@@ -39,13 +69,12 @@ export function internalPriceToSubscriptionLineItemRequest(
 		price.amount = partial.amount;
 	}
 
-	const req: CreateSubscriptionLineItemRequest = {
+	return {
 		price,
 		quantity: quantity ?? partial.min_quantity ?? 1,
 		display_name: partial.display_name,
 		start_date: partial.start_date,
 	};
-	return req;
 }
 
 export interface SubscriptionLineItemToInternalPriceDefaults {
@@ -54,8 +83,8 @@ export interface SubscriptionLineItemToInternalPriceDefaults {
 }
 
 /**
- * Converts an added subscription line item back to RecurringChargesForm state (InternalPrice).
- * Used when editing an existing subscription-level charge so the form can be pre-filled.
+ * Converts an added subscription line item back to form state (InternalPrice).
+ * Used when editing an existing subscription-level charge so RecurringChargesForm or UsagePricingForm can be pre-filled.
  */
 export function subscriptionLineItemToInternalPrice(
 	item: AddedSubscriptionLineItemLike,
@@ -70,6 +99,7 @@ export function subscriptionLineItemToInternalPrice(
 			internal_state: PriceInternalState.EDIT,
 		};
 	}
+	const isUsage = (p.type as string) === PRICE_TYPE.USAGE;
 	const isCustom = p.price_unit_type === PRICE_UNIT_TYPE.CUSTOM;
 	const base: Partial<InternalPrice> = {
 		display_name: item.display_name ?? p.display_name ?? '',
@@ -84,6 +114,28 @@ export function subscriptionLineItemToInternalPrice(
 		price_unit_type: p.price_unit_type ?? PRICE_UNIT_TYPE.FIAT,
 		internal_state: PriceInternalState.EDIT,
 	};
+
+	if (isUsage) {
+		const usageBase: Partial<InternalPrice> = {
+			...base,
+			type: PRICE_TYPE.USAGE,
+			meter_id: p.meter_id,
+			filter_values: p.filter_values,
+			tier_mode: p.tier_mode,
+			tiers: p.tiers as InternalPrice['tiers'],
+			transform_quantity: p.transform_quantity ?? undefined,
+			currency: (p as { currency?: string }).currency ?? defaults?.currency ?? 'USD',
+		};
+		const pWithMeter = p as SubscriptionPriceCreateRequest & { meter?: unknown };
+		if (pWithMeter.meter) {
+			(usageBase as Record<string, unknown>).meter = pWithMeter.meter;
+		}
+		if (isCustom && p.price_unit_config) {
+			return { ...usageBase, price_unit_config: p.price_unit_config, amount: p.price_unit_config.amount ?? p.amount };
+		}
+		return { ...usageBase, amount: p.amount };
+	}
+
 	if (isCustom && p.price_unit_config) {
 		return {
 			...base,
