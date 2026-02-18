@@ -1,5 +1,5 @@
 import { FC } from 'react';
-import { Card } from '@/components/atoms';
+import { Card, AddButton, NoDataCard } from '@/components/atoms';
 import SubscriptionLineItemTable from '@/components/molecules/SubscriptionLineItemTable/SubscriptionLineItemTable';
 import type { LineItem } from '@/models/Subscription';
 import formatDate from '@/utils/common/format_date';
@@ -14,6 +14,10 @@ export interface SubscriptionEditChargesSectionProps {
 	isLoading: boolean;
 	onEditLineItem: (lineItem: LineItem) => void;
 	onTerminateLineItem: (lineItemId: string, endDate?: string) => void;
+	/** When provided, shows Add charge button next to Charges header. */
+	onAddCharge?: () => void;
+	/** Disable Add charge button (e.g. when subscription is cancelled/trialing). */
+	isAddChargeDisabled?: boolean;
 }
 
 const SubscriptionEditChargesSection: FC<SubscriptionEditChargesSectionProps> = ({
@@ -23,6 +27,8 @@ const SubscriptionEditChargesSection: FC<SubscriptionEditChargesSectionProps> = 
 	isLoading,
 	onEditLineItem,
 	onTerminateLineItem,
+	onAddCharge,
+	isAddChargeDisabled = false,
 }) => {
 	const hasWithoutPhase = groupedLineItems.withoutPhase.length > 0;
 	const phaseIds = Object.keys(groupedLineItems.byPhase);
@@ -38,21 +44,41 @@ const SubscriptionEditChargesSection: FC<SubscriptionEditChargesSectionProps> = 
 		return new Date(startDateA).getTime() - new Date(startDateB).getTime();
 	});
 
+	const chargesHeader = (count: number) => (
+		<div className='flex items-center justify-between gap-2 mb-4'>
+			<div className='flex items-center gap-2'>
+				<h3 className='text-lg font-semibold text-gray-900'>Charges</h3>
+				<span className='text-sm text-gray-500'>({count} items)</span>
+			</div>
+			{onAddCharge && <AddButton onClick={onAddCharge} disabled={isAddChargeDisabled} />}
+		</div>
+	);
+
 	return (
 		<>
 			{hasWithoutPhase && (
-				<div className='space-y-4'>
-					<div className='flex items-center gap-2'>
-						<h3 className='text-lg font-semibold text-gray-900'>Charges</h3>
-						<span className='text-sm text-gray-500'>({groupedLineItems.withoutPhase.length} items)</span>
-					</div>
+				<Card variant='notched'>
+					{chargesHeader(groupedLineItems.withoutPhase.length)}
 					<SubscriptionLineItemTable
 						data={groupedLineItems.withoutPhase}
 						isLoading={isLoading}
 						onEdit={onEditLineItem}
 						onTerminate={onTerminateLineItem}
+						hideCardWrapper={true}
 					/>
-				</div>
+				</Card>
+			)}
+
+			{isEmpty && onAddCharge && (
+				<NoDataCard
+					title='Charges'
+					subtitle='No charges found for this subscription yet'
+					cta={<AddButton onClick={onAddCharge} disabled={isAddChargeDisabled} />}
+				/>
+			)}
+
+			{isEmpty && !onAddCharge && (
+				<SubscriptionLineItemTable data={allLineItems} isLoading={isLoading} onEdit={onEditLineItem} onTerminate={onTerminateLineItem} />
 			)}
 
 			{hasPhases && (
@@ -83,10 +109,6 @@ const SubscriptionEditChargesSection: FC<SubscriptionEditChargesSectionProps> = 
 						);
 					})}
 				</div>
-			)}
-
-			{isEmpty && (
-				<SubscriptionLineItemTable data={allLineItems} isLoading={isLoading} onEdit={onEditLineItem} onTerminate={onTerminateLineItem} />
 			)}
 		</>
 	);

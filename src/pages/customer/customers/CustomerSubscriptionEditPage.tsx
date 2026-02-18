@@ -16,7 +16,15 @@ import toast from 'react-hot-toast';
 import { useParams } from 'react-router';
 import { LineItem, SUBSCRIPTION_STATUS } from '@/models/Subscription';
 import PriceOverrideDialog from '@/components/molecules/PriceOverrideDialog/PriceOverrideDialog';
-import { DeleteSubscriptionLineItemRequest, UpdateSubscriptionLineItemRequest, UpdateSubscriptionRequest } from '@/types/dto/Subscription';
+import AddSubscriptionChargeDialog, {
+	type AddedSubscriptionLineItem,
+} from '@/components/organisms/Subscription/AddSubscriptionChargeDialog';
+import {
+	CreateSubscriptionLineItemRequest,
+	DeleteSubscriptionLineItemRequest,
+	UpdateSubscriptionLineItemRequest,
+	UpdateSubscriptionRequest,
+} from '@/types/dto/Subscription';
 import { ExtendedPriceOverride } from '@/utils/common/price_override_helpers';
 import { convertPriceOverrideToLineItemUpdate } from '@/utils/subscription/priceOverrideToLineItemUpdate';
 import { lineItemToPrice } from '@/utils/subscription/lineItemToPrice';
@@ -38,6 +46,7 @@ const CustomerSubscriptionEditPage: React.FC = () => {
 	const [creditGrantToCancel, setCreditGrantToCancel] = useState<CreditGrant | null>(null);
 
 	const [updateSubscriptionDrawerOpen, setUpdateSubscriptionDrawerOpen] = useState(false);
+	const [isAddChargeDialogOpen, setIsAddChargeDialogOpen] = useState(false);
 
 	const { updateBreadcrumb } = useBreadcrumbsStore();
 
@@ -101,6 +110,20 @@ const CustomerSubscriptionEditPage: React.FC = () => {
 		},
 		onError: (error: { error?: { message?: string } }) => {
 			toast.error(error?.error?.message || 'Failed to terminate line item');
+		},
+	});
+
+	const { mutate: createLineItem } = useMutation({
+		mutationFn: async (payload: CreateSubscriptionLineItemRequest) => {
+			return await SubscriptionApi.createSubscriptionLineItem(subscriptionId!, payload);
+		},
+		onSuccess: () => {
+			toast.success('Charge added successfully');
+			refetchQueries(['subscriptionDetailsEditPage', subscriptionId!]);
+			setIsAddChargeDialogOpen(false);
+		},
+		onError: (error: { error?: { message?: string } }) => {
+			toast.error(error?.error?.message || 'Failed to add charge');
 		},
 	});
 
@@ -218,6 +241,14 @@ const CustomerSubscriptionEditPage: React.FC = () => {
 		setCreditGrantToCancel(null);
 	}, []);
 
+	const handleAddChargeSave = useCallback(
+		(item: AddedSubscriptionLineItem) => {
+			const { tempId: _tempId, ...request } = item;
+			createLineItem(request as CreateSubscriptionLineItemRequest);
+		},
+		[createLineItem],
+	);
+
 	if (isSubscriptionDetailsLoading) {
 		return <Loader />;
 	}
@@ -251,6 +282,11 @@ const CustomerSubscriptionEditPage: React.FC = () => {
 					isLoading={isSubscriptionDetailsLoading}
 					onEditLineItem={handleEditLineItem}
 					onTerminateLineItem={handleTerminateLineItem}
+					onAddCharge={() => setIsAddChargeDialogOpen(true)}
+					isAddChargeDisabled={
+						subscriptionDetails?.subscription_status === SUBSCRIPTION_STATUS.CANCELLED ||
+						subscriptionDetails?.subscription_status === SUBSCRIPTION_STATUS.TRIALING
+					}
 				/>
 
 				<SubscriptionEditCreditGrantsSection
@@ -287,6 +323,15 @@ const CustomerSubscriptionEditPage: React.FC = () => {
 						showEffectiveFrom={true}
 					/>
 				)}
+
+				<AddSubscriptionChargeDialog
+					isOpen={isAddChargeDialogOpen}
+					onOpenChange={setIsAddChargeDialogOpen}
+					onSave={handleAddChargeSave}
+					defaultCurrency={subscriptionDetails?.currency}
+					defaultBillingPeriod={subscriptionDetails?.billing_period}
+					defaultStartDate={subscriptionDetails?.start_date}
+				/>
 
 				<Spacer className='!h-20' />
 			</div>

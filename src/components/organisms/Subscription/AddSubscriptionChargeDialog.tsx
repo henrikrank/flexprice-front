@@ -20,11 +20,13 @@ interface AddSubscriptionChargeDialogProps {
 	onSave: (item: AddedSubscriptionLineItem) => void;
 	defaultCurrency?: string;
 	defaultBillingPeriod?: string;
+	/** Default start date for new charges (e.g. subscription start_date in ISO format). */
+	defaultStartDate?: string;
 	/** When set, dialog is in edit mode: form pre-filled and save updates this item (same tempId). */
 	initialItem?: AddedSubscriptionLineItem | null;
 }
 
-const getEmptyPrice = (defaultCurrency?: string, defaultBillingPeriod?: string): Partial<InternalPrice> => ({
+const getEmptyPrice = (defaultCurrency?: string, defaultBillingPeriod?: string, defaultStartDate?: string): Partial<InternalPrice> => ({
 	amount: '',
 	currency: defaultCurrency ?? 'USD',
 	billing_period: (defaultBillingPeriod as BILLING_PERIOD) ?? BILLING_PERIOD.MONTHLY,
@@ -35,6 +37,7 @@ const getEmptyPrice = (defaultCurrency?: string, defaultBillingPeriod?: string):
 	type: PRICE_TYPE.FIXED,
 	display_name: '',
 	min_quantity: 1,
+	start_date: defaultStartDate,
 	internal_state: PriceInternalState.NEW,
 });
 
@@ -44,9 +47,10 @@ const AddSubscriptionChargeDialog: React.FC<AddSubscriptionChargeDialogProps> = 
 	onSave,
 	defaultCurrency,
 	defaultBillingPeriod,
+	defaultStartDate,
 	initialItem = null,
 }) => {
-	const [price, setPrice] = useState<Partial<InternalPrice>>(() => getEmptyPrice(defaultCurrency, defaultBillingPeriod));
+	const [price, setPrice] = useState<Partial<InternalPrice>>(() => getEmptyPrice(defaultCurrency, defaultBillingPeriod, defaultStartDate));
 
 	useEffect(() => {
 		if (isOpen) {
@@ -58,10 +62,10 @@ const AddSubscriptionChargeDialog: React.FC<AddSubscriptionChargeDialogProps> = 
 					}),
 				);
 			} else {
-				setPrice(getEmptyPrice(defaultCurrency, defaultBillingPeriod));
+				setPrice(getEmptyPrice(defaultCurrency, defaultBillingPeriod, defaultStartDate));
 			}
 		}
-	}, [isOpen, defaultCurrency, defaultBillingPeriod, initialItem]);
+	}, [isOpen, defaultCurrency, defaultBillingPeriod, defaultStartDate, initialItem]);
 
 	const handleAdd = (partial: Partial<InternalPrice>) => {
 		const quantity = partial.min_quantity != null ? Number(partial.min_quantity) : 1;

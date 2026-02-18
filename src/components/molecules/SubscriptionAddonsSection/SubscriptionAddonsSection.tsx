@@ -1,7 +1,7 @@
 import { FC, useState, useMemo, useCallback, ReactNode } from 'react';
 import { useQuery, useQueryClient, useMutation } from '@tanstack/react-query';
 import { Trash2 } from 'lucide-react';
-import { Button, Card, CardHeader, Chip, Dialog, AddButton, Tooltip } from '@/components/atoms';
+import { Button, Card, CardHeader, Chip, Dialog, AddButton, Tooltip, NoDataCard } from '@/components/atoms';
 import { FlexpriceTable, ColumnData } from '@/components/molecules';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { BsThreeDotsVertical } from 'react-icons/bs';
@@ -307,7 +307,7 @@ const SubscriptionAddonsSection: FC<SubscriptionAddonsSectionProps> = ({ subscri
 	if (isLoading) {
 		return (
 			<Card variant='notched'>
-				<CardHeader title='Addons' cta={<AddButton onClick={() => setIsAddDialogOpen(true)} label='Add Addon' />} />
+				<CardHeader title='Addons' cta={<AddButton onClick={() => setIsAddDialogOpen(true)} />} />
 				<div className='flex justify-center items-center py-8'>
 					<span className='text-gray-500'>Loading addons...</span>
 				</div>
@@ -321,16 +321,18 @@ const SubscriptionAddonsSection: FC<SubscriptionAddonsSectionProps> = ({ subscri
 
 	return (
 		<>
-			<Card variant='notched'>
-				<CardHeader title='Addons' cta={<AddButton onClick={() => setIsAddDialogOpen(true)} label='Add Addon' />} />
-				{processedAddonAssociations.length > 0 ? (
+			{processedAddonAssociations.length > 0 ? (
+				<Card variant='notched'>
+					<CardHeader title='Addons' cta={<AddButton onClick={() => setIsAddDialogOpen(true)} label='Add Addon' />} />
 					<FlexpriceTable showEmptyRow data={processedAddonAssociations} columns={columns} variant='no-bordered' />
-				) : (
-					<div className='flex flex-col items-center justify-center py-12 text-center'>
-						<p className='text-gray-500 text-sm'>No addons added to this subscription yet</p>
-					</div>
-				)}
-			</Card>
+				</Card>
+			) : (
+				<NoDataCard
+					title='Addons'
+					subtitle='No addons added to this subscription yet'
+					cta={<AddButton onClick={() => setIsAddDialogOpen(true)} label='Add Addon' />}
+				/>
+			)}
 
 			{/* Add Addon Dialog */}
 			<AddAddonDialog

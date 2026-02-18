@@ -1,5 +1,5 @@
 import { FC, useMemo } from 'react';
-import { Card, FormHeader, AddButton } from '@/components/atoms';
+import { Card, FormHeader, AddButton, NoDataCard } from '@/components/atoms';
 import { ActionButton } from '@/components/atoms';
 import FlexpriceTable, { ColumnData } from '@/components/molecules/Table';
 import EditSubscriptionCreditGrantModal from '@/components/molecules/CreditGrant/EditSubscriptionCreditGrantModal';
@@ -97,14 +97,24 @@ const SubscriptionEditCreditGrantsSection: FC<SubscriptionEditCreditGrantsSectio
 	);
 
 	return (
-		<Card variant='notched'>
-			<div className='flex items-center justify-between mb-4'>
-				<FormHeader title='Credit Grants' variant='sub-header' titleClassName='font-semibold' className='mb-0' />
-				<AddButton onClick={onAddClick} disabled={isAddDisabled} />
-			</div>
-			<div className='mt-4'>
-				<FlexpriceTable showEmptyRow={true} data={creditGrants} columns={columns} />
-			</div>
+		<>
+			{creditGrants.length > 0 ? (
+				<Card variant='notched'>
+					<div className='flex items-center justify-between mb-4'>
+						<FormHeader title='Credit Grants' variant='sub-header' titleClassName='font-semibold' className='mb-0' />
+						<AddButton onClick={onAddClick} disabled={isAddDisabled} />
+					</div>
+					<div className='mt-4'>
+						<FlexpriceTable showEmptyRow={false} data={creditGrants} columns={columns} />
+					</div>
+				</Card>
+			) : (
+				<NoDataCard
+					title='Credit Grants'
+					subtitle='No credit grants added to this subscription yet'
+					cta={<AddButton onClick={onAddClick} disabled={isAddDisabled} />}
+				/>
+			)}
 
 			<EditSubscriptionCreditGrantModal
 				isOpen={isAddModalOpen}
@@ -123,7 +133,7 @@ const SubscriptionEditCreditGrantsSection: FC<SubscriptionEditCreditGrantsSectio
 				onCancel={onCloseCancelModal}
 				creditGrant={creditGrantToCancel}
 			/>
-		</Card>
+		</>
 	);
 };
 

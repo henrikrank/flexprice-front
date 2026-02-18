@@ -1,7 +1,7 @@
 import { FC, useState, useMemo } from 'react';
 import { useQuery, useQueryClient, useMutation } from '@tanstack/react-query';
 import { Plus, Trash2 } from 'lucide-react';
-import { Button, Card, CardHeader, Chip, NoDataCard, Dialog } from '@/components/atoms';
+import { Button, Card, CardHeader, Chip, Dialog, NoDataCard } from '@/components/atoms';
 import { FlexpriceTable, ColumnData, AddEntitlementDrawer } from '@/components/molecules';
 import SubscriptionApi from '@/api/SubscriptionApi';
 import EntitlementApi from '@/api/EntitlementApi';
