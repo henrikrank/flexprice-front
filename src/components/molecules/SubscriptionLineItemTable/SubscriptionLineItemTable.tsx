@@ -1,7 +1,7 @@
 import { Card, CardHeader, NoDataCard, Chip, Tooltip } from '@/components/atoms';
 import { ChargeValueCell, ColumnData, FlexpriceTable, TerminateLineItemModal, DropdownMenu } from '@/components/molecules';
 import { PriceTooltip } from '@/components/molecules/PriceTooltip';
-import { LineItem } from '@/models/Subscription';
+import { LineItem, SUBSCRIPTION_LINE_ITEM_ENTITY_TYPE } from '@/models/Subscription';
 import { FC, useState, useCallback, useMemo } from 'react';
 import { Trash2, Pencil } from 'lucide-react';
 import { ENTITY_STATUS } from '@/models/base';
@@ -97,6 +97,36 @@ const getLineItemStatus = (lineItem: LineItem): PRICE_STATUS => {
 
 	// Default to active
 	return PRICE_STATUS.ACTIVE;
+};
+
+const getEntityLabel = (entityType?: string): string => {
+	if (!entityType) return '--';
+	switch (entityType.toLowerCase()) {
+		case SUBSCRIPTION_LINE_ITEM_ENTITY_TYPE.PLAN:
+			return 'Plan';
+		case SUBSCRIPTION_LINE_ITEM_ENTITY_TYPE.ADDON:
+			return 'Addon';
+		case SUBSCRIPTION_LINE_ITEM_ENTITY_TYPE.SUBSCRIPTION:
+			return 'Subscription';
+		default:
+			return entityType;
+	}
+};
+
+type EntityChipVariant = 'default' | 'info' | 'success' | 'warning';
+
+const getEntityChipVariant = (entityType?: string): EntityChipVariant => {
+	if (!entityType) return 'default';
+	switch (entityType.toLowerCase()) {
+		case SUBSCRIPTION_LINE_ITEM_ENTITY_TYPE.PLAN:
+			return 'info';
+		case SUBSCRIPTION_LINE_ITEM_ENTITY_TYPE.SUBSCRIPTION:
+			return 'success';
+		case SUBSCRIPTION_LINE_ITEM_ENTITY_TYPE.ADDON:
+			return 'warning';
+		default:
+			return 'default';
+	}
 };
 
 const getStatusChipVariant = (status: PRICE_STATUS): 'info' | 'default' | 'success' => {
@@ -224,72 +254,93 @@ const SubscriptionLineItemTable: FC<Props> = ({ data, onEdit, onTerminate, isLoa
 		});
 	}, [data]);
 
-	// ===== TABLE COLUMNS =====
-	const columns: ColumnData<LineItemWithStatus>[] = [
-		{
-			title: 'Display Name',
-			fieldName: 'display_name',
-		},
-		{
-			title: 'Price Type',
-			render: (row) => <span>{getPriceTypeLabel(row.price_type)}</span>,
-		},
-		{
-			title: 'Billing Period',
-			render: (row) => formatBillingPeriodForDisplay(row.billing_period),
-		},
-		{
-			title: 'Status',
-			render(rowData) {
-				return (
-					<Tooltip
-						content={rowData.tooltipContent}
-						delayDuration={0}
-						sideOffset={5}
-						className='bg-white border border-gray-200 shadow-lg text-sm text-gray-900 px-4 py-3 rounded-[6px] max-w-[320px]'>
-						<span>
-							<Chip label={rowData.statusLabel} variant={rowData.statusVariant} />
-						</span>
-					</Tooltip>
-				);
-			},
-		},
-		{
-			title: 'Charge',
-			render: (row) => {
-				if (!row.price) return '--';
-				const isSubscriptionOverride = row.price.entity_type === PRICE_ENTITY_TYPE.SUBSCRIPTION;
-				return (
-					<div className='flex items-center gap-2'>
-						<ChargeValueCell data={row.price} />
-						{isSubscriptionOverride && <PriceTooltip data={row.price} isSubscriptionOverride={true} />}
-					</div>
-				);
-			},
-		},
-		{
-			fieldVariant: 'interactive',
-			width: '30px',
-			hideOnEmpty: true,
-			render: (row) => {
-				const isArchived = row.status === ENTITY_STATUS.ARCHIVED;
-				const defaultEndDate = '0001-01-01T00:00:00Z';
-				const hasEndDate = !!(row.end_date && row.end_date.trim() !== '' && row.end_date !== defaultEndDate);
-				const isTerminateDisabled = isArchived || hasEndDate;
-				const isEditDisabled = isArchived || hasEndDate || row.price_type !== PRICE_TYPE.USAGE;
+	// Show Entity column only when data has multiple different entity types
+	const hasMultipleEntityTypes = useMemo(() => {
+		if (!data?.length) return false;
+		const types = new Set(data.map((item) => (item.entity_type ?? '').toLowerCase()).filter(Boolean));
+		return types.size > 1;
+	}, [data]);
 
-				return (
-					<LineItemDropdown
-						row={row}
-						isEditDisabled={isEditDisabled}
-						isTerminateDisabled={isTerminateDisabled}
-						onEdit={handleEditClick}
-						onTerminate={handleTerminateClick}
-					/>
-				);
+	// ===== TABLE COLUMNS =====
+	const columns: ColumnData<LineItemWithStatus>[] = useMemo(
+		() => [
+			{
+				title: 'Display Name',
+				fieldName: 'display_name',
 			},
-		},
-	];
+			{
+				title: 'Price Type',
+				render: (row) => <span>{getPriceTypeLabel(row.price_type)}</span>,
+			},
+			{
+				title: 'Billing Period',
+				render: (row) => formatBillingPeriodForDisplay(row.billing_period),
+			},
+			...(hasMultipleEntityTypes
+				? [
+						{
+							title: 'Source',
+							render: (row: LineItemWithStatus) => (
+								<Chip label={getEntityLabel(row.entity_type)} variant={getEntityChipVariant(row.entity_type)} />
+							),
+						},
+					]
+				: []),
+			{
+				title: 'Status',
+				render(rowData) {
+					return (
+						<Tooltip
+							content={rowData.tooltipContent}
+							delayDuration={0}
+							sideOffset={5}
+							className='bg-white border border-gray-200 shadow-lg text-sm text-gray-900 px-4 py-3 rounded-[6px] max-w-[320px]'>
+							<span>
+								<Chip label={rowData.statusLabel} variant={rowData.statusVariant} />
+							</span>
+						</Tooltip>
+					);
+				},
+			},
+			{
+				title: 'Charge',
+				render: (row) => {
+					if (!row.price) return '--';
+					const isSubscriptionOverride =
+						row.price.entity_type === PRICE_ENTITY_TYPE.SUBSCRIPTION && row.entity_type === SUBSCRIPTION_LINE_ITEM_ENTITY_TYPE.PLAN;
+					return (
+						<div className='flex items-center gap-2'>
+							<ChargeValueCell data={row.price} />
+							{isSubscriptionOverride && <PriceTooltip data={row.price} isSubscriptionOverride={true} />}
+						</div>
+					);
+				},
+			},
+			{
+				fieldVariant: 'interactive',
+				width: '30px',
+				hideOnEmpty: true,
+				render: (row) => {
+					const isArchived = row.status === ENTITY_STATUS.ARCHIVED;
+					const defaultEndDate = '0001-01-01T00:00:00Z';
+					const hasEndDate = !!(row.end_date && row.end_date.trim() !== '' && row.end_date !== defaultEndDate);
+					const isTerminateDisabled = isArchived || hasEndDate;
+					const isEditDisabled = isArchived || hasEndDate || row.price_type !== PRICE_TYPE.USAGE;
+
+					return (
+						<LineItemDropdown
+							row={row}
+							isEditDisabled={isEditDisabled}
+							isTerminateDisabled={isTerminateDisabled}
+							onEdit={handleEditClick}
+							onTerminate={handleTerminateClick}
+						/>
+					);
+				},
+			},
+		],
+		[hasMultipleEntityTypes],
+	);
 
 	if (isLoading) {
 		if (hideCardWrapper) {
