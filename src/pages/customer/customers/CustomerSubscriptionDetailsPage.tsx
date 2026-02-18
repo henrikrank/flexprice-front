@@ -17,20 +17,21 @@ import { TAXRATE_ENTITY_TYPE } from '@/models/Tax';
 import TaxAssociationTable from '@/components/molecules/TaxAssociationTable';
 import { SUBSCRIPTION_STATUS } from '@/models/Subscription';
 import { Subscription as SubscriptionType } from '@/models/Subscription';
+import { BILLING_PERIOD } from '@/constants/constants';
 import { ExternalLink } from 'lucide-react';
 
 function getCommitmentPeriodLabel(subscription: SubscriptionType | undefined): string {
 	const period = subscription?.billing_period;
 	const count = subscription?.billing_period_count ?? 1;
 	if (!period) return '--';
-	if (period === 'ANNUAL') return 'Annual';
-	if (period === 'MONTHLY' && count === 12) return 'Annual';
-	if (period === 'MONTHLY' && count === 1) return 'Monthly';
-	if (period === 'QUARTERLY') return 'Quarterly';
-	if (period === 'HALF_YEARLY') return 'Half-Yearly';
-	if (period === 'WEEKLY') return 'Weekly';
-	if (period === 'DAILY') return 'Daily';
-	if (period === 'MONTHLY') return `${count} months`;
+	if (period === BILLING_PERIOD.ANNUAL) return 'Annual';
+	if (period === BILLING_PERIOD.MONTHLY && count === 12) return 'Annual';
+	if (period === BILLING_PERIOD.MONTHLY && count === 1) return 'Monthly';
+	if (period === BILLING_PERIOD.QUARTERLY) return 'Quarterly';
+	if (period === BILLING_PERIOD.HALF_YEARLY) return 'Half-Yearly';
+	if (period === BILLING_PERIOD.WEEKLY) return 'Weekly';
+	if (period === BILLING_PERIOD.DAILY) return 'Daily';
+	if (period === BILLING_PERIOD.MONTHLY) return `${count} months`;
 	return '--';
 }
 
