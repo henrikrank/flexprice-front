@@ -15,7 +15,7 @@ import {
 	CREDIT_GRANT_PERIOD_UNIT,
 	CREDIT_GRANT_SCOPE,
 } from '@/models';
-import { BILLING_PERIOD } from '@/constants/constants';
+import { BILLING_PERIOD, PAYMENT_TERMS_NONE, paymentTermsOptions } from '@/constants/constants';
 import { SubscriptionFormState } from '@/pages';
 import { useQuery } from '@tanstack/react-query';
 import { PlanApi } from '@/api/PlanApi';
@@ -778,6 +778,20 @@ const SubscriptionForm = ({
 						disabled={isDisabled}
 						billingPeriod={state.billingPeriod}
 						currency={state.currency}
+					/>
+				</div>
+			)}
+
+			{/* Payment Terms */}
+			{state.selectedPlan && !isLoadingPlanDetails && (
+				<div className='mt-6 pt-6 border-t border-gray-200'>
+					<Select
+						value={state.paymentTerms ?? PAYMENT_TERMS_NONE}
+						options={paymentTermsOptions}
+						onChange={(value) => setState((prev) => ({ ...prev, paymentTerms: value === PAYMENT_TERMS_NONE ? undefined : value }))}
+						label='Payment terms'
+						disabled={isDisabled || isLoadingPlanDetails}
+						placeholder='Select payment terms'
 					/>
 				</div>
 			)}

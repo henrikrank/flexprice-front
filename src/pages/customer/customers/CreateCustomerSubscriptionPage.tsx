@@ -21,10 +21,11 @@ import {
 	EXPAND,
 	BILLING_CYCLE,
 	INVOICE_BILLING,
+	PAYMENT_TERMS,
 	SUBSCRIPTION_STATUS,
 } from '@/models';
 import { InternalCreditGrantRequest, creditGrantToInternal, internalToCreateRequest } from '@/types/dto/CreditGrant';
-import { BILLING_PERIOD, SANDBOX_AUTO_CANCELLATION_DAYS } from '@/constants/constants';
+import { BILLING_PERIOD, PAYMENT_TERMS_NONE, SANDBOX_AUTO_CANCELLATION_DAYS } from '@/constants/constants';
 
 import {
 	PlanResponse,
@@ -84,6 +85,7 @@ export type SubscriptionFormState = {
 	enable_true_up: boolean;
 	commitmentDuration: string;
 	invoiceBillingConfig?: INVOICE_BILLING;
+	paymentTerms?: string;
 	hasModifiedPlanCreditGrants?: boolean;
 	addedSubscriptionLineItems: AddedSubscriptionLineItem[];
 };
@@ -256,6 +258,7 @@ const CreateCustomerSubscriptionPage: React.FC = () => {
 		enable_true_up: false,
 		commitmentDuration: BILLING_PERIOD.MONTHLY.toUpperCase(),
 		invoiceBillingConfig: undefined,
+		paymentTerms: undefined,
 		hasModifiedPlanCreditGrants: false,
 		addedSubscriptionLineItems: [],
 	});
@@ -449,6 +452,7 @@ const CreateCustomerSubscriptionPage: React.FC = () => {
 			entitlementOverrides,
 			creditGrants,
 			invoiceBillingConfig,
+			paymentTerms,
 			addedSubscriptionLineItems,
 		} = subscriptionState;
 
@@ -545,6 +549,7 @@ const CreateCustomerSubscriptionPage: React.FC = () => {
 			entitlementOverrides,
 			creditGrants,
 			invoiceBillingConfig,
+			paymentTerms,
 			sanitizedAddons,
 			addedSubscriptionLineItems,
 		};
@@ -598,6 +603,8 @@ const CreateCustomerSubscriptionPage: React.FC = () => {
 			commitment_duration: sanitized.commitmentDuration ? (sanitized.commitmentDuration as BILLING_PERIOD) : undefined,
 			subscription_status: isDraftParam ? SUBSCRIPTION_STATUS.DRAFT : undefined,
 			invoice_billing: sanitized.invoiceBillingConfig,
+			payment_terms:
+				sanitized.paymentTerms && sanitized.paymentTerms !== PAYMENT_TERMS_NONE ? (sanitized.paymentTerms as PAYMENT_TERMS) : undefined,
 			line_items:
 				!sanitized.sanitizedPhases && sanitized.addedSubscriptionLineItems && sanitized.addedSubscriptionLineItems.length > 0
 					? sanitized.addedSubscriptionLineItems.map(({ tempId, ...req }) => req)
