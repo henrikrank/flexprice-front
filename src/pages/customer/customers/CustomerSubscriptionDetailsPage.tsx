@@ -23,16 +23,27 @@ import { ExternalLink } from 'lucide-react';
 function getCommitmentPeriodLabel(subscription: SubscriptionType | undefined): string {
 	const period = subscription?.billing_period;
 	const count = subscription?.billing_period_count ?? 1;
+
 	if (!period) return '--';
-	if (period === BILLING_PERIOD.ANNUAL) return 'Annual';
-	if (period === BILLING_PERIOD.MONTHLY && count === 12) return 'Annual';
-	if (period === BILLING_PERIOD.MONTHLY && count === 1) return 'Monthly';
-	if (period === BILLING_PERIOD.QUARTERLY) return 'Quarterly';
-	if (period === BILLING_PERIOD.HALF_YEARLY) return 'Half-Yearly';
-	if (period === BILLING_PERIOD.WEEKLY) return 'Weekly';
-	if (period === BILLING_PERIOD.DAILY) return 'Daily';
-	if (period === BILLING_PERIOD.MONTHLY) return `${count} months`;
-	return '--';
+
+	switch (period) {
+		case BILLING_PERIOD.ANNUAL:
+			return 'Annual';
+		case BILLING_PERIOD.MONTHLY:
+			if (count === 12) return 'Annual';
+			if (count === 1) return 'Monthly';
+			return `${count} months`;
+		case BILLING_PERIOD.QUARTERLY:
+			return 'Quarterly';
+		case BILLING_PERIOD.HALF_YEARLY:
+			return 'Half-Yearly';
+		case BILLING_PERIOD.WEEKLY:
+			return 'Weekly';
+		case BILLING_PERIOD.DAILY:
+			return 'Daily';
+		default:
+			return '--';
+	}
 }
 
 const CustomerSubscriptionDetailsPage: FC = () => {
