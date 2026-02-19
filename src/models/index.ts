@@ -84,7 +84,14 @@ export type { Integration } from './Integration';
 
 // Invoice
 export type { Invoice, LineItem } from './Invoice';
-export { INVOICE_STATUS, INVOICE_BILLING_REASON, INVOICE_TYPE, INVOICE_CADENCE, BILLING_CADENCE } from './Invoice';
+export {
+	INVOICE_STATUS,
+	INVOICE_BILLING_REASON,
+	INVOICE_TYPE,
+	INVOICE_CADENCE,
+	BILLING_CADENCE,
+	INVOICE_LINE_ITEM_ENTITY_TYPE as InvoiceLineItemEntityType,
+} from './Invoice';
 
 // Meter
 export type { Meter } from './Meter';

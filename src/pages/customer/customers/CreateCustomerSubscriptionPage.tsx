@@ -36,6 +36,7 @@ import {
 } from '@/types/dto';
 import { FilterOperator, DataType } from '@/types/common/QueryBuilder';
 import { OverrideLineItemRequest, SubscriptionPhaseCreateRequest } from '@/types/dto/Subscription';
+import type { AddedSubscriptionLineItem } from '@/components/organisms/Subscription/AddSubscriptionChargeDialog';
 
 import { cn } from '@/lib/utils';
 import { toSentenceCase } from '@/utils/common/helper_functions';
@@ -86,6 +87,7 @@ export type SubscriptionFormState = {
 	invoiceBillingConfig?: INVOICE_BILLING;
 	paymentTerms?: string;
 	hasModifiedPlanCreditGrants?: boolean;
+	addedSubscriptionLineItems: AddedSubscriptionLineItem[];
 };
 
 const usePlans = () => {
@@ -258,6 +260,7 @@ const CreateCustomerSubscriptionPage: React.FC = () => {
 		invoiceBillingConfig: undefined,
 		paymentTerms: undefined,
 		hasModifiedPlanCreditGrants: false,
+		addedSubscriptionLineItems: [],
 	});
 
 	const { data: plans, isLoading: plansLoading, isError: plansError } = usePlans();
@@ -450,6 +453,7 @@ const CreateCustomerSubscriptionPage: React.FC = () => {
 			creditGrants,
 			invoiceBillingConfig,
 			paymentTerms,
+			addedSubscriptionLineItems,
 		} = subscriptionState;
 
 		let finalStartDate: string;
@@ -471,9 +475,8 @@ const CreateCustomerSubscriptionPage: React.FC = () => {
 			finalLineItemCoupons = firstPhaseData.line_item_coupons;
 			finalOverrideLineItems = firstPhaseData.override_line_items;
 
-			// Extract commitments from first phase if present
-			// Note: Phase-level commitments should be extracted from phase.line_item_commitments if phases support them
-			finalLineItemCommitments = undefined; // Phases handle their own commitments
+			// Commitments are subscription-level only; phases do not have line_item_commitments per backend
+			finalLineItemCommitments = undefined;
 
 			// Sanitize phases (quantity exclusion for USAGE prices handled in PhaseList conversion)
 			sanitizedPhases = phases.map((phase) => ({
@@ -482,7 +485,6 @@ const CreateCustomerSubscriptionPage: React.FC = () => {
 				coupons: phase.coupons || undefined,
 				line_item_coupons: phase.line_item_coupons || undefined,
 				override_line_items: phase.override_line_items || undefined,
-				line_item_commitments: phase.line_item_commitments || undefined,
 				metadata: phase.metadata || undefined,
 			}));
 		} else {
@@ -549,6 +551,7 @@ const CreateCustomerSubscriptionPage: React.FC = () => {
 			invoiceBillingConfig,
 			paymentTerms,
 			sanitizedAddons,
+			addedSubscriptionLineItems,
 		};
 	};
 
@@ -602,6 +605,10 @@ const CreateCustomerSubscriptionPage: React.FC = () => {
 			invoice_billing: sanitized.invoiceBillingConfig,
 			payment_terms:
 				sanitized.paymentTerms && sanitized.paymentTerms !== PAYMENT_TERMS_NONE ? (sanitized.paymentTerms as PAYMENT_TERMS) : undefined,
+			line_items:
+				!sanitized.sanitizedPhases && sanitized.addedSubscriptionLineItems && sanitized.addedSubscriptionLineItems.length > 0
+					? sanitized.addedSubscriptionLineItems.map(({ tempId, ...req }) => req)
+					: undefined,
 		};
 
 		setIsDraft(isDraftParam);

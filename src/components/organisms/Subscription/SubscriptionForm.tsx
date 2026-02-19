@@ -25,7 +25,8 @@ import { SubscriptionDiscountTable, EntitlementOverridesTable } from '@/componen
 import SubscriptionTaxAssociationTable from '@/components/molecules/SubscriptionTaxAssociationTable';
 import PhaseList from './PhaseList';
 import { SubscriptionPhaseCreateRequest, EntitlementOverrideRequest } from '@/types/dto/Subscription';
-import PriceTable from './PriceTable';
+import SubscriptionPriceTable from './SubscriptionPriceTable';
+import AddSubscriptionChargeDialog from './AddSubscriptionChargeDialog';
 import { usePriceOverrides } from '@/hooks/usePriceOverrides';
 import { Coupon } from '@/models/Coupon';
 import { InternalCreditGrantRequest, creditGrantToInternal } from '@/types/dto/CreditGrant';
@@ -264,6 +265,10 @@ const SubscriptionForm = ({
 
 	// Track edited plan-level grant IDs (these will be converted to subscription scope)
 	const [editedPlanGrantIds, setEditedPlanGrantIds] = useState<Set<string>>(new Set());
+	// Add subscription charge dialog open state (single-phase only)
+	const [isAddChargeDialogOpen, setAddChargeDialogOpen] = useState(false);
+	// When set, dialog is in edit mode for this added line item (tempId)
+	const [editingAddedChargeTempId, setEditingAddedChargeTempId] = useState<string | null>(null);
 
 	// Combine plan credit grants with user-added credit grants (all editable now)
 	const relevantCreditGrants = useMemo(() => {
@@ -442,6 +447,39 @@ const SubscriptionForm = ({
 					disabled={isDisabled || isLoadingPlanDetails}
 				/>
 			)}
+			{/* Add subscription charge dialog (single-phase only) */}
+			{state.selectedPlan && !isLoadingPlanDetails && phases.length === 0 && (
+				<AddSubscriptionChargeDialog
+					isOpen={isAddChargeDialogOpen}
+					onOpenChange={(open) => {
+						setAddChargeDialogOpen(open);
+						if (!open) setEditingAddedChargeTempId(null);
+					}}
+					onSave={(item) => {
+						if (editingAddedChargeTempId) {
+							setState((prev) => ({
+								...prev,
+								addedSubscriptionLineItems: (prev.addedSubscriptionLineItems ?? []).map((i) => (i.tempId === item.tempId ? item : i)),
+							}));
+						} else {
+							setState((prev) => ({
+								...prev,
+								addedSubscriptionLineItems: [...(prev.addedSubscriptionLineItems ?? []), item],
+							}));
+						}
+						setEditingAddedChargeTempId(null);
+						setAddChargeDialogOpen(false);
+					}}
+					defaultCurrency={state.currency}
+					defaultBillingPeriod={state.billingPeriod}
+					initialItem={
+						editingAddedChargeTempId != null
+							? (state.addedSubscriptionLineItems?.find((i) => i.tempId === editingAddedChargeTempId) ?? null)
+							: null
+					}
+				/>
+			)}
+
 			{/* Conditional: Show Subscription Fields OR Phases */}
 			{state.selectedPlan && !isLoadingPlanDetails && phases.length === 0 && (
 				<>
@@ -473,55 +511,68 @@ const SubscriptionForm = ({
 						</div>
 					</div>
 
-					{/* Subscription Level Price Table */}
-					{currentPrices.length > 0 && (
-						<div className='mt-6 pt-6 border-t border-gray-200'>
-							<PriceTable
-								data={currentPrices}
-								billingPeriod={state.billingPeriod}
-								currency={state.currency}
-								onPriceOverride={overridePrice}
-								onResetOverride={resetOverride}
-								overriddenPrices={overriddenPrices}
-								lineItemCoupons={state.lineItemCoupons}
-								onLineItemCouponsChange={(priceId, coupon) => {
-									setState((prev) => {
-										const newLineItemCoupons = { ...prev.lineItemCoupons };
-										if (coupon) {
-											newLineItemCoupons[priceId] = coupon;
-										} else {
-											delete newLineItemCoupons[priceId];
-										}
-										return {
-											...prev,
-											lineItemCoupons: newLineItemCoupons,
-										};
-									});
-								}}
-								onCommitmentChange={(priceId, config) => {
-									// Update the commitment field on the price override
-									if (config) {
-										overridePrice(priceId, { commitment: config });
+					{/* Subscription Level Price Table (always show in single-phase so Add charge is available) */}
+					<div className='mt-6 pt-6 border-t border-gray-200'>
+						<SubscriptionPriceTable
+							data={currentPrices}
+							billingPeriod={state.billingPeriod}
+							currency={state.currency}
+							onPriceOverride={overridePrice}
+							onResetOverride={resetOverride}
+							overriddenPrices={overriddenPrices}
+							lineItemCoupons={state.lineItemCoupons}
+							onLineItemCouponsChange={(priceId, coupon) => {
+								setState((prev) => {
+									const newLineItemCoupons = { ...prev.lineItemCoupons };
+									if (coupon) {
+										newLineItemCoupons[priceId] = coupon;
 									} else {
-										// Remove commitment from override
-										const currentOverride = overriddenPrices[priceId];
-										if (currentOverride) {
-											const { commitment, ...restOverride } = currentOverride;
-											if (Object.keys(restOverride).length > 1) {
-												// Has other overrides, just remove commitment
-												overridePrice(priceId, restOverride);
-											} else {
-												// Only had commitment, remove entire override
-												resetOverride(priceId);
-											}
+										delete newLineItemCoupons[priceId];
+									}
+									return {
+										...prev,
+										lineItemCoupons: newLineItemCoupons,
+									};
+								});
+							}}
+							onCommitmentChange={(priceId, config) => {
+								// Update the commitment field on the price override
+								if (config) {
+									overridePrice(priceId, { commitment: config });
+								} else {
+									// Remove commitment from override
+									const currentOverride = overriddenPrices[priceId];
+									if (currentOverride) {
+										const { commitment, ...restOverride } = currentOverride;
+										if (Object.keys(restOverride).length > 1) {
+											// Has other overrides, just remove commitment
+											overridePrice(priceId, restOverride);
+										} else {
+											// Only had commitment, remove entire override
+											resetOverride(priceId);
 										}
 									}
-								}}
-								disabled={isDisabled}
-								subscriptionLevelCoupon={state.linkedCoupon}
-							/>
-						</div>
-					)}
+								}
+							}}
+							disabled={isDisabled}
+							subscriptionLevelCoupon={state.linkedCoupon}
+							addedLineItems={state.addedSubscriptionLineItems}
+							onAddCharge={() => {
+								setEditingAddedChargeTempId(null);
+								setAddChargeDialogOpen(true);
+							}}
+							onRemoveAddedCharge={(tempId) =>
+								setState((prev) => ({
+									...prev,
+									addedSubscriptionLineItems: (prev.addedSubscriptionLineItems ?? []).filter((i) => i.tempId !== tempId),
+								}))
+							}
+							onEditAddedCharge={(item) => {
+								setEditingAddedChargeTempId(item.tempId);
+								setAddChargeDialogOpen(true);
+							}}
+						/>
+					</div>
 
 					{/* Subscription Level Discounts */}
 					<div className='mt-6'>
