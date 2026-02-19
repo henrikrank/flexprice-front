@@ -9,7 +9,8 @@ import { Price } from './Price';
 export interface LineItem extends BaseModel {
 	readonly subscription_id: string;
 	readonly customer_id: string;
-	readonly plan_id: string;
+	/** @deprecated Prefer entity_type + entity_id. When entity_type === 'plan', entity_id is the plan ID. */
+	readonly plan_id?: string;
 	readonly price_id: string;
 	readonly meter_id: string;
 	readonly environment_id: string;
@@ -26,6 +27,10 @@ export interface LineItem extends BaseModel {
 	readonly metadata: Metadata;
 	readonly price?: Price;
 	readonly subscription_phase_id?: string;
+	/** Source of the line item: plan, addon, or subscription (subscription-scoped price) */
+	readonly entity_type?: SUBSCRIPTION_LINE_ITEM_ENTITY_TYPE;
+	/** ID of the source entity (plan_id, addon_id, or subscription_id) */
+	readonly entity_id?: string;
 }
 
 export interface Pause extends BaseModel {
@@ -88,6 +93,8 @@ export interface Subscription extends BaseModel {
 	credit_grants?: CreditGrant[];
 	commitment_amount?: number;
 	overage_factor?: number;
+	/** Payment terms (e.g. 15 NET, 30 NET) used to compute invoice due date from period end */
+	readonly payment_terms?: string;
 
 	// Subscription phases
 	readonly phases?: SubscriptionPhase[];
@@ -205,10 +212,21 @@ export enum COLLECTION_METHOD {
 	SEND_INVOICE = 'send_invoice',
 }
 
+// PaymentTerms (e.g. 15 NET, 30 NET) used to compute invoice due date from period end
+export enum PAYMENT_TERMS {
+	NET_15 = '15 NET',
+	NET_30 = '30 NET',
+	NET_45 = '45 NET',
+	NET_60 = '60 NET',
+	NET_75 = '75 NET',
+	NET_90 = '90 NET',
+}
+
 // SubscriptionLineItemEntityType is the type of the source of a subscription line item
 export enum SUBSCRIPTION_LINE_ITEM_ENTITY_TYPE {
 	PLAN = 'plan',
 	ADDON = 'addon',
+	SUBSCRIPTION = 'subscription',
 }
 
 // SubscriptionChangeType defines the type of subscription change
