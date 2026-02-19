@@ -7,6 +7,7 @@ import {
 	BILLING_CYCLE,
 	COLLECTION_METHOD,
 	PAYMENT_BEHAVIOR,
+	PAYMENT_TERMS,
 	SUBSCRIPTION_CANCELLATION_TYPE,
 	SUBSCRIPTION_LINE_ITEM_ENTITY_TYPE,
 	SUBSCRIPTION_PRORATION_BEHAVIOR,
@@ -144,6 +145,18 @@ export const paymentBehaviorOptions = [
 export const collectionMethodOptions = [
 	{ label: 'Charge Automatically', value: COLLECTION_METHOD.CHARGE_AUTOMATICALLY },
 	{ label: 'Send Invoice', value: COLLECTION_METHOD.SEND_INVOICE },
+];
+
+// Sentinel for "no payment terms" — Radix Select disallows value=""
+export const PAYMENT_TERMS_NONE = '__none__';
+export const paymentTermsOptions = [
+	{ label: 'None', value: PAYMENT_TERMS_NONE },
+	{ label: 'NET 15', value: PAYMENT_TERMS.NET_15 },
+	{ label: 'NET 30', value: PAYMENT_TERMS.NET_30 },
+	{ label: 'NET 45', value: PAYMENT_TERMS.NET_45 },
+	{ label: 'NET 60', value: PAYMENT_TERMS.NET_60 },
+	{ label: 'NET 75', value: PAYMENT_TERMS.NET_75 },
+	{ label: 'NET 90', value: PAYMENT_TERMS.NET_90 },
 ];
 
 export const prorationBehaviorOptions = [

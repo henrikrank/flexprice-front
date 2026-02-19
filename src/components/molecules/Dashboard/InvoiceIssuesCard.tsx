@@ -1,6 +1,13 @@
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, Skeleton } from '@/components/ui';
-import { AlertCircle, CheckCircle, Clock, RefreshCw } from 'lucide-react';
+import { PAYMENT_STATUS } from '@/constants';
+import { RouteNames } from '@/core/routes/Routes';
 import { getTypographyClass } from '@/lib/typography';
+import { ENTITY_STATUS } from '@/models';
+import type { FilterCondition } from '@/types/common/QueryBuilder';
+import { DataType, FilterOperator } from '@/types/common/QueryBuilder';
+import { getFiltersParamKey, serializeFilters } from '@/utils/filterPersistence';
+import { AlertCircle, CheckCircle, Clock, RefreshCw } from 'lucide-react';
+import { useNavigate } from 'react-router';
 
 interface Invoice {
 	amount_remaining?: number;
@@ -21,7 +28,45 @@ interface InvoiceIssuesCardProps {
 	isLoading: boolean;
 	error?: boolean;
 }
+
+const INVOICES_QUERY_KEY = 'fetchInvoices';
+
+/** Builds filter array matching InvoicePage base filters + payment_status. Used for navigation link. */
+function getFiltersForPaymentStatus(paymentStatus: string): FilterCondition[] {
+	return [
+		{
+			field: 'invoice_number',
+			operator: FilterOperator.CONTAINS,
+			valueString: '',
+			dataType: DataType.STRING,
+			id: 'initial-invoice-number',
+		},
+		{
+			field: 'status',
+			operator: FilterOperator.IN,
+			valueArray: [ENTITY_STATUS.PUBLISHED],
+			dataType: DataType.ARRAY,
+			id: 'initial-status',
+		},
+		{
+			field: 'payment_status',
+			operator: FilterOperator.IN,
+			valueArray: [paymentStatus],
+			dataType: DataType.ARRAY,
+			id: 'payment-status-filter',
+		},
+	];
+}
+
 export const InvoiceIssuesCard: React.FC<InvoiceIssuesCardProps> = ({ invoicesByStatus, isLoading, error }) => {
+	const navigate = useNavigate();
+
+	const handleStatusClick = (paymentStatus: string) => {
+		const filters = getFiltersForPaymentStatus(paymentStatus);
+		const search = `?${getFiltersParamKey(INVOICES_QUERY_KEY)}=${encodeURIComponent(serializeFilters(filters))}`;
+		navigate({ pathname: RouteNames.invoices, search });
+	};
+
 	return (
 		<Card className='shadow-sm'>
 			<CardHeader className='pb-8'>
@@ -49,7 +94,12 @@ export const InvoiceIssuesCard: React.FC<InvoiceIssuesCardProps> = ({ invoicesBy
 				) : (
 					<div className='space-y-3'>
 						{/* Paid Invoices */}
-						<div className='bg-white border border-zinc-200 rounded-lg p-4'>
+						<div
+							role='button'
+							tabIndex={0}
+							className='bg-white border border-zinc-200 rounded-lg p-4 cursor-pointer hover:bg-zinc-50 transition-colors'
+							onClick={() => handleStatusClick(PAYMENT_STATUS.SUCCEEDED)}
+							onKeyDown={(e) => e.key === 'Enter' && handleStatusClick(PAYMENT_STATUS.SUCCEEDED)}>
 							<div className='flex items-center justify-between'>
 								<div className='flex items-center gap-3'>
 									<CheckCircle className='w-5 h-5 text-green-600' />
@@ -60,7 +110,12 @@ export const InvoiceIssuesCard: React.FC<InvoiceIssuesCardProps> = ({ invoicesBy
 						</div>
 
 						{/* Pending Payments */}
-						<div className='bg-white border border-zinc-200 rounded-lg p-4'>
+						<div
+							role='button'
+							tabIndex={0}
+							className='bg-white border border-zinc-200 rounded-lg p-4 cursor-pointer hover:bg-zinc-50 transition-colors'
+							onClick={() => handleStatusClick(PAYMENT_STATUS.PENDING)}
+							onKeyDown={(e) => e.key === 'Enter' && handleStatusClick(PAYMENT_STATUS.PENDING)}>
 							<div className='flex items-center justify-between'>
 								<div className='flex items-center gap-3'>
 									<Clock className='w-5 h-5 text-yellow-600' />
@@ -71,7 +126,12 @@ export const InvoiceIssuesCard: React.FC<InvoiceIssuesCardProps> = ({ invoicesBy
 						</div>
 
 						{/* Failed Payments */}
-						<div className='bg-white border border-zinc-200 rounded-lg p-4'>
+						<div
+							role='button'
+							tabIndex={0}
+							className='bg-white border border-zinc-200 rounded-lg p-4 cursor-pointer hover:bg-zinc-50 transition-colors'
+							onClick={() => handleStatusClick(PAYMENT_STATUS.FAILED)}
+							onKeyDown={(e) => e.key === 'Enter' && handleStatusClick(PAYMENT_STATUS.FAILED)}>
 							<div className='flex items-center justify-between'>
 								<div className='flex items-center gap-3'>
 									<AlertCircle className='w-5 h-5 text-red-600' />

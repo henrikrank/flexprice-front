@@ -84,7 +84,14 @@ export type { Integration } from './Integration';
 
 // Invoice
 export type { Invoice, LineItem } from './Invoice';
-export { INVOICE_STATUS, INVOICE_BILLING_REASON, INVOICE_TYPE, INVOICE_CADENCE, BILLING_CADENCE } from './Invoice';
+export {
+	INVOICE_STATUS,
+	INVOICE_BILLING_REASON,
+	INVOICE_TYPE,
+	INVOICE_CADENCE,
+	BILLING_CADENCE,
+	INVOICE_LINE_ITEM_ENTITY_TYPE as InvoiceLineItemEntityType,
+} from './Invoice';
 
 // Meter
 export type { Meter } from './Meter';
@@ -132,6 +139,7 @@ export {
 	SUBSCRIPTION_CANCEL_IMMEDIATELY_INVOICE_POLICY,
 	PAYMENT_BEHAVIOR,
 	COLLECTION_METHOD,
+	PAYMENT_TERMS,
 	SUBSCRIPTION_LINE_ITEM_ENTITY_TYPE,
 	SUBSCRIPTION_CHANGE_TYPE,
 	PauseStatus,
@@ -153,7 +161,7 @@ export { TenantMetadataKey } from './Tenant';
 export type { User } from './User';
 
 // Wallet
-export type { Wallet } from './Wallet';
+export type { Wallet, WalletAlertSettings, WalletAlertThreshold, WalletAlertState } from './Wallet';
 export {
 	WALLET_STATUS,
 	WALLET_TX_REFERENCE_TYPE,
@@ -162,6 +170,7 @@ export {
 	WALLET_TYPE,
 	WALLET_AUTO_TOPUP_TRIGGER,
 	WALLET_CONFIG_PRICE_TYPE,
+	WalletAlertLevel,
 } from './Wallet';
 
 // WalletBalance

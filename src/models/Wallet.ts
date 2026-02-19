@@ -1,6 +1,26 @@
 import { BaseModel, Metadata } from './base';
 import { Meter } from './Meter';
 
+export interface WalletAlertThreshold {
+	threshold: string;
+	condition: 'above' | 'below';
+}
+
+export interface WalletAlertSettings {
+	critical?: WalletAlertThreshold | null;
+	warning?: WalletAlertThreshold | null;
+	info?: WalletAlertThreshold | null;
+	alert_enabled?: boolean;
+}
+
+export enum WalletAlertLevel {
+	CRITICAL = 'critical',
+	WARNING = 'warning',
+	INFO = 'info',
+}
+
+export type WalletAlertState = 'ok' | 'info' | 'warning' | 'in_alarm';
+
 export interface Wallet extends BaseModel {
 	readonly balance: number;
 	readonly name: string;
@@ -12,13 +32,8 @@ export interface Wallet extends BaseModel {
 	readonly conversion_rate: number;
 	readonly topup_conversion_rate?: number;
 	readonly meter: Meter;
-	readonly alert_enabled?: boolean;
-	readonly alert_config?: {
-		threshold: {
-			type: 'amount' | 'percentage';
-			value: string;
-		};
-	};
+	readonly alert_settings?: WalletAlertSettings;
+	readonly alert_state?: WalletAlertState;
 	readonly auto_topup?: {
 		enabled: boolean;
 		threshold: string;

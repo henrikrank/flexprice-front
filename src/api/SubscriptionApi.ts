@@ -187,10 +187,13 @@ class SubscriptionApi {
 	// =============================================================================
 
 	/**
-	 * Create a new subscription line item
+	 * Create a new subscription line item (POST /subscriptions/{id}/lineitems)
 	 */
-	public static async createSubscriptionLineItem(payload: CreateSubscriptionLineItemRequest): Promise<SubscriptionLineItemResponse> {
-		return await AxiosClient.post<SubscriptionLineItemResponse>(`${this.baseUrl}/lineitems`, payload);
+	public static async createSubscriptionLineItem(
+		subscriptionId: string,
+		payload: CreateSubscriptionLineItemRequest,
+	): Promise<SubscriptionLineItemResponse> {
+		return await AxiosClient.post<SubscriptionLineItemResponse>(`${this.baseUrl}/${subscriptionId}/lineitems`, payload);
 	}
 
 	/**

@@ -7,6 +7,8 @@ import {
 	WALLET_TYPE,
 	WALLET_CONFIG_PRICE_TYPE,
 	WalletTransaction,
+	WalletAlertSettings,
+	WalletAlertState,
 } from '@/models';
 import { TypedBackendFilter, TypedBackendSort } from '../formatters/QueryBuilder';
 
@@ -32,13 +34,7 @@ export interface CreateWalletPayload {
 	initial_credits_to_load?: number;
 	initial_credits_to_load_expiry_date?: number; // YYYYMMDD format
 	initial_credits_expiry_date_utc?: string; // ISO string
-	alert_enabled?: boolean;
-	alert_config?: {
-		threshold: {
-			type: 'amount' | 'percentage';
-			value: string;
-		};
-	};
+	alert_settings?: WalletAlertSettings;
 	auto_topup?: {
 		enabled: boolean;
 		threshold: string;
@@ -89,13 +85,7 @@ export interface UpdateWalletRequest {
 		amount: string;
 		invoicing: boolean;
 	};
-	alert_enabled?: boolean;
-	alert_config?: {
-		threshold: {
-			type: 'amount' | 'percentage';
-			value: string;
-		};
-	};
+	alert_settings?: WalletAlertSettings;
 }
 
 export interface WalletResponse {
@@ -122,13 +112,8 @@ export interface WalletResponse {
 	topup_conversion_rate?: string;
 	created_at: string;
 	updated_at: string;
-	alert_enabled?: boolean;
-	alert_config?: {
-		threshold: {
-			type: 'amount' | 'percentage';
-			value: string;
-		};
-	};
+	alert_settings?: WalletAlertSettings;
+	alert_state?: WalletAlertState;
 }
 
 export interface GetCustomerWalletsResponse extends BaseModel {
@@ -152,13 +137,8 @@ export interface GetCustomerWalletsResponse extends BaseModel {
 	name: string;
 	wallet_status: WALLET_STATUS;
 	wallet_type: WALLET_TYPE;
-	alert_enabled?: boolean;
-	alert_config?: {
-		threshold: {
-			type: 'amount' | 'percentage';
-			value: string;
-		};
-	};
+	alert_settings?: WalletAlertSettings;
+	alert_state?: WalletAlertState;
 }
 
 export interface GetWalletTransactionsByFilterPayload extends Pagination {
