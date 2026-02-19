@@ -17,7 +17,34 @@ import { TAXRATE_ENTITY_TYPE } from '@/models/Tax';
 import TaxAssociationTable from '@/components/molecules/TaxAssociationTable';
 import { SUBSCRIPTION_STATUS } from '@/models/Subscription';
 import { Subscription as SubscriptionType } from '@/models/Subscription';
+import { BILLING_PERIOD } from '@/constants/constants';
 import { ExternalLink } from 'lucide-react';
+
+function getCommitmentPeriodLabel(subscription: SubscriptionType | undefined): string {
+	const period = subscription?.billing_period;
+	const count = subscription?.billing_period_count ?? 1;
+
+	if (!period) return '--';
+
+	switch (period) {
+		case BILLING_PERIOD.ANNUAL:
+			return 'Annual';
+		case BILLING_PERIOD.MONTHLY:
+			if (count === 12) return 'Annual';
+			if (count === 1) return 'Monthly';
+			return `${count} months`;
+		case BILLING_PERIOD.QUARTERLY:
+			return 'Quarterly';
+		case BILLING_PERIOD.HALF_YEARLY:
+			return 'Half-Yearly';
+		case BILLING_PERIOD.WEEKLY:
+			return 'Weekly';
+		case BILLING_PERIOD.DAILY:
+			return 'Daily';
+		default:
+			return '--';
+	}
+}
 
 const CustomerSubscriptionDetailsPage: FC = () => {
 	const { subscription_id, id: customerId } = useParams();
@@ -199,6 +226,12 @@ const CustomerSubscriptionDetailsPage: FC = () => {
 				<Spacer className='!my-4' />
 
 				<div className='w-full flex justify-between items-center'>
+					<p className='text-[#71717A] text-sm'>Commitment Period</p>
+					<p className='text-[#09090B] text-sm'>{getCommitmentPeriodLabel(subscriptionDetails)}</p>
+				</div>
+				<Spacer className='!my-4' />
+        
+        <div className='w-full flex justify-between items-center'>
 					<p className='text-[#71717A] text-sm'>Payment terms</p>
 					<p className='text-[#09090B] text-sm'>{subscriptionDetails?.payment_terms ?? '--'}</p>
 				</div>
