@@ -151,12 +151,12 @@ export const collectionMethodOptions = [
 export const PAYMENT_TERMS_NONE = '__none__';
 export const paymentTermsOptions = [
 	{ label: 'None', value: PAYMENT_TERMS_NONE },
-	{ label: '15 NET', value: PAYMENT_TERMS.NET_15 },
-	{ label: '30 NET', value: PAYMENT_TERMS.NET_30 },
-	{ label: '45 NET', value: PAYMENT_TERMS.NET_45 },
-	{ label: '60 NET', value: PAYMENT_TERMS.NET_60 },
-	{ label: '75 NET', value: PAYMENT_TERMS.NET_75 },
-	{ label: '90 NET', value: PAYMENT_TERMS.NET_90 },
+	{ label: 'NET 15', value: PAYMENT_TERMS.NET_15 },
+	{ label: 'NET 30', value: PAYMENT_TERMS.NET_30 },
+	{ label: 'NET 45', value: PAYMENT_TERMS.NET_45 },
+	{ label: 'NET 60', value: PAYMENT_TERMS.NET_60 },
+	{ label: 'NET 75', value: PAYMENT_TERMS.NET_75 },
+	{ label: 'NET 90', value: PAYMENT_TERMS.NET_90 },
 ];
 
 export const prorationBehaviorOptions = [
